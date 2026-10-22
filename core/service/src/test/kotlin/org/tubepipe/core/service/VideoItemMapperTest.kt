@@ -1,10 +1,12 @@
 package org.tubepipe.core.service
 
+import java.time.OffsetDateTime
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import org.schabi.newpipe.extractor.localization.DateWrapper
 import org.schabi.newpipe.extractor.stream.StreamInfoItem
 import org.schabi.newpipe.extractor.stream.StreamType
 
@@ -56,5 +58,26 @@ class VideoItemMapperTest {
 
         assertNull(video.viewCount)
         assertNull(video.uploadedText)
+    }
+
+    @Test
+    fun shortsMembersOnlyAndUpcomingAreFlagged() {
+        val item = extractorItem(StreamType.VIDEO_STREAM)
+        item.isShortFormContent = true
+        item.setRequiresMembership(true)
+
+        val video = item.toVideoItem()
+
+        assertTrue(video.isShort)
+        assertTrue(video.isMembersOnly)
+        assertFalse(video.isUpcoming)
+    }
+
+    @Test
+    fun aFutureUploadDateMeansUpcoming() {
+        val item = extractorItem(StreamType.VIDEO_STREAM)
+        item.uploadDate = DateWrapper(OffsetDateTime.now().plusDays(2))
+
+        assertTrue(item.toVideoItem().isUpcoming)
     }
 }

@@ -14,6 +14,10 @@ data class VideoItem(
     val viewCount: Long?,
     val uploadedText: String?,
     val isLive: Boolean,
+    // Used by the Settings content filters; defaults keep locally stored videos visible.
+    val isShort: Boolean = false,
+    val isUpcoming: Boolean = false,
+    val isMembersOnly: Boolean = false,
 )
 
 data class VideoDetails(
