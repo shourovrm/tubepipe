@@ -1,48 +1,76 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="settings_content_country">Content country</string>
-    <string name="settings_content_country_supporting">Decides which trending videos YouTube shows.</string>
-    <string name="settings_country_current">Current</string>
-    <string name="settings_player">Player</string>
-    <string name="settings_player_visionos">VisionOS (HLS, default)</string>
-    <string name="settings_player_mweb">MWEB (SABR)</string>
-    <string name="settings_selected_marker">Selected</string>
-    <string name="settings_home_sections">Home sections</string>
-    <string name="settings_section_continue_watching">Continue watching</string>
-    <string name="settings_section_recommended">Recommended</string>
-    <string name="settings_section_mix">Mix</string>
-    <string name="settings_section_new_from_subscriptions">New from subscriptions</string>
-    <string name="settings_section_trending_music">Trending music</string>
-    <string name="settings_section_trending_movies">Trending movies and shows</string>
-    <string name="settings_show">Show</string>
-    <string name="settings_hide">Hide</string>
-    <string name="settings_hidden_marker">Hidden</string>
-    <string name="settings_move_up">Move up</string>
-    <string name="settings_move_down">Move down</string>
+    <!-- Hub and page titles -->
+    <string name="settings_breadcrumb">Settings ›</string>
+    <string name="settings_page_playback">Playback</string>
+    <string name="settings_page_quality">Quality &amp; audio</string>
+    <string name="settings_page_captions">Captions</string>
     <string name="settings_sponsorblock">SponsorBlock</string>
-    <string name="settings_sponsorblock_supporting">Skip sponsor, intro and outro segments marked by the community.</string>
+    <string name="settings_page_home">Home screen</string>
+    <string name="settings_content_filters">Content filters</string>
+    <string name="settings_page_history">History &amp; privacy</string>
+    <string name="settings_page_region">Region &amp; player engine</string>
+    <string name="settings_about">About</string>
+
+    <!-- Hub summaries -->
+    <string name="settings_summary_separator">" · "</string>
+    <string name="settings_summary_seek">%1$d s seek</string>
+    <string name="settings_summary_autoplay_on">Autoplay on</string>
+    <string name="settings_summary_autoplay_off">Autoplay off</string>
+    <string name="settings_summary_audio_original">Original audio</string>
+    <string name="settings_summary_audio_language">%1$s audio</string>
+    <string name="settings_summary_caption_size">%1$s size</string>
+    <string name="settings_summary_categories">%1$d of %2$d categories</string>
+    <plurals name="settings_summary_home_rows">
+        <item quantity="one">%d row shown</item>
+        <item quantity="other">%d rows shown</item>
+    </plurals>
+    <string name="settings_summary_hiding">Hiding %1$s</string>
+    <string name="settings_summary_hiding_shorts">Shorts</string>
+    <string name="settings_summary_hiding_upcoming">upcoming</string>
+    <string name="settings_summary_hiding_paid">paid</string>
+    <string name="settings_summary_hiding_nothing">Nothing hidden</string>
+    <string name="settings_summary_history_both">Watch and search history on</string>
+    <string name="settings_summary_history_watch">Watch history on</string>
+    <string name="settings_summary_history_search">Search history on</string>
+    <string name="settings_summary_history_none">History off</string>
+    <string name="settings_summary_about">%1$s %2$s · GPL-3.0</string>
+
+    <!-- Shared -->
     <string name="settings_on">On</string>
     <string name="settings_off">Off</string>
-    <string name="settings_about">About</string>
-    <string name="settings_about_version">%1$s, version %2$s</string>
-    <string name="settings_about_license">Free software under GPL-3.0</string>
-    <string name="settings_about_credits">Built on the work of</string>
-    <string name="settings_about_newpipe">NewPipe</string>
-    <string name="settings_about_newpipe_url">https://github.com/TeamNewPipe/NewPipe</string>
-    <string name="settings_about_pipepipe">PipePipe</string>
-    <string name="settings_about_pipepipe_url">https://github.com/InfinityLoop1308/PipePipe</string>
-    <string name="settings_about_source">The source code of every release is public, under the same licence.</string>
+    <string name="settings_selected_marker">Selected</string>
+    <string name="settings_confirm_clear">Clear</string>
+
+    <!-- Playback -->
+    <string name="settings_default_speed">Default speed</string>
+    <string name="settings_default_speed_help">Speed every new video starts at. Left and Right move the slider in 0.25× steps from 0.5× to 2×.\n\nThe player\'s speed button changes only the current video.</string>
+    <string name="settings_speed_value">%1$s×</string>
+    <string name="settings_seek_step">Seek step</string>
+    <string name="settings_seek_step_help">How far a skip forward or back jumps. Left and Right move the slider in 5 s steps from 5 s to 30 s.</string>
+    <string name="settings_seconds_value">%1$d s</string>
+    <string name="settings_autoplay_next">Autoplay next video</string>
+    <string name="settings_autoplay_next_help">When a video ends, the next one starts on its own.</string>
+    <string name="settings_resume">Resume where I stopped</string>
+    <string name="settings_resume_help">A video you did not finish continues from the point where you left it. Saved positions stay on this device.</string>
+    <string name="settings_always_start_from_beginning">Always start from the beginning</string>
+    <string name="settings_always_start_from_beginning_help">Every video starts at 0:00 and ignores any saved resume point.</string>
+
+    <!-- Quality and audio -->
     <string name="settings_default_quality">Default quality</string>
+    <string name="settings_default_quality_help">The quality a video starts at. Auto lets the player choose for your connection. You can still change it in the player.</string>
     <string name="settings_quality_auto">Auto</string>
     <string name="settings_quality_1080">1080p</string>
     <string name="settings_quality_720">720p</string>
     <string name="settings_quality_480">480p</string>
     <string name="settings_quality_360">360p</string>
-    <string name="settings_preferred_codec">Preferred video codec</string>
+    <string name="settings_preferred_codec">Preferred codec</string>
+    <string name="settings_preferred_codec_help">H.264 plays on every device. VP9 and AV1 use less data at the same quality, but older devices may not play them.</string>
     <string name="settings_codec_h264">H.264</string>
     <string name="settings_codec_vp9">VP9</string>
     <string name="settings_codec_av1">AV1</string>
-    <string name="settings_audio_language">Preferred audio language</string>
+    <string name="settings_audio_language">Audio language</string>
+    <string name="settings_audio_language_help">Dubbed videos switch to this track when they have it. \"Original\" keeps the language the video was made in.</string>
     <string name="settings_audio_language_original">Original</string>
     <string name="settings_language_bangla">Bangla</string>
     <string name="settings_language_english">English</string>
@@ -56,43 +84,99 @@
     <string name="settings_language_portuguese">Portuguese</string>
     <string name="settings_language_russian">Russian</string>
     <string name="settings_language_turkish">Turkish</string>
-    <string name="settings_default_speed">Default speed</string>
-    <string name="settings_speed_value">%1$s×</string>
-    <string name="settings_seek_step">Skip step</string>
-    <string name="settings_seconds_value">%1$d s</string>
-    <string name="settings_autoplay_next">Play the next video automatically</string>
-    <string name="settings_always_start_from_beginning">Always start from the beginning</string>
-    <string name="settings_captions_default">Show captions by default</string>
+
+    <!-- Captions -->
+    <string name="settings_captions_default">Captions on by default</string>
+    <string name="settings_captions_default_help">Turns captions on for every video that has them. You can still switch them in the player.</string>
     <string name="settings_caption_size">Caption size</string>
+    <string name="settings_caption_size_help">How large captions are on screen. Each Aa shows its size.</string>
+    <string name="settings_caption_sample">Aa</string>
     <string name="settings_caption_small">Small</string>
     <string name="settings_caption_normal">Normal</string>
     <string name="settings_caption_large">Large</string>
-    <string name="settings_history_and_search">History &amp; search</string>
+
+    <!-- SponsorBlock -->
+    <string name="settings_sponsorblock_master">Skip segments automatically</string>
+    <string name="settings_sponsorblock_master_help">Skip sponsor, intro and outro segments marked by the community.</string>
+    <string name="settings_sponsorblock_categories">Skip these</string>
+    <string name="settings_sponsorblock_show_notice">Show \"Skipped\" notice</string>
+    <string name="settings_sponsorblock_show_notice_help">Shows a short message on the player each time a segment is skipped.</string>
+    <string name="settings_category_color_note">The colour matches the mark on the seek bar.</string>
+    <string name="settings_category_sponsor">Sponsor</string>
+    <string name="settings_category_sponsor_help">Paid promotion, product placement or a sponsor message inside the video.</string>
+    <string name="settings_category_intro">Intro</string>
+    <string name="settings_category_intro_help">Opening animation or title card with no content.</string>
+    <string name="settings_category_outro">Outro</string>
+    <string name="settings_category_outro_help">End credits or end cards after the content has finished.</string>
+    <string name="settings_category_interaction">Subscribe ask</string>
+    <string name="settings_category_interaction_help">A reminder to like, subscribe or follow, placed inside the content.</string>
+    <string name="settings_category_self_promo">Self-promo</string>
+    <string name="settings_category_self_promo_help">Promotion of the creator\'s own merchandise, channels or other videos.</string>
+    <string name="settings_category_non_music">Non-music</string>
+    <string name="settings_category_non_music_help">Parts of a music video that are not music, such as talking or silence.</string>
+    <string name="settings_category_preview">Preview</string>
+    <string name="settings_category_preview_help">A preview or recap of other parts of the video or series.</string>
+    <string name="settings_category_filler">Filler</string>
+    <string name="settings_category_filler_help">Tangents, jokes or scenes that are not needed to follow the video.</string>
+
+    <!-- Home screen -->
+    <string name="settings_home_help">Hide a row to remove it from Home. Move up and Move down change where it appears.</string>
+    <string name="settings_section_continue_watching">Continue watching</string>
+    <string name="settings_section_recommended">Recommended</string>
+    <string name="settings_section_mix">Mix</string>
+    <string name="settings_section_new_from_subscriptions">New from subscriptions</string>
+    <string name="settings_section_trending_music">Trending music</string>
+    <string name="settings_section_trending_movies">Trending movies and shows</string>
+    <string name="settings_show">Show</string>
+    <string name="settings_hide">Hide</string>
+    <string name="settings_hidden_marker">Hidden</string>
+    <string name="settings_move_up">Move up</string>
+    <string name="settings_move_down">Move down</string>
+
+    <!-- Content filters -->
+    <string name="settings_hide_shorts">Hide Shorts</string>
+    <string name="settings_hide_shorts_help">Removes Shorts, the short vertical videos, from lists and search results.</string>
+    <string name="settings_hide_upcoming">Hide upcoming videos</string>
+    <string name="settings_hide_upcoming_help">Removes premieres and live streams that have not started yet.</string>
+    <string name="settings_hide_paid">Hide members-only and paid videos</string>
+    <string name="settings_hide_paid_help">Removes videos that need a channel membership or a purchase to watch.</string>
+
+    <!-- History and privacy -->
     <string name="settings_watch_history">Save watch history</string>
-    <string name="settings_resume">Resume where you stopped</string>
+    <string name="settings_watch_history_help">Keeps a list of the videos you watched on this device. Turn off to stop adding to it.</string>
     <string name="settings_search_history">Save search history</string>
+    <string name="settings_search_history_help">Remembers what you searched for so you can pick it again. Turn off to stop remembering.</string>
     <string name="settings_search_suggestions">Show search suggestions</string>
-    <string name="settings_confirm_clear">Clear</string>
+    <string name="settings_search_suggestions_help">Shows suggested searches while you type. Turn off to stop asking YouTube for suggestions.</string>
     <string name="settings_clear_watch_history">Clear watch history</string>
-    <string name="settings_clear_watch_history_supporting">Removes every watched video and its resume position.</string>
+    <string name="settings_clear_watch_history_help">Removes every watched video and its resume position.</string>
     <string name="settings_clear_watch_history_message">This removes every video and its resume position from this device.</string>
     <string name="settings_clear_positions">Clear playback positions</string>
-    <string name="settings_clear_positions_supporting">Keeps the history list, forgets where each video stopped.</string>
+    <string name="settings_clear_positions_help">Keeps the history list, forgets where each video stopped.</string>
     <string name="settings_clear_positions_message">Every video in your history will start from the beginning next time.</string>
     <string name="settings_clear_search_history">Clear search history</string>
-    <string name="settings_clear_search_history_supporting">Keeps your saved searches.</string>
+    <string name="settings_clear_search_history_help">Removes your recent searches. Saved searches stay.</string>
     <string name="settings_clear_search_history_message">This removes your recent searches. Saved searches stay.</string>
-    <string name="settings_content_filters">Content filters</string>
-    <string name="settings_hide_shorts">Hide Shorts</string>
-    <string name="settings_hide_upcoming">Hide upcoming videos</string>
-    <string name="settings_hide_paid">Hide members-only and paid videos</string>
-    <string name="settings_sponsorblock_show_notice">Show skip notice</string>
-    <string name="settings_category_sponsor">Skip sponsors</string>
-    <string name="settings_category_intro">Skip intros</string>
-    <string name="settings_category_outro">Skip outros</string>
-    <string name="settings_category_interaction">Skip interaction reminders</string>
-    <string name="settings_category_self_promo">Skip self promotion</string>
-    <string name="settings_category_non_music">Skip non-music parts</string>
-    <string name="settings_category_preview">Skip previews and recaps</string>
-    <string name="settings_category_filler">Skip filler</string>
+
+    <!-- Region and player engine -->
+    <string name="settings_content_country">Content country</string>
+    <string name="settings_content_country_help">Decides which trending videos YouTube shows.</string>
+    <string name="settings_player_engine">Player engine</string>
+    <string name="settings_player_engine_help">Standard is the default and plays the most videos. Fallback asks YouTube for streams in a different way; switch to it if videos fail to play.</string>
+    <string name="settings_engine_standard">Standard</string>
+    <string name="settings_engine_fallback">Fallback</string>
+
+    <!-- About -->
+    <string name="settings_about_version_name">Version</string>
+    <string name="settings_about_version">%1$s, version %2$s</string>
+    <string name="settings_about_license_name">Licence</string>
+    <string name="settings_about_license_value">GPL-3.0</string>
+    <string name="settings_about_license">Free software under GPL-3.0</string>
+    <string name="settings_about_credits">Built on the work of</string>
+    <string name="settings_about_newpipe">NewPipe</string>
+    <string name="settings_about_newpipe_help">TubePipe is built on the work of the NewPipe project, which is free software. https://github.com/TeamNewPipe/NewPipe</string>
+    <string name="settings_about_pipepipe">PipePipe</string>
+    <string name="settings_about_pipepipe_help">TubePipe is built on the work of the PipePipe project, which is free software. https://github.com/InfinityLoop1308/PipePipe</string>
+    <string name="settings_about_source_name">Source code</string>
+    <string name="settings_about_source">The source code of every release is public, under the same licence.</string>
 </resources>
