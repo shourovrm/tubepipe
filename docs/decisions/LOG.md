@@ -36,3 +36,4 @@
 2026-10-22 | Search field owns its TextFieldValue, view model gets each change | async state made the field restart input and close the keyboard
 2026-10-22 | Up on the player's channel chip hides the control overlay | user request
 2026-10-22 | Playlist video Back keeps playing in the shared PlayerBar; bar has X left of centre, Back focuses centre | user request
+2026-10-22 | Drawer opens a tab when focus lands on it (250 ms delay), no Centre needed | user request
