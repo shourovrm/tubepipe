@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="library_history">History</string>
+    <string name="library_history_empty">Videos you watch appear here.</string>
+    <string name="library_clear_history">Clear history</string>
+    <string name="library_clear_history_title">Clear watch history?</string>
+    <string name="library_clear_history_message">This removes every video and its resume position from this device.</string>
+    <string name="library_confirm_clear">Clear</string>
+    <string name="library_cancel">Cancel</string>
+    <string name="library_playlists">Playlists</string>
+    <string name="library_liked_playlist">Liked</string>
+    <string name="library_new_playlist">New playlist</string>
+    <string name="library_new_playlist_hint">Playlist name</string>
+    <string name="library_create">Create</string>
+    <string name="library_playlist_empty">This playlist has no videos yet. Add some from any video\'s menu.</string>
+    <string name="library_delete_playlist">Delete playlist</string>
+    <string name="library_saved_searches">Saved searches</string>
+    <string name="library_saved_searches_empty">Searches you save appear here.</string>
+    <string name="library_pinned_marker">Pinned to the drawer</string>
+    <string name="library_open_search">Search</string>
+    <string name="library_pin_search">Pin to drawer</string>
+    <string name="library_unpin_search">Unpin from drawer</string>
+    <string name="library_delete_search">Delete saved search</string>
+</resources>
