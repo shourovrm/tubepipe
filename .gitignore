@@ -41,3 +41,6 @@ sessions/
 # Logs and temp
 *.log
 *.tmp
+
+# Design mockups (design-system skill)
+.design-mockups/
