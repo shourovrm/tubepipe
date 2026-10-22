@@ -16,6 +16,7 @@ import org.tubepipe.tv.home.HomeScreen
 import org.tubepipe.tv.library.LibraryScreen
 import org.tubepipe.tv.navigation.AppNavigator
 import org.tubepipe.tv.navigation.Screen
+import org.tubepipe.tv.player.PlayerScreen
 import org.tubepipe.tv.search.SearchScreen
 import org.tubepipe.tv.settings.SettingsScreen
 import org.tubepipe.tv.subscriptions.SubscriptionsScreen
@@ -33,7 +34,7 @@ class MainActivity : ComponentActivity() {
                         when (screen) {
                             is Screen.Top -> TopLevelScreen(screen.destination, container, navigator)
                             is Screen.Channel -> ChannelScreen(screen.channelUrl, container, navigator)
-                            is Screen.Player -> PlaceholderScreen(screen.videoUrl)
+                            is Screen.Player -> PlayerScreen(screen.videoUrl, container, navigator)
                         }
                     }
                 }

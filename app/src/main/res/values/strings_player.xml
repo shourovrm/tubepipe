@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="player_playing">Playing</string>
+    <string name="player_paused">Paused</string>
+    <string name="player_like">Like</string>
+    <string name="player_liked">Liked</string>
+    <string name="player_related">Related</string>
+    <string name="player_channel">Go to channel</string>
+    <string name="player_skipped">Skipped %1$s</string>
+    <string name="player_segment_sponsor">sponsor</string>
+    <string name="player_segment_intro">intro</string>
+    <string name="player_segment_outro">outro</string>
+    <string name="player_segment_interaction">interaction reminder</string>
+    <string name="player_segment_other">segment</string>
+    <string name="player_error">This video could not be played. Check the connection and try again.</string>
+</resources>
