@@ -30,8 +30,7 @@ Speed budget (the user's "slick and quick like PipePipe"), measured on a 2 GB Go
   cache first and refreshes in the background. Baseline and startup profiles are generated from the D-pad walk.
 - Focus moves within one frame: scale and border via `graphicsLayer`, no relayout on focus, rows are lazy with keys.
 - Thumbnails via Coil sized to the card, memory and disk cached, 150 ms crossfade at most, decoded off the main thread.
-- Play within 2 s of Centre: stream info is prefetched after 1.15 s dwell on a focused card (at most 6 a minute, one at
-  a time, cached 5 min in `StreamInfoCache`), the next video 30 s before the end; the first prefetch starts the WebView.
+- Play within 2 s of Centre: `StreamInfoCache` prefetch after 1.15 s card dwell (6/min, one at a time) and 30 s before the end.
 - Extractor and Room calls always on `Dispatchers.IO`; StrictMode in debug; one Macrobenchmark for startup and one for
   row scroll jank in `:benchmark`. R8 full mode and resource shrinking in release; no ffmpeg module.
 
