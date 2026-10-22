@@ -48,6 +48,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.tubepipe.core.database.PlaylistEntity
 import org.tubepipe.core.service.VideoDetails
+import org.tubepipe.core.service.StreamInfoCache
 import org.tubepipe.core.ui.component.ErrorView
 import org.tubepipe.core.ui.component.LoadingView
 import org.tubepipe.core.ui.component.MediaRow
@@ -89,7 +90,13 @@ fun PlayerScreen(videoUrl: String, queue: PlaybackQueue?, container: AppContaine
         state.isBlockedAsAdult -> AdultBlockedView()
         state.hasError -> ErrorView(message = stringResource(R.string.error_network), onRetry = viewModel::retry)
         engine?.loadState == LoadState.Failed ->
-            ErrorView(message = stringResource(R.string.player_error), onRetry = { controller.restart(videoUrl) })
+            ErrorView(
+                message = stringResource(R.string.player_error),
+                onRetry = {
+                    StreamInfoCache.invalidateVideo(videoUrl)
+                    controller.restart(videoUrl)
+                },
+            )
         state.isLoading || details == null || engine == null || !isFullscreenForThisVideo -> LoadingView()
         else -> PlayerContent(details, state, viewModel, engine, queue, container, navigator)
     }

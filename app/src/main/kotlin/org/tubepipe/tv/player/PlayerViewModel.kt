@@ -17,6 +17,7 @@ import org.tubepipe.core.database.PlaylistEntity
 import org.tubepipe.core.player.PlaybackPreferences
 import org.tubepipe.core.player.PreferredCodec
 import org.tubepipe.core.service.ContentRepository
+import org.tubepipe.core.service.StreamInfoCache
 import org.tubepipe.core.service.VideoDetails
 import org.tubepipe.tv.common.toHistoryEntity
 import org.tubepipe.tv.common.toPlaylistVideo
@@ -84,7 +85,11 @@ class PlayerViewModel(
         load()
     }
 
-    fun retry() = load()
+    /** Drops what a prefetch cached for this video, so the retry asks YouTube again instead of replaying the failure. */
+    fun retry() {
+        StreamInfoCache.invalidateVideo(videoUrl)
+        load()
+    }
 
     /**
      * Stores [positionMillis] as the resume point. The view model outlives the screen (it is keyed by URL in the

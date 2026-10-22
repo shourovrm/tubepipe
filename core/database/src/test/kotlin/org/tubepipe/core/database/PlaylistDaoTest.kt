@@ -69,4 +69,14 @@ class PlaylistDaoTest {
         playlists.addItem(PlaylistEntity.LIKED_ID, item("a"))
         assertEquals(true, playlists.observeContains(PlaylistEntity.LIKED_ID, "a").first())
     }
+
+    // "New playlist" in the player's add-to-playlist menu creates the playlist with the playing video already in it.
+    @Test
+    fun createPlaylistWithVideoHoldsThatVideo() = runTest {
+        val playlistId = playlists.createPlaylistWithVideo(name = "Watch later", video = item("a"), createdAtMillis = 5L)
+
+        val created = playlists.observePlaylists().first().single { it.id == playlistId }
+        assertEquals("Watch later", created.name)
+        assertEquals(listOf("a"), playlists.observeItems(playlistId).first().map { it.url })
+    }
 }
