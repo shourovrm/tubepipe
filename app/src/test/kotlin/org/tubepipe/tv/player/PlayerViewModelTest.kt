@@ -1,8 +1,11 @@
 package org.tubepipe.tv.player
 
+import androidx.lifecycle.viewModelScope
 import kotlin.time.Duration.Companion.seconds
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
+import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -41,6 +44,8 @@ class PlayerViewModelTest {
 
     private val settings = testSettings()
 
+    private val createdViewModels = mutableListOf<PlayerViewModel>()
+
     private fun viewModel(sponsorBlockEnabled: Boolean = true) = PlayerViewModel(
         videoUrl = playing.url,
         content = content,
@@ -49,7 +54,15 @@ class PlayerViewModelTest {
         settings = settings.apply { value = value.copy(sponsorBlockEnabled = sponsorBlockEnabled) },
         sponsorBlock = sponsorSegments,
         clock = { 7_000L },
-    )
+    ).also { createdViewModels += it }
+
+    // The view models collect database flows for as long as they live. Nothing clears them in a test, so without
+    // this they outlive the test, hit the database the rule has closed, and fail whichever test runs next.
+    // @After runs before the rule closes the database.
+    @After
+    fun stopViewModels() {
+        createdViewModels.forEach { it.viewModelScope.cancel() }
+    }
 
     @Test
     fun detailsAndRelatedVideosLoad() = runTest(timeout = 30.seconds) {
