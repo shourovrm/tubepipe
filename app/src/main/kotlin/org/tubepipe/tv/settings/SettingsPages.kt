@@ -54,7 +54,7 @@ import org.tubepipe.tv.data.VideoQuality
 private val SpeedChoices = listOf(0.5f, 0.75f, 1f, 1.25f, 1.5f, 1.75f, 2f)
 private val SeekStepChoicesSeconds = listOf(5, 10, 15, 20, 25, 30)
 private const val SPONSOR_BLOCK_GRID_COLUMNS = 4
-private val ControlsColumnMaxWidth = 1060.dp
+private val ControlsColumnMaxWidth = 530.dp
 private const val PLAYER_CLIENT_VISIONOS = "visionos"
 private const val PLAYER_CLIENT_MWEB = "mweb"
 
@@ -97,19 +97,19 @@ internal fun SettingsPageScaffold(title: String, controls: @Composable ColumnSco
     ) {
         Text(
             text = stringResource(R.string.settings_breadcrumb),
-            fontSize = 24.sp,
+            style = MaterialTheme.typography.labelLarge,
             color = TubepipeColors.OnSurfaceVariant,
         )
         Text(
             text = title,
-            style = MaterialTheme.typography.displaySmall,
+            style = MaterialTheme.typography.headlineMedium,
             color = TubepipeColors.OnSurface,
-            modifier = Modifier.padding(bottom = 24.dp),
+            modifier = Modifier.padding(bottom = 12.dp),
         )
         CompositionLocalProvider(LocalHelpSink provides { help = it }) {
-            Row(horizontalArrangement = Arrangement.spacedBy(56.dp), modifier = Modifier.fillMaxWidth()) {
+            Row(horizontalArrangement = Arrangement.spacedBy(28.dp), modifier = Modifier.fillMaxWidth()) {
                 Column(
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp),
                     modifier = Modifier
                         .weight(0.62f)
                         .widthIn(max = ControlsColumnMaxWidth)
@@ -134,7 +134,7 @@ private fun HelpPanel(help: HelpText?, modifier: Modifier = Modifier) {
     Row(
         modifier = modifier
             .height(IntrinsicSize.Min)
-            .background(TubepipeColors.Surface, RoundedCornerShape(12.dp)),
+            .background(TubepipeColors.Surface, RoundedCornerShape(6.dp)),
     ) {
         Spacer(
             Modifier
@@ -143,14 +143,18 @@ private fun HelpPanel(help: HelpText?, modifier: Modifier = Modifier) {
                 .background(TubepipeColors.PrimaryContainer),
         )
         if (help != null) {
-            Column(modifier = Modifier.padding(32.dp)) {
+            Column(modifier = Modifier.padding(16.dp)) {
                 Text(
                     text = help.title,
                     style = MaterialTheme.typography.headlineSmall,
                     color = TubepipeColors.OnSurface,
-                    modifier = Modifier.padding(bottom = 14.dp),
+                    modifier = Modifier.padding(bottom = 7.dp),
                 )
-                Text(text = help.body, fontSize = 24.sp, color = TubepipeColors.OnSurfaceVariant)
+                Text(
+                    text = help.body,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = TubepipeColors.OnSurfaceVariant,
+                )
             }
         }
     }
@@ -270,7 +274,7 @@ internal fun SponsorBlockPage(settings: AppSettings, viewModel: SettingsViewMode
         SettingsGroupLabel(stringResource(R.string.settings_sponsorblock_categories))
         val colorNote = stringResource(R.string.settings_category_color_note)
         SponsorBlockCategory.entries.chunked(SPONSOR_BLOCK_GRID_COLUMNS).forEach { rowCategories ->
-            Row(horizontalArrangement = Arrangement.spacedBy(14.dp), modifier = Modifier.fillMaxWidth()) {
+            Row(horizontalArrangement = Arrangement.spacedBy(7.dp), modifier = Modifier.fillMaxWidth()) {
                 rowCategories.forEach { category ->
                     val categoryName = stringResource(category.labelResource())
                     val categoryHelp = stringResource(category.helpResource())
@@ -489,9 +493,9 @@ internal fun speedLabel(speed: Float): String {
 }
 
 private fun CaptionSize.sampleFontSize() = when (this) {
-    CaptionSize.Small -> 24.sp
-    CaptionSize.Normal -> 30.sp
-    CaptionSize.Large -> 38.sp
+    CaptionSize.Small -> 12.sp
+    CaptionSize.Normal -> 16.sp
+    CaptionSize.Large -> 20.sp
 }
 
 /** Seek-bar colours of the SponsorBlock categories, as PipePipe draws them. */
