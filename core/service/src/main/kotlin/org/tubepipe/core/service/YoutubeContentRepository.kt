@@ -19,6 +19,7 @@ import org.schabi.newpipe.extractor.channel.ChannelInfo
 import org.schabi.newpipe.extractor.exceptions.ExtractionException
 import org.schabi.newpipe.extractor.kiosk.KioskExtractor
 import org.schabi.newpipe.extractor.linkhandler.SearchQueryHandler
+import org.schabi.newpipe.extractor.playlist.PlaylistInfo
 import org.schabi.newpipe.extractor.search.SearchInfo
 import org.schabi.newpipe.extractor.services.youtube.search.filter.YoutubeFilters
 import org.schabi.newpipe.extractor.stream.StreamInfo
@@ -34,30 +35,31 @@ import org.tubepipe.core.service.kiosk.YoutubeTrendingMusicLinkHandlerFactory
  * The only door from the app to YouTube content. Every extractor call is blocking network I/O,
  * so each public function moves it to [ioDispatcher]. Call [ExtractorInitializer.initialize] first.
  */
-class YoutubeContentRepository(private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO) {
+class YoutubeContentRepository(private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO) : ContentRepository {
     private val youtube = ServiceList.YouTube
 
-    suspend fun search(query: String): ContentPage<VideoItem> = withContext(ioDispatcher) {
+    override suspend fun search(query: String): ContentPage<VideoItem> = withContext(ioDispatcher) {
         val searchInfo = SearchInfo.getInfo(youtube, videoSearchHandlerFor(query))
         videoPageOf(searchInfo.relatedItems, searchInfo.nextPage)
     }
 
-    suspend fun searchMore(query: String, cursor: PageCursor): ContentPage<VideoItem> = withContext(ioDispatcher) {
-        val page = SearchInfo.getMoreItems(youtube, videoSearchHandlerFor(query), cursor.page)
-        videoPageOf(page.items, page.nextPage)
-    }
+    override suspend fun searchMore(query: String, cursor: PageCursor): ContentPage<VideoItem> =
+        withContext(ioDispatcher) {
+            val page = SearchInfo.getMoreItems(youtube, videoSearchHandlerFor(query), cursor.page)
+            videoPageOf(page.items, page.nextPage)
+        }
 
-    suspend fun searchSuggestions(query: String): List<String> = withContext(ioDispatcher) {
+    override suspend fun searchSuggestions(query: String): List<String> = withContext(ioDispatcher) {
         youtube.suggestionExtractor.suggestionList(query)
     }
 
-    suspend fun trending(kind: TrendingKind): List<VideoItem> = withContext(ioDispatcher) {
+    override suspend fun trending(kind: TrendingKind): List<VideoItem> = withContext(ioDispatcher) {
         val extractor = trendingExtractorFor(kind)
         extractor.fetchPage()
         extractor.initialPage.items.map { it.toVideoItem() }
     }
 
-    suspend fun videoDetails(url: String): VideoDetails = withContext(ioDispatcher) {
+    override suspend fun videoDetails(url: String): VideoDetails = withContext(ioDispatcher) {
         val streamInfo = StreamInfo.getInfo(youtube, url)
         VideoDetails(
             video = streamInfo.toVideoItem(),
@@ -68,7 +70,14 @@ class YoutubeContentRepository(private val ioDispatcher: CoroutineDispatcher = D
         )
     }
 
-    suspend fun channel(url: String): ChannelPage = withContext(ioDispatcher) {
+    override suspend fun mix(videoUrl: String): List<VideoItem> = withContext(ioDispatcher) {
+        // A YouTube Mix is the playlist "RD" + video id, opened on the seed video.
+        val videoId = youtube.streamLHFactory.getId(videoUrl)
+        val mixUrl = "https://www.youtube.com/watch?v=$videoId&list=RD$videoId"
+        PlaylistInfo.getInfo(youtube, mixUrl).relatedItems.toVideoItems()
+    }
+
+    override suspend fun channel(url: String): ChannelPage = withContext(ioDispatcher) {
         val channelInfo = ChannelInfo.getInfo(youtube, url)
         ChannelPage(
             channel = ChannelSummary(
@@ -81,13 +90,14 @@ class YoutubeContentRepository(private val ioDispatcher: CoroutineDispatcher = D
         )
     }
 
-    suspend fun channelVideosMore(url: String, cursor: PageCursor): ContentPage<VideoItem> = withContext(ioDispatcher) {
-        val page = ChannelInfo.getMoreItems(youtube, url, cursor.page)
-        videoPageOf(page.items, page.nextPage)
-    }
+    override suspend fun channelVideosMore(url: String, cursor: PageCursor): ContentPage<VideoItem> =
+        withContext(ioDispatcher) {
+            val page = ChannelInfo.getMoreItems(youtube, url, cursor.page)
+            videoPageOf(page.items, page.nextPage)
+        }
 
     /** Newest first across all channels. A channel that fails is logged and left out of the feed. */
-    suspend fun latestFromChannels(channelUrls: List<String>): List<VideoItem> = coroutineScope {
+    override suspend fun latestFromChannels(channelUrls: List<String>): List<VideoItem> = coroutineScope {
         val concurrencyLimit = Semaphore(MAX_CONCURRENT_CHANNEL_FETCHES)
         val itemsPerChannel = channelUrls.map { channelUrl ->
             async {

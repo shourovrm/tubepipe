@@ -62,6 +62,12 @@ class LiveYoutubeSmokeTest {
     }
 
     @Test
+    fun mixReturnsVideosForASeedVideo() = runTest(timeout = 60.seconds) {
+        val videos = repository.mix("https://www.youtube.com/watch?v=dQw4w9WgXcQ")
+        assertTrue("mix has ${videos.size} videos", videos.size >= 5)
+    }
+
+    @Test
     fun channelPageHasHeaderAndVideos() = runTest(timeout = 60.seconds) {
         val channel = repository.channel("https://www.youtube.com/channel/UCuAXFkgsw1L7xaCfnd5JJOw")
         assertTrue(channel.channel.name.isNotBlank())
