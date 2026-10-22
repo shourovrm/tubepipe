@@ -19,6 +19,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
@@ -36,6 +37,7 @@ import androidx.tv.material3.ListItem
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import java.util.Locale
+import kotlinx.coroutines.launch
 import org.tubepipe.core.ui.component.LoadingView
 import org.tubepipe.core.ui.theme.TubepipeColors
 import org.tubepipe.core.ui.theme.TubepipeSpacing
@@ -61,6 +63,14 @@ fun SettingsScreen(container: AppContainer, navigator: AppNavigator) {
     }
 
     var choosingCountry by remember { mutableStateOf(false) }
+    val clearScope = rememberCoroutineScope()
+    val clearActions = remember(container) {
+        ClearActions(
+            clearWatchHistory = { clearScope.launch { container.database.historyDao().clear() } },
+            clearPlaybackPositions = { clearScope.launch { container.database.historyDao().clearPositions() } },
+            clearSearchHistory = { clearScope.launch { container.database.searchDao().clearSearchHistory() } },
+        )
+    }
     val versionName = rememberAppVersionName()
     val currentCountryName = state.countries.firstOrNull { it.code == settings.contentCountry }?.name
         ?: settings.contentCountry
@@ -96,6 +106,7 @@ fun SettingsScreen(container: AppContainer, navigator: AppNavigator) {
                 onClick = { viewModel.setPlayerClient(PLAYER_CLIENT_MWEB) },
             )
         }
+        playerPreferenceItems(settings, viewModel)
         item(key = "sections-title") { SectionTitle(stringResource(R.string.settings_home_sections)) }
         itemsIndexed(settings.homeSectionOrder, key = { _, section -> "section-${section.name}" }) { _, section ->
             HomeSectionRow(
@@ -106,16 +117,9 @@ fun SettingsScreen(container: AppContainer, navigator: AppNavigator) {
                 onMoveDown = { viewModel.moveSectionDown(section) },
             )
         }
-        item(key = "sponsorblock") {
-            SettingRow(
-                headline = stringResource(R.string.settings_sponsorblock),
-                supporting = stringResource(R.string.settings_sponsorblock_supporting),
-                trailing = stringResource(
-                    if (settings.sponsorBlockEnabled) R.string.settings_on else R.string.settings_off,
-                ),
-                onClick = viewModel::toggleSponsorBlock,
-            )
-        }
+        historyAndSearchItems(settings, viewModel, clearActions)
+        contentFilterItems(settings, viewModel)
+        sponsorBlockItems(settings, viewModel)
         aboutItems(versionName)
     }
 
@@ -170,7 +174,7 @@ private fun rememberAppVersionName(): String {
 }
 
 @Composable
-private fun SectionTitle(title: String) {
+internal fun SectionTitle(title: String) {
     Text(
         text = title,
         style = MaterialTheme.typography.headlineSmall,
@@ -181,7 +185,7 @@ private fun SectionTitle(title: String) {
 
 /** A 64dp two-line list row (48dp when it has no supporting text), per docs/design-system.md. */
 @Composable
-private fun SettingRow(
+internal fun SettingRow(
     headline: String,
     supporting: String? = null,
     trailing: String? = null,

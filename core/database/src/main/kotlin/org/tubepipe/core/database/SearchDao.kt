@@ -49,4 +49,7 @@ abstract class SearchDao {
 
     @Query("DELETE FROM saved_search WHERE `query` = :query")
     abstract suspend fun deleteSavedSearch(query: String)
+
+    @Query("DELETE FROM search_history")
+    abstract suspend fun clearSearchHistory()
 }

@@ -21,4 +21,7 @@
     <string name="library_pin_search">Pin to drawer</string>
     <string name="library_unpin_search">Unpin from drawer</string>
     <string name="library_delete_search">Delete saved search</string>
+    <string name="library_delete_search_title">Delete saved search?</string>
+    <string name="library_delete_search_message">\"%1$s\" will no longer be saved.</string>
+    <string name="library_confirm_delete">Delete</string>
 </resources>

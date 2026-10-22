@@ -6,14 +6,17 @@ import androidx.lifecycle.viewModelScope
 import java.io.IOException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.tubepipe.core.database.SearchDao
 import org.tubepipe.core.service.ContentRepository
 import org.tubepipe.core.service.PageCursor
 import org.tubepipe.core.service.VideoItem
+import org.tubepipe.tv.data.AppSettings
 
 data class SearchState(
     val query: String = "",
@@ -32,6 +35,7 @@ data class SearchState(
 class SearchViewModel(
     private val content: ContentRepository,
     private val searchDao: SearchDao,
+    private val settings: Flow<AppSettings>,
     private val clock: () -> Long = System::currentTimeMillis,
 ) : ViewModel() {
     private val mutableState = MutableStateFlow(SearchState())
@@ -63,6 +67,9 @@ class SearchViewModel(
             return
         }
         suggestionJob = viewModelScope.launch {
+            if (!settings.first().searchSuggestionsEnabled) {
+                return@launch
+            }
             // Waiting out the typing pause keeps one request per word instead of one per key press.
             delay(SUGGESTION_DELAY_MILLIS)
             val suggestions = fetchSuggestions(query)
@@ -91,7 +98,9 @@ class SearchViewModel(
             )
         }
         searchJob = viewModelScope.launch {
-            searchDao.recordSearch(trimmedQuery, searchedAtMillis = clock())
+            if (settings.first().searchHistoryEnabled) {
+                searchDao.recordSearch(trimmedQuery, searchedAtMillis = clock())
+            }
             loadFirstPage(trimmedQuery)
         }
     }

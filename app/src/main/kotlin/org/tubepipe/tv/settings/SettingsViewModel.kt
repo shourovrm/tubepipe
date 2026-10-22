@@ -10,8 +10,12 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import org.tubepipe.tv.data.AppSettings
+import org.tubepipe.tv.data.CaptionSize
 import org.tubepipe.tv.data.HomeSection
 import org.tubepipe.tv.data.SettingsRepository
+import org.tubepipe.tv.data.SponsorBlockCategory
+import org.tubepipe.tv.data.VideoCodec
+import org.tubepipe.tv.data.VideoQuality
 
 data class CountryOption(val code: String, val name: String)
 
@@ -59,6 +63,78 @@ class SettingsViewModel(
             val enabled = settingsRepository.settings.first().sponsorBlockEnabled
             settingsRepository.setSponsorBlockEnabled(!enabled)
         }
+    }
+
+    fun setDefaultQuality(quality: VideoQuality) {
+        viewModelScope.launch { settingsRepository.setDefaultQuality(quality) }
+    }
+
+    fun setPreferredCodec(codec: VideoCodec) {
+        viewModelScope.launch { settingsRepository.setPreferredCodec(codec) }
+    }
+
+    fun setPreferredAudioLanguage(languageCode: String) {
+        viewModelScope.launch { settingsRepository.setPreferredAudioLanguage(languageCode) }
+    }
+
+    fun setDefaultSpeed(speed: Float) {
+        viewModelScope.launch { settingsRepository.setDefaultSpeed(speed) }
+    }
+
+    fun setSeekStepSeconds(seconds: Int) {
+        viewModelScope.launch { settingsRepository.setSeekStepSeconds(seconds) }
+    }
+
+    fun setAutoplayNext(enabled: Boolean) {
+        viewModelScope.launch { settingsRepository.setAutoplayNext(enabled) }
+    }
+
+    fun setAlwaysStartFromBeginning(enabled: Boolean) {
+        viewModelScope.launch { settingsRepository.setAlwaysStartFromBeginning(enabled) }
+    }
+
+    fun setCaptionsEnabled(enabled: Boolean) {
+        viewModelScope.launch { settingsRepository.setCaptionsEnabled(enabled) }
+    }
+
+    fun setCaptionSize(size: CaptionSize) {
+        viewModelScope.launch { settingsRepository.setCaptionSize(size) }
+    }
+
+    fun setWatchHistoryEnabled(enabled: Boolean) {
+        viewModelScope.launch { settingsRepository.setWatchHistoryEnabled(enabled) }
+    }
+
+    fun setResumeEnabled(enabled: Boolean) {
+        viewModelScope.launch { settingsRepository.setResumeEnabled(enabled) }
+    }
+
+    fun setSearchHistoryEnabled(enabled: Boolean) {
+        viewModelScope.launch { settingsRepository.setSearchHistoryEnabled(enabled) }
+    }
+
+    fun setSearchSuggestionsEnabled(enabled: Boolean) {
+        viewModelScope.launch { settingsRepository.setSearchSuggestionsEnabled(enabled) }
+    }
+
+    fun setHideShorts(enabled: Boolean) {
+        viewModelScope.launch { settingsRepository.setHideShorts(enabled) }
+    }
+
+    fun setHideUpcoming(enabled: Boolean) {
+        viewModelScope.launch { settingsRepository.setHideUpcoming(enabled) }
+    }
+
+    fun setHidePaid(enabled: Boolean) {
+        viewModelScope.launch { settingsRepository.setHidePaid(enabled) }
+    }
+
+    fun setSponsorBlockShowNotice(enabled: Boolean) {
+        viewModelScope.launch { settingsRepository.setSponsorBlockShowNotice(enabled) }
+    }
+
+    fun setSponsorBlockCategoryEnabled(category: SponsorBlockCategory, enabled: Boolean) {
+        viewModelScope.launch { settingsRepository.setSponsorBlockCategoryEnabled(category, enabled) }
     }
 
     private fun moveSection(section: HomeSection, offset: Int) {
