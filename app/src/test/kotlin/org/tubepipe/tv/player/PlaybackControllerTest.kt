@@ -20,19 +20,19 @@ class PlaybackControllerTest {
     }
 
     @Test
-    fun leavingThePlayerKeepsItPlayingInTheCorner() {
+    fun openingAChannelKeepsItPlayingInTheBar() {
         controller.engineFor("a")
 
-        controller.minimize()
+        controller.showAsBar()
 
-        assertEquals(NowPlaying("a", PlayerMode.Mini), controller.state.value)
+        assertEquals(NowPlaying("a", PlayerMode.Bar), controller.state.value)
         assertFalse(createdEngines.single().released)
     }
 
     @Test
     fun reopeningTheSameVideoReusesTheRunningEngine() {
         val first = controller.engineFor("a")
-        controller.minimize()
+        controller.showAsBar()
 
         val second = controller.engineFor("a")
 
@@ -42,9 +42,9 @@ class PlaybackControllerTest {
     }
 
     @Test
-    fun playingAnotherVideoReplacesTheMiniPlayer() {
+    fun playingAnotherVideoReplacesTheBarVideo() {
         controller.engineFor("a")
-        controller.minimize()
+        controller.showAsBar()
 
         val lease = controller.engineFor("b")
 
@@ -54,9 +54,9 @@ class PlaybackControllerTest {
     }
 
     @Test
-    fun stopReleasesTheEngineAndClearsTheMiniPlayer() {
+    fun stopReleasesTheEngineAndClearsTheBar() {
         controller.engineFor("a")
-        controller.minimize()
+        controller.showAsBar()
 
         controller.stop()
 
@@ -65,9 +65,9 @@ class PlaybackControllerTest {
     }
 
     @Test
-    fun expandReturnsTheMiniPlayerToFullScreen() {
+    fun expandReturnsTheBarToFullScreen() {
         controller.engineFor("a")
-        controller.minimize()
+        controller.showAsBar()
 
         controller.expand()
 

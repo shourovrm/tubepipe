@@ -3,9 +3,10 @@ package org.tubepipe.tv.player
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 
-enum class PlayerMode { Fullscreen, Mini }
+/** [Bar] is the strip along the bottom of a channel page that opened over the playing video. */
+enum class PlayerMode { Fullscreen, Bar }
 
-/** The video that is loaded in the player, and whether it fills the screen or sits in the corner. */
+/** The video that is loaded in the player, and whether it fills the screen or plays in the channel page's bar. */
 data class NowPlaying(val videoUrl: String, val mode: PlayerMode)
 
 /** What the controller needs from a player; the app wraps TubepipePlayer in [TubepipePlayerEngine]. */
@@ -25,8 +26,9 @@ interface PlayerEngine {
 class EngineLease(val engine: PlayerEngine, val isNew: Boolean)
 
 /**
- * Owns the one running player for the whole app, so it survives screen changes: leaving the player screen
- * minimises it into the corner window instead of stopping it. Call every method on the main thread.
+ * Owns the one running player for the whole app, so it survives the change from the player screen to a
+ * channel page, where it plays on in a bar. Whoever leaves both screens calls [stop]. Call every method on the
+ * main thread.
  */
 class PlaybackController(private val createEngine: () -> PlayerEngine) {
     private val mutableState = MutableStateFlow<NowPlaying?>(null)
@@ -74,9 +76,9 @@ class PlaybackController(private val createEngine: () -> PlayerEngine) {
         return startEngine(videoUrl)
     }
 
-    fun minimize() {
+    fun showAsBar() {
         val current = mutableState.value ?: return
-        mutableState.value = current.copy(mode = PlayerMode.Mini)
+        mutableState.value = current.copy(mode = PlayerMode.Bar)
     }
 
     fun expand() {

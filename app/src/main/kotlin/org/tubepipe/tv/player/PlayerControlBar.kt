@@ -63,6 +63,7 @@ import org.tubepipe.core.ui.theme.TubepipeSpacing
 import org.tubepipe.tv.R
 import org.tubepipe.tv.channel.ChannelAvatar
 import org.tubepipe.tv.common.CountFormatting
+import org.tubepipe.tv.navigation.PlaybackQueue
 
 private val SmallButtonSize = 48.dp
 private val PlayButtonSize = 72.dp
@@ -70,6 +71,7 @@ private val PopupWidth = 260.dp
 private val PopupRowHeight = 56.dp
 private val PopupMaxHeight = 392.dp
 private val PopupGap = 12.dp
+private val LabelGap = 4.dp
 private val ButtonBackground = Color(0x14FFFFFF)
 private val ButtonBackgroundFocused = Color(0x38FFFFFF)
 private val LoopOnBackground = Color(0x59E53935)
@@ -112,6 +114,7 @@ internal fun PlayerControlBar(
     snapshot: PlaybackSnapshot,
     engine: TubepipePlayerEngine,
     state: PlayerState,
+    queue: PlaybackQueue?,
     isLooping: Boolean,
     openList: ControlList?,
     listOptions: List<ListOption>,
@@ -122,6 +125,7 @@ internal fun PlayerControlBar(
     modifier: Modifier = Modifier,
 ) {
     val openerFocus = remember { ControlList.entries.associateWith { FocusRequester() } }
+    val seekBarFocus = remember { FocusRequester() }
     var lastOpened by remember { mutableStateOf<ControlList?>(null) }
     LaunchedEffect(openList) {
         if (openList != null) {
@@ -150,8 +154,18 @@ internal fun PlayerControlBar(
             maxLines = 2,
             overflow = TextOverflow.Ellipsis,
         )
-        ChannelLine(details, onOpenChannel = actions.onOpenChannel)
-        SeekRow(snapshot, details, state.segments)
+        ChannelLine(details, queue, onOpenChannel = actions.onOpenChannel)
+        SeekRow(
+            snapshot = snapshot,
+            details = details,
+            segments = state.segments,
+            focus = SeekBarFocus(
+                requester = seekBarFocus,
+                onSeekBack = actions.onSeekBack,
+                onSeekForward = actions.onSeekForward,
+                downTarget = playPauseFocus,
+            ),
+        )
         ButtonRow(
             snapshot = snapshot,
             engine = engine,
@@ -169,7 +183,7 @@ internal fun PlayerControlBar(
 }
 
 @Composable
-private fun ChannelLine(details: VideoDetails, onOpenChannel: () -> Unit) {
+private fun ChannelLine(details: VideoDetails, queue: PlaybackQueue?, onOpenChannel: () -> Unit) {
     val video = details.video
     val viewsAndAge = listOfNotNull(
         video.viewCount?.let { views ->
@@ -181,6 +195,9 @@ private fun ChannelLine(details: VideoDetails, onOpenChannel: () -> Unit) {
         },
         video.uploadedText,
     ).joinToString(separator = " · ")
+    val queuePosition = queue?.let {
+        stringResource(R.string.player_queue_position, it.index + 1, it.videoUrls.size, it.title)
+    }
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp)) {
         Surface(
             onClick = onOpenChannel,
@@ -209,11 +226,25 @@ private fun ChannelLine(details: VideoDetails, onOpenChannel: () -> Unit) {
             style = MaterialTheme.typography.titleMedium,
             color = TubepipeColors.OnSurfaceVariant,
         )
+        if (queuePosition != null) {
+            Text(
+                text = queuePosition,
+                style = MaterialTheme.typography.titleMedium,
+                color = TubepipeColors.OnSurface,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
     }
 }
 
 @Composable
-private fun SeekRow(snapshot: PlaybackSnapshot, details: VideoDetails, segments: List<SkipSegment>) {
+private fun SeekRow(
+    snapshot: PlaybackSnapshot,
+    details: VideoDetails,
+    segments: List<SkipSegment>,
+    focus: SeekBarFocus? = null,
+) {
     val durationMillis = durationOf(snapshot, details)
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(20.dp)) {
         Text(
@@ -226,6 +257,7 @@ private fun SeekRow(snapshot: PlaybackSnapshot, details: VideoDetails, segments:
             durationMillis = durationMillis,
             segments = segments,
             modifier = Modifier.weight(1f),
+            focus = focus,
         )
         Text(
             text = TimeFormatting.duration(durationMillis / 1_000),
@@ -291,7 +323,7 @@ private fun ButtonRow(
 
     Row(
         verticalAlignment = Alignment.Top,
-        // Thirteen buttons with their labels must fit the 844 dp between the safe margins of a 960 dp screen.
+        // Thirteen buttons must fit the 844 dp between the safe margins of a 960 dp screen.
         horizontalArrangement = Arrangement.spacedBy(ButtonRowGap),
         modifier = Modifier.fillMaxWidth().onFocusChanged { onButtonRowFocusChanged(it.hasFocus) },
     ) {
@@ -452,7 +484,7 @@ private fun focusBorder() = ClickableSurfaceDefaults.border(
     focusedBorder = Border(BorderStroke(3.dp, TubepipeColors.FocusBorder), shape = CircleShape),
 )
 
-/** A round button with its label below; [popup] is drawn over the top of the button area. */
+/** A round button; its [label] shows as a small chip below the button only while the button has focus. */
 @Composable
 private fun RoundControl(
     label: String,
@@ -463,36 +495,55 @@ private fun RoundControl(
     popup: @Composable BoxScope.() -> Unit = {},
     icon: @Composable () -> Unit,
 ) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Box(
-            modifier = Modifier.height(PlayButtonSize).width(size),
-            contentAlignment = Alignment.Center,
+    var isFocused by remember { mutableStateOf(false) }
+    Box(
+        modifier = Modifier.height(PlayButtonSize).width(size),
+        contentAlignment = Alignment.Center,
+    ) {
+        Surface(
+            onClick = onClick,
+            shape = ClickableSurfaceDefaults.shape(CircleShape),
+            colors = ClickableSurfaceDefaults.colors(
+                containerColor = containerColor,
+                focusedContainerColor = ButtonBackgroundFocused,
+                contentColor = TubepipeColors.OnSurface,
+                focusedContentColor = TubepipeColors.OnSurface,
+            ),
+            scale = ClickableSurfaceDefaults.scale(focusedScale = 1.1f),
+            border = focusBorder(),
+            modifier = modifier.size(size).onFocusChanged { isFocused = it.hasFocus },
         ) {
-            Surface(
-                onClick = onClick,
-                shape = ClickableSurfaceDefaults.shape(CircleShape),
-                colors = ClickableSurfaceDefaults.colors(
-                    containerColor = containerColor,
-                    focusedContainerColor = ButtonBackgroundFocused,
-                    contentColor = TubepipeColors.OnSurface,
-                    focusedContentColor = TubepipeColors.OnSurface,
-                ),
-                scale = ClickableSurfaceDefaults.scale(focusedScale = 1.1f),
-                border = focusBorder(),
-                modifier = modifier.size(size),
-            ) {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { icon() }
-            }
-            popup()
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { icon() }
         }
-        Text(
-            text = label,
-            style = MaterialTheme.typography.labelLarge,
-            color = TubepipeColors.OnSurfaceVariant,
-            maxLines = 1,
-            modifier = Modifier.padding(top = TubepipeSpacing.Grid * 2),
-        )
+        popup()
+        if (isFocused) {
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelLarge,
+                color = TubepipeColors.OnSurface,
+                maxLines = 1,
+                softWrap = false,
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .floatBelow(LabelGap)
+                    .background(TubepipeColors.SurfaceVariant, RoundedCornerShape(6.dp))
+                    .padding(horizontal = 8.dp, vertical = 2.dp),
+            )
+        }
     }
+}
+
+/** Places the label's top edge just below the bottom of its parent, centred, without taking room in the parent. */
+private fun Modifier.floatBelow(gap: Dp) = layout { measurable, constraints ->
+    val placeable = measurable.measure(
+        constraints.copy(
+            minWidth = 0,
+            minHeight = 0,
+            maxWidth = Constraints.Infinity,
+            maxHeight = Constraints.Infinity,
+        ),
+    )
+    layout(placeable.width, 0) { placeable.place(0, gap.roundToPx()) }
 }
 
 /** Places the popup's bottom edge just above the top of its parent without taking any room in the parent. */

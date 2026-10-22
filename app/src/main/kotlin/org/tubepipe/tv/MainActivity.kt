@@ -7,7 +7,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEvent
@@ -41,21 +40,17 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier
                         .fillMaxSize()
                         .background(MaterialTheme.colorScheme.background)
-                        .onPreviewKeyEvent { event ->
-                            handleMediaKey(event, container) ||
-                                handleBackKey(event, container)
-                        },
+                        .onPreviewKeyEvent { event -> handleMediaKey(event, container) },
                 ) {
                     TubepipeApp(container = container, onExit = ::finish) { screen ->
                         when (screen) {
                             is Screen.Top -> TopLevelScreen(screen.destination, container, navigator)
                             is Screen.Channel -> ChannelScreen(screen.channelUrl, container, navigator)
-                            is Screen.Player -> PlayerScreen(screen.videoUrl, container, navigator)
+                            is Screen.Player -> PlayerScreen(screen.videoUrl, screen.queue, container, navigator)
                             is Screen.Playlist -> PlaylistScreen(screen.source, container, navigator)
                         }
                     }
-                    // Drawn after the screens so the corner window is above whichever one is shown.
-                    PlaybackHost(container, navigator, Modifier.align(Alignment.BottomEnd))
+                    PlaybackHost(container, navigator)
                 }
             }
         }
@@ -70,7 +65,7 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-/** The remote's Play/Pause keys work on the playing video from any screen, including behind the corner window. */
+/** The remote's Play/Pause keys work on the playing video from any screen, including while the channel bar is shown. */
 private fun handleMediaKey(event: KeyEvent, container: AppContainer): Boolean {
     if (event.type != KeyEventType.KeyDown || container.playback.state.value == null) {
         return false
@@ -83,14 +78,6 @@ private fun handleMediaKey(event: KeyEvent, container: AppContainer): Boolean {
         else -> false
     }
 }
-
-/**
- * The first Back moves focus onto the corner window. This runs as a preview handler on the root, above every
- * screen, because screens such as Channel and Search install their own BackHandler, which would otherwise take
- * the key before the shell's handler sees it.
- */
-private fun handleBackKey(event: KeyEvent, container: AppContainer): Boolean =
-    event.type == KeyEventType.KeyDown && event.key == Key.Back && container.miniPlayerFocus.focusOnBack()
 
 @Composable
 private fun TopLevelScreen(destination: Destination, container: AppContainer, navigator: AppNavigator) {

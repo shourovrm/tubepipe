@@ -43,6 +43,7 @@ import org.tubepipe.tv.common.CountFormatting
 import org.tubepipe.tv.common.VideoActionsDialog
 import org.tubepipe.tv.common.toCardModel
 import org.tubepipe.tv.navigation.AppNavigator
+import org.tubepipe.tv.player.PlayerBar
 
 private val AvatarSize = 96.dp
 
@@ -81,6 +82,10 @@ fun ChannelScreen(channelUrl: String, container: AppContainer, navigator: AppNav
                 onNearEnd = if (state.canLoadMore) viewModel::loadMore else null,
                 modifier = Modifier.weight(1f).fillMaxWidth(),
             )
+        }
+        // Only a channel opened from the playing video has one; Down from the grid reaches it.
+        if (navigator.isChannelOverPlayer) {
+            PlayerBar(container, navigator)
         }
     }
 

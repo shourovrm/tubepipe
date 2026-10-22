@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -34,6 +33,7 @@ import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -60,6 +60,7 @@ import org.tubepipe.tv.common.toPlaylistVideo
 import org.tubepipe.tv.common.videoSubtitle
 import org.tubepipe.tv.data.CaptionSize
 import org.tubepipe.tv.navigation.AppNavigator
+import org.tubepipe.tv.navigation.PlaybackQueue
 
 private const val OVERLAY_HIDE_DELAY_MILLIS = 4_000L
 private const val SEEK_FEEDBACK_MILLIS = 1_500L
@@ -71,7 +72,7 @@ private val SpeedChoices = listOf(0.5f, 0.75f, 1f, 1.25f, 1.5f, 1.75f, 2f)
 private enum class MoreStage { Root, Playlists, AudioTracks }
 
 @Composable
-fun PlayerScreen(videoUrl: String, container: AppContainer, navigator: AppNavigator) {
+fun PlayerScreen(videoUrl: String, queue: PlaybackQueue?, container: AppContainer, navigator: AppNavigator) {
     val controller = container.playback
     val viewModel = rememberPlayerViewModel(videoUrl, container)
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -82,31 +83,29 @@ fun PlayerScreen(videoUrl: String, container: AppContainer, navigator: AppNaviga
     BackHandler { navigator.back() }
 
     LaunchedEffect(videoUrl) { controller.engineFor(videoUrl) }
-    DisposableEffect(videoUrl) {
-        onDispose { leavePlayer(controller, videoUrl, viewModel) }
-    }
 
     val isFullscreenForThisVideo = nowPlaying == NowPlaying(videoUrl, PlayerMode.Fullscreen)
     when {
+        state.isBlockedAsAdult -> AdultBlockedView()
         state.hasError -> ErrorView(message = stringResource(R.string.error_network), onRetry = viewModel::retry)
         engine?.loadState == LoadState.Failed ->
             ErrorView(message = stringResource(R.string.player_error), onRetry = { controller.restart(videoUrl) })
         state.isLoading || details == null || engine == null || !isFullscreenForThisVideo -> LoadingView()
-        else -> PlayerContent(details, state, viewModel, engine, container, navigator)
+        else -> PlayerContent(details, state, viewModel, engine, queue, container, navigator)
     }
 }
 
-/**
- * Leaving the screen (Back, or opening a channel) minimises the player instead of stopping it, unless there is
- * nothing to keep: the video failed to load. A different video that already took over is left alone.
- */
-private fun leavePlayer(controller: PlaybackController, videoUrl: String, viewModel: PlayerViewModel) {
-    if (controller.state.value?.videoUrl != videoUrl) {
-        return
+@Composable
+private fun AdultBlockedView() {
+    Box(modifier = Modifier.fillMaxSize().background(Color.Black), contentAlignment = Alignment.Center) {
+        Text(
+            text = stringResource(R.string.player_adult_blocked),
+            style = MaterialTheme.typography.headlineMedium,
+            color = TubepipeColors.OnSurface,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.padding(horizontal = TubepipeSpacing.SafeMarginHorizontal),
+        )
     }
-    val engine = controller.currentEngine as? TubepipePlayerEngine
-    val hasFailed = viewModel.state.value.hasError || engine?.loadState == LoadState.Failed
-    if (hasFailed) controller.stop() else controller.minimize()
 }
 
 @OptIn(UnstableApi::class)
@@ -116,6 +115,7 @@ private fun PlayerContent(
     state: PlayerState,
     viewModel: PlayerViewModel,
     engine: TubepipePlayerEngine,
+    queue: PlaybackQueue?,
     container: AppContainer,
     navigator: AppNavigator,
 ) {
@@ -153,17 +153,26 @@ private fun PlayerContent(
 
     val actions = ControlBarActions(
         onPrevious = {
+            // In a playlist, Previous steps through the queue; otherwise through the videos played before.
+            val previousQueue = queue?.previous()
             val previousUrl = controller.previousVideoUrl()
-            if (snapshot.positionMillis > RESTART_THRESHOLD_MILLIS || previousUrl == null) {
-                seekBy(-snapshot.positionMillis)
-            } else {
-                navigator.openVideo(previousUrl)
+            val hasPrevious = if (queue != null) previousQueue != null else previousUrl != null
+            when {
+                snapshot.positionMillis > RESTART_THRESHOLD_MILLIS || !hasPrevious -> seekBy(-snapshot.positionMillis)
+                previousQueue != null -> navigator.playQueue(previousQueue)
+                previousUrl != null -> navigator.openVideo(previousUrl)
             }
         },
         onSeekBack = { seekBy(-state.seekStepMillis) },
         onPlayPause = controller::togglePause,
         onSeekForward = { seekBy(state.seekStepMillis) },
-        onNext = { viewModel.nextVideoUrl()?.let(navigator::openVideo) },
+        onNext = {
+            if (queue != null) {
+                queue.next()?.let(navigator::playQueue)
+            } else {
+                viewModel.nextVideoUrl()?.let(navigator::openVideo)
+            }
+        },
         // Pressing the opener of the list that is already open closes it.
         onOpenList = { list -> if (openList == list) closeList() else openList = list },
         onToggleLike = viewModel::toggleLike,
@@ -331,6 +340,7 @@ private fun PlayerContent(
                 snapshot = snapshot,
                 engine = engine,
                 state = state,
+                queue = queue,
                 isLooping = isLooping,
                 openList = openList,
                 listOptions = listOptions,

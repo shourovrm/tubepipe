@@ -35,5 +35,10 @@
     <string name="player_loop_off">Loop off</string>
     <string name="player_autoplay_on">Autoplay on</string>
     <string name="player_autoplay_off">Autoplay off</string>
-    <string name="mini_video_description">Playing in the corner. Press Centre for full screen.</string>
+    <string name="bar_video_description">Playing. Press Centre for full screen.</string>
+    <string name="bar_play">Play</string>
+    <string name="bar_pause">Pause</string>
+    <string name="bar_full_screen">Open full screen</string>
+    <string name="player_adult_blocked">This video is for adults only and is hidden by parental controls</string>
+    <string name="player_queue_position">%1$d / %2$d · %3$s</string>
 </resources>
