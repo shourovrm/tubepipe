@@ -35,6 +35,5 @@
     <string name="player_loop_off">Loop off</string>
     <string name="player_autoplay_on">Autoplay on</string>
     <string name="player_autoplay_off">Autoplay off</string>
-    <string name="mini_stop">Stop</string>
     <string name="mini_video_description">Playing in the corner. Press Centre for full screen.</string>
 </resources>
