@@ -24,6 +24,7 @@ import org.tubepipe.tv.navigation.AppNavigator
 import org.tubepipe.tv.navigation.Screen
 import org.tubepipe.tv.player.PlaybackHost
 import org.tubepipe.tv.player.PlayerScreen
+import org.tubepipe.tv.playlist.PlaylistScreen
 import org.tubepipe.tv.search.SearchScreen
 import org.tubepipe.tv.settings.SettingsScreen
 import org.tubepipe.tv.subscriptions.SubscriptionsScreen
@@ -50,6 +51,7 @@ class MainActivity : ComponentActivity() {
                             is Screen.Top -> TopLevelScreen(screen.destination, container, navigator)
                             is Screen.Channel -> ChannelScreen(screen.channelUrl, container, navigator)
                             is Screen.Player -> PlayerScreen(screen.videoUrl, container, navigator)
+                            is Screen.Playlist -> PlaylistScreen(screen.source, container, navigator)
                         }
                     }
                     // Drawn after the screens so the corner window is above whichever one is shown.

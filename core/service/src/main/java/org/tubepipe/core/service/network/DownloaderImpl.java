@@ -5,6 +5,7 @@ import androidx.annotation.Nullable;
 
 import okhttp3.Call;
 import okhttp3.Callback;
+import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
 import okhttp3.RequestBody;
 import okhttp3.ResponseBody;
@@ -39,7 +40,11 @@ public final class DownloaderImpl extends Downloader {
     private static final int MAX_DNS_RETRIES = 2;
     private static final long DNS_RETRY_DELAY_MS = 500L;
 
+    /** YouTube's Restricted Mode preference cookie, the same one PipePipe sends. */
+    static final String RESTRICTED_MODE_COOKIE = "PREF=f2=8000000";
+
     private static DownloaderImpl instance;
+    private static volatile boolean restrictedMode = false;
     private final OkHttpClient client;
 
     private DownloaderImpl(final OkHttpClient.Builder builder) {
@@ -53,6 +58,11 @@ public final class DownloaderImpl extends Downloader {
 
     public static DownloaderImpl getInstance() {
         return instance;
+    }
+
+    /** Turns YouTube Restricted Mode on or off for every later request; it hides videos flagged as sensitive. */
+    public static void setRestrictedMode(final boolean enabled) {
+        restrictedMode = enabled;
     }
 
     @Override
@@ -179,7 +189,7 @@ public final class DownloaderImpl extends Downloader {
         return cancellableCall;
     }
 
-    private static okhttp3.Request buildOkHttpRequest(@NonNull final Request request) {
+    static okhttp3.Request buildOkHttpRequest(@NonNull final Request request) {
         final String httpMethod = request.httpMethod();
         final byte[] dataToSend = request.dataToSend();
         RequestBody requestBody = null;
@@ -206,7 +216,24 @@ public final class DownloaderImpl extends Downloader {
                 builder.header(pair.getKey(), values.get(0));
             }
         }
+        if (restrictedMode && isYoutubeUrl(request.url())) {
+            // The extractor may send its own consent cookie, so the preference is appended, not swapped in.
+            final List<String> cookies = headers.get("Cookie");
+            final String merged = cookies == null || cookies.isEmpty()
+                    ? RESTRICTED_MODE_COOKIE
+                    : String.join("; ", cookies) + "; " + RESTRICTED_MODE_COOKIE;
+            builder.header("Cookie", merged);
+        }
         return builder.build();
+    }
+
+    private static boolean isYoutubeUrl(@NonNull final String url) {
+        final HttpUrl parsed = HttpUrl.parse(url);
+        if (parsed == null) {
+            return false;
+        }
+        final String host = parsed.host();
+        return host.equals("youtube.com") || host.endsWith(".youtube.com");
     }
 
     private static okhttp3.Response executeWithDnsRetry(@NonNull final OkHttpClient requestClient,

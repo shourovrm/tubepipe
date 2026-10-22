@@ -28,4 +28,9 @@ object ExtractorInitializer {
     fun setContentCountry(countryCode: String) {
         NewPipe.setPreferredContentCountry(ContentCountry(countryCode))
     }
+
+    /** YouTube Restricted Mode (the parental "hide sensitive content" setting) for every later request. */
+    fun setRestrictedMode(enabled: Boolean) {
+        DownloaderImpl.setRestrictedMode(enabled)
+    }
 }

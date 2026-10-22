@@ -33,5 +33,11 @@ class TubepipeApplication : Application() {
                 .distinctUntilChanged()
                 .collect { country -> ExtractorInitializer.setContentCountry(country) }
         }
+        applicationScope.launch {
+            container.settings.settings
+                .map { it.hideSensitiveContent }
+                .distinctUntilChanged()
+                .collect { enabled -> ExtractorInitializer.setRestrictedMode(enabled) }
+        }
     }
 }

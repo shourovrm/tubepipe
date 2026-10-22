@@ -8,6 +8,7 @@ import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -53,6 +54,19 @@ class SettingsRepositoryTest {
 
         settings.setPlayerClientName("mweb")
         assertEquals("mweb", settings.settings.first().playerClientName)
+    }
+
+    @Test
+    fun parentalFiltersStartOffAndCanBeTurnedOn() = runTest(UnconfinedTestDispatcher()) {
+        val settings = repository(this)
+        assertFalse(settings.settings.first().hideSensitiveContent)
+        assertFalse(settings.settings.first().hideAdultVideos)
+
+        settings.setHideSensitiveContent(true)
+        settings.setHideAdultVideos(true)
+
+        assertTrue(settings.settings.first().hideSensitiveContent)
+        assertTrue(settings.settings.first().hideAdultVideos)
     }
 
     @Test

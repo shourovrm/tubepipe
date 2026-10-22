@@ -26,7 +26,15 @@ data class VideoDetails(
     val likeCount: Long?,
     val channelAvatarUrl: String?,
     val related: List<VideoItem>,
-)
+    /** The minimum viewer age YouTube sets for the video; 0 when it has none. */
+    val ageLimit: Int = 0,
+) {
+    val isAdultOnly: Boolean get() = ageLimit >= ADULT_AGE
+
+    private companion object {
+        const val ADULT_AGE = 18
+    }
+}
 
 data class ChannelSummary(val url: String, val name: String, val avatarUrl: String?, val subscriberCount: Long?)
 

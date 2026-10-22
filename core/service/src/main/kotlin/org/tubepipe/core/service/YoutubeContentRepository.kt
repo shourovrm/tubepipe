@@ -72,6 +72,7 @@ class YoutubeContentRepository(private val ioDispatcher: CoroutineDispatcher = D
             likeCount = streamInfo.likeCount.nullIfNegative(),
             channelAvatarUrl = streamInfo.uploaderAvatarUrl,
             related = streamInfo.relatedItems.toVideoItems(),
+            ageLimit = streamInfo.ageLimit.coerceAtLeast(0),
         )
     }
 

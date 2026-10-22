@@ -72,6 +72,10 @@ data class AppSettings(
     val hidePaid: Boolean = false,
     val sponsorBlockCategories: Set<SponsorBlockCategory> = SponsorBlockCategory.entries.toSet(),
     val sponsorBlockShowNotice: Boolean = true,
+    /** YouTube Restricted Mode for every request (parental control). */
+    val hideSensitiveContent: Boolean = false,
+    /** Refuse to play videos YouTube marks 18+ (parental control). */
+    val hideAdultVideos: Boolean = false,
 ) {
     companion object {
         const val ORIGINAL_AUDIO_LANGUAGE = "original"
@@ -110,6 +114,8 @@ class SettingsRepository(
         val hidePaid = booleanPreferencesKey("hide_paid")
         val disabledSponsorBlockCategories = stringSetPreferencesKey("disabled_sponsor_block_categories")
         val sponsorBlockShowNotice = booleanPreferencesKey("sponsor_block_show_notice")
+        val hideSensitiveContent = booleanPreferencesKey("hide_sensitive_content")
+        val hideAdultVideos = booleanPreferencesKey("hide_adult_videos")
     }
 
     val settings: Flow<AppSettings> = dataStore.data.map { preferences ->
@@ -141,6 +147,8 @@ class SettingsRepository(
                     SponsorBlockCategory.entries.firstOrNull { it.name == name }
                 }.toSet(),
             sponsorBlockShowNotice = preferences[Keys.sponsorBlockShowNotice] ?: true,
+            hideSensitiveContent = preferences[Keys.hideSensitiveContent] ?: false,
+            hideAdultVideos = preferences[Keys.hideAdultVideos] ?: false,
         )
     }
 
@@ -203,6 +211,10 @@ class SettingsRepository(
     suspend fun setHidePaid(enabled: Boolean) = save(Keys.hidePaid, enabled)
 
     suspend fun setSponsorBlockShowNotice(enabled: Boolean) = save(Keys.sponsorBlockShowNotice, enabled)
+
+    suspend fun setHideSensitiveContent(enabled: Boolean) = save(Keys.hideSensitiveContent, enabled)
+
+    suspend fun setHideAdultVideos(enabled: Boolean) = save(Keys.hideAdultVideos, enabled)
 
     suspend fun setSponsorBlockCategoryEnabled(category: SponsorBlockCategory, enabled: Boolean) {
         dataStore.edit { preferences ->
