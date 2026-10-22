@@ -60,15 +60,15 @@ import org.tubepipe.tv.AppContainer
 import org.tubepipe.tv.R
 import org.tubepipe.tv.navigation.AppNavigator
 
-private val MiniVideoWidth = 448.dp
-private val MiniVideoHeight = 252.dp
+private val MiniVideoWidth = 320.dp
+private val MiniVideoHeight = 180.dp
 private val MiniRadius = 12.dp
-private val IconButtonSize = 52.dp
-private val IconSize = 28.dp
-private val TooltipOffset = 60.dp
-private val SwitchWidth = 40.dp
-private val SwitchHeight = 22.dp
-private val SwitchThumbSize = 16.dp
+private val IconButtonSize = 38.dp
+private val IconSize = 22.dp
+private val TooltipOffset = 44.dp
+private val SwitchWidth = 30.dp
+private val SwitchHeight = 17.dp
+private val SwitchThumbSize = 12.dp
 private val SwitchOffColor = Color(0xFF4A4A4A)
 private const val HINT_VISIBLE_MILLIS = 3_000L
 
@@ -252,7 +252,7 @@ fun MiniPlayerWindow(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(start = TubepipeSpacing.Grid * 3, end = TubepipeSpacing.Grid * 3, bottom = 16.dp),
+                    .padding(start = TubepipeSpacing.Grid * 2, end = TubepipeSpacing.Grid * 2, bottom = 12.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
             ) {
                 MiniIconButton(label = stringResource(R.string.mini_button_previous), onClick = ::playPrevious) {
@@ -326,7 +326,7 @@ private fun MiniIconButton(
             }
         }
         if (isFocused) {
-            // Unbounded so the chip can be wider than the 52 dp button without widening the row.
+            // Unbounded so the chip can be wider than the 38 dp button without widening the row.
             Text(
                 text = label,
                 style = MaterialTheme.typography.labelLarge,

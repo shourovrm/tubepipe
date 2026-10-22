@@ -64,7 +64,7 @@ import org.tubepipe.tv.R
 import org.tubepipe.tv.channel.ChannelAvatar
 import org.tubepipe.tv.common.CountFormatting
 
-private val SmallButtonSize = 56.dp
+private val SmallButtonSize = 48.dp
 private val PlayButtonSize = 72.dp
 private val PopupWidth = 260.dp
 private val PopupRowHeight = 56.dp
@@ -78,7 +78,8 @@ private val SwitchTrackWidth = 36.dp
 private val SwitchTrackHeight = 20.dp
 private val SwitchKnobSize = 16.dp
 private val SeparatorWidth = 2.dp
-private val SeparatorHeight = 48.dp
+private val SeparatorHeight = 40.dp
+private val ButtonRowGap = 8.dp
 private val ScrimTop = Color(0x00000000)
 private val ScrimBottom = Color(0xEB000000)
 
@@ -290,7 +291,8 @@ private fun ButtonRow(
 
     Row(
         verticalAlignment = Alignment.Top,
-        horizontalArrangement = Arrangement.spacedBy(TubepipeSpacing.Gutter),
+        // Thirteen buttons with their labels must fit the 844 dp between the safe margins of a 960 dp screen.
+        horizontalArrangement = Arrangement.spacedBy(ButtonRowGap),
         modifier = Modifier.fillMaxWidth().onFocusChanged { onButtonRowFocusChanged(it.hasFocus) },
     ) {
         RoundControl(stringResource(R.string.player_previous), SmallButtonSize, actions.onPrevious) {
