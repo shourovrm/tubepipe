@@ -40,18 +40,10 @@ internal object PlayerIcons {
     /** Two arrows in a loop; the player tints it red while the video repeats. */
     val Loop = transportIcon("Loop", "M7,7h10v3l4,-4 -4,-4v3H5v6h2V7zM17,17H7v-3l-4,4 4,4v-3h12v-6h-2v4z")
 
-    /** A list with a play arrow: "play the next one". The bar draws it as a switch, see the player mockup. */
-    val Autoplay = transportIcon("Autoplay", "M3,10h11v2H3zM3,6h11v2H3zM3,14h7v2H3zM16,13v8l6,-4z")
-
     val PlayArrow = transportIcon("PlayArrow", "M8,5v14l11,-7z")
 
     val Fullscreen = transportIcon(
         "Fullscreen",
         "M7,14H5v5h5v-2H7v-3zM5,10h2V7h3V5H5v5zM17,17h-3v2h5v-5h-2v3zM14,5v2h3v3h2V5h-5z",
-    )
-
-    val Close = transportIcon(
-        "Close",
-        "M19,6.41L17.59,5 12,10.59 6.41,5 5,6.41 10.59,12 5,17.59 6.41,19 12,13.41 17.59,19 19,17.59 13.41,12z",
     )
 }
