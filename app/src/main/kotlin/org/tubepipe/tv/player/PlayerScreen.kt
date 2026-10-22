@@ -56,6 +56,7 @@ import org.tubepipe.core.ui.theme.TubepipeColors
 import org.tubepipe.core.ui.theme.TubepipeSpacing
 import org.tubepipe.tv.AppContainer
 import org.tubepipe.tv.R
+import org.tubepipe.tv.common.NewPlaylistDialog
 import org.tubepipe.tv.common.toCardModel
 import org.tubepipe.tv.common.toPlaylistVideo
 import org.tubepipe.tv.common.videoSubtitle
@@ -137,6 +138,7 @@ private fun PlayerContent(
     var isButtonRowFocused by remember { mutableStateOf(false) }
     var openList by remember { mutableStateOf<ControlList?>(null) }
     var moreStage by remember { mutableStateOf(MoreStage.Root) }
+    var isCreatingPlaylist by remember { mutableStateOf(false) }
     var keyPressCount by remember { mutableIntStateOf(0) }
     var seekFeedbackCount by remember { mutableIntStateOf(0) }
     var isSeekFeedbackVisible by remember { mutableStateOf(false) }
@@ -343,6 +345,10 @@ private fun PlayerContent(
                 moreStage = moreStage,
                 onMoreStage = { newStage -> moreStage = newStage },
                 onClose = ::closeList,
+                onNewPlaylist = {
+                    closeList()
+                    isCreatingPlaylist = true
+                },
                 engine = engine,
                 details = details,
                 container = container,
@@ -390,6 +396,28 @@ private fun PlayerContent(
             )
         }
     }
+
+    // Outside the bar's conditional, so the dialog survives the bar hiding while the viewer types.
+    if (isCreatingPlaylist) {
+        NewPlaylistDialog(
+            onCreate = { name ->
+                val trimmedName = name.trim()
+                if (trimmedName.isNotEmpty()) {
+                    coroutineScope.launch {
+                        container.database.playlistDao().createPlaylistWithVideo(
+                            name = trimmedName,
+                            video = details.video.toPlaylistVideo(),
+                            createdAtMillis = System.currentTimeMillis(),
+                        )
+                    }
+                }
+            },
+            onDismiss = {
+                isCreatingPlaylist = false
+                rootFocus.requestFocus()
+            },
+        )
+    }
 }
 
 @Composable
@@ -398,6 +426,7 @@ private fun optionsFor(
     moreStage: MoreStage,
     onMoreStage: (MoreStage) -> Unit,
     onClose: () -> Unit,
+    onNewPlaylist: () -> Unit,
     engine: TubepipePlayerEngine,
     details: VideoDetails,
     container: AppContainer,
@@ -434,7 +463,8 @@ private fun optionsFor(
             }
         }
     }
-    ControlList.More -> moreOptions(moreStage, onMoreStage, onClose, engine, details, container, navigator)
+    ControlList.More ->
+        moreOptions(moreStage, onMoreStage, onClose, onNewPlaylist, engine, details, container, navigator)
 }
 
 @Composable
@@ -442,6 +472,7 @@ private fun moreOptions(
     stage: MoreStage,
     onStage: (MoreStage) -> Unit,
     onClose: () -> Unit,
+    onNewPlaylist: () -> Unit,
     engine: TubepipePlayerEngine,
     details: VideoDetails,
     container: AppContainer,
@@ -465,11 +496,12 @@ private fun moreOptions(
             }
         }
         MoreStage.Playlists -> {
+            val newPlaylist = ListOption(stringResource(R.string.library_new_playlist), false) { onNewPlaylist() }
             val userPlaylists = playlists.filter { it.id != PlaylistEntity.LIKED_ID }
             if (userPlaylists.isEmpty()) {
-                listOf(ListOption(stringResource(R.string.player_no_playlists), false) { onClose() })
+                listOf(newPlaylist, ListOption(stringResource(R.string.player_no_playlists), false) { onClose() })
             } else {
-                userPlaylists.map { playlist ->
+                listOf(newPlaylist) + userPlaylists.map { playlist ->
                     ListOption(playlist.name, false) {
                         scope.launch { playlistDao.addItem(playlist.id, details.video.toPlaylistVideo()) }
                         onClose()
