@@ -32,6 +32,7 @@ dependencies {
     implementation(libs.media3.session)
     implementation(libs.androidx.annotation)
     implementation(libs.jsr305)
+    implementation(libs.nanojson)
     implementation(libs.coroutines.android)
     testImplementation(libs.junit4)
     androidTestImplementation(libs.androidx.test.core)
