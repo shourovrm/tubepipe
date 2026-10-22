@@ -561,7 +561,8 @@ private fun Modifier.floatAbove(gap: Dp) = layout { measurable, constraints ->
 
 @Composable
 private fun BoxScope.OptionPopup(options: List<ListOption>, listKey: Any, horizontal: Alignment.Horizontal) {
-    val focusRequesters = remember(listKey) { List(options.size) { FocusRequester() } }
+    // Keyed on the size too: Quality shows only Auto until the stream loads, then grows while the list is open.
+    val focusRequesters = remember(listKey, options.size) { List(options.size) { FocusRequester() } }
     LaunchedEffect(listKey) {
         if (focusRequesters.isNotEmpty()) {
             val currentIndex = options.indexOfFirst { it.isCurrent }.coerceAtLeast(0)
