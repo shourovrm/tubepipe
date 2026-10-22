@@ -157,4 +157,22 @@ class SearchViewModelTest {
         assertEquals(emptyList<String>(), content.suggestionRequests)
         assertEquals(emptyList<String>(), viewModel.state.value.suggestions)
     }
+
+    // The screen moves focus to the results once per submission; the count tells a new submission from the same
+    // results being shown again.
+    @Test
+    fun eachSubmitCountsAsANewSubmissionButTypingDoesNot() = runTest(timeout = 30.seconds) {
+        val viewModel = viewModel()
+
+        viewModel.submit("cats")
+        viewModel.onQueryChange("")
+        viewModel.onQueryChange("cats")
+        assertEquals(1, viewModel.state.value.submissionCount)
+
+        viewModel.submit("cats")
+        assertEquals(2, viewModel.state.value.submissionCount)
+
+        viewModel.submit("   ")
+        assertEquals(2, viewModel.state.value.submissionCount)
+    }
 }
