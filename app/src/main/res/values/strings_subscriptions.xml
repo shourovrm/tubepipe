@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="subscriptions_empty">You have no subscriptions yet. Open a channel from any video and choose Subscribe to follow it here.</string>
+    <string name="subscriptions_feed_empty">None of your channels have new videos.</string>
+</resources>

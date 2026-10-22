@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="channel_subscribe">Subscribe</string>
+    <string name="channel_subscribed">Subscribed</string>
+    <plurals name="channel_subscriber_count">
+        <item quantity="one">%s subscriber</item>
+        <item quantity="other">%s subscribers</item>
+    </plurals>
+    <string name="channel_no_videos">This channel has no videos.</string>
+</resources>
