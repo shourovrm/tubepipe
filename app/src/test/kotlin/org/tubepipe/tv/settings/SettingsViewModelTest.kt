@@ -63,11 +63,11 @@ class SettingsViewModelTest {
         viewModel.moveSectionDown(HomeSection.TrendingMovies)
         viewModel.moveSectionDown(HomeSection.ContinueWatching)
 
-        val order = viewModel.state.first { it.settings?.homeSectionOrder?.first() == HomeSection.BecauseYouWatched }
+        val order = viewModel.state.first { it.settings?.homeSectionOrder?.first() == HomeSection.Recommended }
             .settings!!.homeSectionOrder
         assertEquals(
             listOf(
-                HomeSection.BecauseYouWatched,
+                HomeSection.Recommended,
                 HomeSection.ContinueWatching,
                 HomeSection.Mix,
                 HomeSection.NewFromSubscriptions,

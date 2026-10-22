@@ -1,6 +1,7 @@
 package org.tubepipe.tv.testing
 
 import java.io.IOException
+import kotlinx.coroutines.CompletableDeferred
 import org.tubepipe.core.service.ChannelPage
 import org.tubepipe.core.service.ChannelSummary
 import org.tubepipe.core.service.ContentPage
@@ -39,6 +40,9 @@ class FakeContentRepository : ContentRepository {
     val channels = mutableMapOf<String, ChannelPage>()
     val channelSecondPages = mutableMapOf<String, List<VideoItem>>()
     var feed: List<VideoItem> = emptyList()
+
+    /** When set, videoDetails waits for it, so a test can observe what shows before the network answers. */
+    var detailsGate: CompletableDeferred<Unit>? = null
     val failures = mutableSetOf<String>()
 
     val suggestionRequests = mutableListOf<String>()
@@ -81,6 +85,7 @@ class FakeContentRepository : ContentRepository {
     }
 
     override suspend fun videoDetails(url: String): VideoDetails {
+        detailsGate?.await()
         failIfRequested("details:$url")
         return details[url] ?: throw IOException("no fake details for $url")
     }

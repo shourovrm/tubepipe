@@ -11,9 +11,9 @@ class DestinationTest {
     }
 
     @Test
-    fun drawerOrderMatchesTheProductStructure() {
+    fun searchComesFirstSoItIsOneStepUpFromHome() {
         assertEquals(
-            listOf("Home", "Trending", "Subscriptions", "Search", "Library", "Settings"),
+            listOf("Search", "Home", "Trending", "Subscriptions", "Library", "Settings"),
             Destination.entries.map { it.name },
         )
     }
