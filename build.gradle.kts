@@ -4,6 +4,8 @@ plugins {
     alias(libs.plugins.kotlin.compose) apply false
     alias(libs.plugins.wire) apply false
     alias(libs.plugins.ktlint) apply false
+    alias(libs.plugins.ksp) apply false
+    alias(libs.plugins.room) apply false
 }
 
 // Format and lint every Kotlin module the same way; the extractor modules are Java and upstream's.

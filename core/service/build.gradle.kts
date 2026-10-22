@@ -16,7 +16,17 @@ android {
     }
 }
 
+// Live tests hit YouTube, so they run only on request: ./gradlew :core:service:test -Ptubepipe.live=true
+tasks.withType<Test>().configureEach {
+    systemProperty("tubepipe.live", providers.gradleProperty("tubepipe.live").getOrElse("false"))
+}
+
 dependencies {
     coreLibraryDesugaring(libs.desugar.jdk.libs)
     implementation(project(":extractor"))
+    api(libs.okhttp)
+    implementation(libs.androidx.annotation)
+    implementation(libs.coroutines.core)
+    testImplementation(libs.junit4)
+    testImplementation(libs.coroutines.test)
 }

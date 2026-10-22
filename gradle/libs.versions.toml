@@ -10,6 +10,18 @@ lifecycle = "2.11.0"
 core-ktx = "1.19.1"
 desugar-jdk-libs = "2.1.5"
 junit4 = "4.13.2"
+media3 = "1.11.1"
+room = "2.8.5"
+ksp = "2.3.12"
+datastore = "1.3.0"
+coil = "3.6.3"
+coroutines = "1.11.0"
+robolectric = "4.17"
+androidx-test-core = "1.7.0"
+androidx-test-runner = "1.7.0"
+androidx-test-ext-junit = "1.3.0"
+jsr305 = "3.0.2"
+androidx-annotation = "1.11.0"
 # Pinned to the versions the pinned PipePipeExtractor commit declares (extractor/build.gradle); update together.
 nanojson = "1d9e1aea9049fc9f85e68b43ba39fe7be1c1f751"
 spotbugs = "4.10.2"
@@ -36,6 +48,28 @@ lifecycle-runtime-compose = { module = "androidx.lifecycle:lifecycle-runtime-com
 core-ktx = { module = "androidx.core:core-ktx", version.ref = "core-ktx" }
 desugar-jdk-libs = { module = "com.android.tools:desugar_jdk_libs", version.ref = "desugar-jdk-libs" }
 junit4 = { module = "junit:junit", version.ref = "junit4" }
+media3-exoplayer = { module = "androidx.media3:media3-exoplayer", version.ref = "media3" }
+media3-exoplayer-dash = { module = "androidx.media3:media3-exoplayer-dash", version.ref = "media3" }
+media3-exoplayer-hls = { module = "androidx.media3:media3-exoplayer-hls", version.ref = "media3" }
+media3-datasource-okhttp = { module = "androidx.media3:media3-datasource-okhttp", version.ref = "media3" }
+media3-session = { module = "androidx.media3:media3-session", version.ref = "media3" }
+media3-ui-compose = { module = "androidx.media3:media3-ui-compose", version.ref = "media3" }
+room-runtime = { module = "androidx.room:room-runtime", version.ref = "room" }
+room-ktx = { module = "androidx.room:room-ktx", version.ref = "room" }
+room-compiler = { module = "androidx.room:room-compiler", version.ref = "room" }
+datastore-preferences = { module = "androidx.datastore:datastore-preferences", version.ref = "datastore" }
+coil-compose = { module = "io.coil-kt.coil3:coil-compose", version.ref = "coil" }
+coil-network-okhttp = { module = "io.coil-kt.coil3:coil-network-okhttp", version.ref = "coil" }
+coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "coroutines" }
+coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "coroutines" }
+coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "coroutines" }
+robolectric = { module = "org.robolectric:robolectric", version.ref = "robolectric" }
+androidx-test-core = { module = "androidx.test:core", version.ref = "androidx-test-core" }
+androidx-test-runner = { module = "androidx.test:runner", version.ref = "androidx-test-runner" }
+androidx-test-ext-junit = { module = "androidx.test.ext:junit", version.ref = "androidx-test-ext-junit" }
+jsr305 = { module = "com.google.code.findbugs:jsr305", version.ref = "jsr305" }
+androidx-annotation = { module = "androidx.annotation:annotation", version.ref = "androidx-annotation" }
+lifecycle-viewmodel-compose = { module = "androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "lifecycle" }
 nanojson = { module = "com.github.TeamNewPipe:nanojson", version.ref = "nanojson" }
 spotbugs-annotations = { module = "com.github.spotbugs:spotbugs-annotations", version.ref = "spotbugs" }
 jsoup = { module = "org.jsoup:jsoup", version.ref = "jsoup" }
@@ -54,3 +88,5 @@ android-library = { id = "com.android.library", version.ref = "agp" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 ktlint = { id = "org.jlleitschuh.gradle.ktlint", version.ref = "ktlint-plugin" }
 wire = { id = "com.squareup.wire", version.ref = "wire" }
+ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
+room = { id = "androidx.room", version.ref = "room" }
