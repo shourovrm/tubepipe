@@ -93,10 +93,43 @@ class PlaybackControllerTest {
         controller.togglePause()
         assertTrue(createdEngines.single().playing)
     }
+
+    @Test
+    fun toggleLoopRepeatsTheCurrentVideo() {
+        controller.engineFor("a")
+
+        controller.toggleLoop()
+
+        assertTrue(controller.isLooping.value)
+        assertTrue(createdEngines.single().repeatsVideo)
+    }
+
+    @Test
+    fun loopCarriesOverToTheNextVideo() {
+        controller.engineFor("a")
+        controller.toggleLoop()
+
+        controller.engineFor("b")
+
+        assertTrue(createdEngines.last().repeatsVideo)
+    }
+
+    @Test
+    fun stopTurnsLoopOff() {
+        controller.engineFor("a")
+        controller.toggleLoop()
+
+        controller.stop()
+        controller.engineFor("b")
+
+        assertFalse(controller.isLooping.value)
+        assertFalse(createdEngines.last().repeatsVideo)
+    }
 }
 
 private class FakeEngine : PlayerEngine {
     var released = false
+    var repeatsVideo = false
     var playing = true
 
     override val isPlaying: Boolean get() = playing
@@ -111,5 +144,9 @@ private class FakeEngine : PlayerEngine {
 
     override fun release() {
         released = true
+    }
+
+    override fun setLooping(isLooping: Boolean) {
+        repeatsVideo = isLooping
     }
 }

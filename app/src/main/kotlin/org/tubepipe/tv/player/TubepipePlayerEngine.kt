@@ -9,6 +9,7 @@ import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.media3.common.C
+import androidx.media3.common.Player
 import androidx.media3.common.TrackGroup
 import androidx.media3.common.TrackSelectionOverride
 import java.io.IOException
@@ -64,6 +65,9 @@ class TubepipePlayerEngine(private val context: Context) : PlayerEngine {
 
     private var isReleased = false
 
+    // Kept here because the loop choice can arrive before load() has built the player.
+    private var isLooping = false
+
     // Controls act on playWhenReady: while the player buffers, isPlaying is false but the viewer pressed play.
     override val isPlaying: Boolean get() = player?.exoPlayer?.playWhenReady ?: false
 
@@ -73,6 +77,11 @@ class TubepipePlayerEngine(private val context: Context) : PlayerEngine {
 
     override fun resume() {
         player?.exoPlayer?.play()
+    }
+
+    override fun setLooping(isLooping: Boolean) {
+        this.isLooping = isLooping
+        player?.exoPlayer?.repeatMode = repeatModeFor(isLooping)
     }
 
     override fun release() {
@@ -95,6 +104,7 @@ class TubepipePlayerEngine(private val context: Context) : PlayerEngine {
         currentQuality = preferences.maxVideoHeight
         captionLanguage = preferences.captionLanguage
         val newPlayer = TubepipePlayer(context, client, preferences)
+        newPlayer.exoPlayer.repeatMode = repeatModeFor(isLooping)
         player = newPlayer
         try {
             newPlayer.load(videoUrl, startPositionMillis)
@@ -143,3 +153,5 @@ class TubepipePlayerEngine(private val context: Context) : PlayerEngine {
             .build()
     }
 }
+
+private fun repeatModeFor(isLooping: Boolean): Int = if (isLooping) Player.REPEAT_MODE_ONE else Player.REPEAT_MODE_OFF

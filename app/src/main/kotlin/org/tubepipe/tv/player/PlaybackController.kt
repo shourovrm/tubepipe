@@ -17,6 +17,9 @@ interface PlayerEngine {
     fun resume()
 
     fun release()
+
+    /** Repeats the current video forever when true. */
+    fun setLooping(isLooping: Boolean)
 }
 
 class EngineLease(val engine: PlayerEngine, val isNew: Boolean)
@@ -38,6 +41,11 @@ class PlaybackController(private val createEngine: () -> PlayerEngine) {
     val engine: StateFlow<PlayerEngine?> = mutableEngine
 
     val currentEngine: PlayerEngine? get() = mutableEngine.value
+
+    private val mutableIsLooping = MutableStateFlow(false)
+
+    /** Whether the playing video repeats; the choice carries over to the next video until [stop]. */
+    val isLooping: StateFlow<Boolean> = mutableIsLooping
 
     // Videos played before the current one, oldest first; the last entry is what "Previous" opens.
     private val previousVideos = ArrayDeque<String>()
@@ -80,7 +88,14 @@ class PlaybackController(private val createEngine: () -> PlayerEngine) {
         currentEngine?.release()
         mutableEngine.value = null
         previousVideos.clear()
+        mutableIsLooping.value = false
         mutableState.value = null
+    }
+
+    fun toggleLoop() {
+        val looping = !mutableIsLooping.value
+        mutableIsLooping.value = looping
+        currentEngine?.setLooping(looping)
     }
 
     fun previousVideoUrl(): String? = previousVideos.lastOrNull()
@@ -92,6 +107,7 @@ class PlaybackController(private val createEngine: () -> PlayerEngine) {
 
     private fun startEngine(videoUrl: String): EngineLease {
         val engine = createEngine()
+        engine.setLooping(mutableIsLooping.value)
         mutableEngine.value = engine
         mutableState.value = NowPlaying(videoUrl, PlayerMode.Fullscreen)
         return EngineLease(engine, isNew = true)
