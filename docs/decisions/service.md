@@ -6,7 +6,7 @@
 `ChannelPage`, `ContentPage`, opaque `PageCursor`) carry no `org.schabi` type. `ExtractorInitializer` starts the extractor
 with `DownloaderImpl` (OkHttp, trimmed from PipePipeClient) and restores the TLS defaults `NewPipe.init` disables.
 Trending kiosks (music, movies and shows, gaming) are ported from NewPipeExtractor into `kiosk/`; podcasts skipped.
-News is `YoutubeNewsFeed`: a desktop `browse` of the News topic channel `UCYfdidRxbB8Qhf0Nx7ioOYw` (US 188, BD 143 items).
+News is `YoutubeNewsFeed`: a desktop `browse` of the News topic channel `UCYfdidRxbB8Qhf0Nx7ioOYw` (US 188, BD 143 items). Where it has no videos (CN, KP, IR, AF, NP, MM) the feed is read again for US.
 Live smoke tests: `./gradlew :core:service:testDebugUnitTest -Ptubepipe.live=true` (all 8 passed 2026-10-22).
 
 ## Open items

@@ -5,6 +5,7 @@ import com.grack.nanojson.JsonWriter
 import java.nio.charset.StandardCharsets
 import org.schabi.newpipe.extractor.NewPipe
 import org.schabi.newpipe.extractor.ServiceList
+import org.schabi.newpipe.extractor.localization.ContentCountry
 import org.schabi.newpipe.extractor.services.youtube.YoutubeParsingHelper
 import org.schabi.newpipe.extractor.services.youtube.extractors.YoutubeLockupStreamInfoItemExtractor
 import org.schabi.newpipe.extractor.services.youtube.extractors.YoutubeStreamInfoItemExtractor
@@ -21,10 +22,25 @@ internal object YoutubeNewsFeed {
     private const val NEWS_CHANNEL_BROWSE_ID = "UCYfdidRxbB8Qhf0Nx7ioOYw"
     private const val VIDEO_LOCKUP_CONTENT_TYPE = "LOCKUP_CONTENT_TYPE_VIDEO"
 
+    private val FALLBACK_COUNTRY = ContentCountry("US")
+
     /** Blocking network call; throws IOException or ExtractionException on failure. */
-    fun fetch(): List<StreamInfoItem> {
+    fun fetch(): List<StreamInfoItem> = withUsFallback(NewPipe.getPreferredContentCountry(), ::fetchFor)
+
+    /**
+     * Where YouTube does not offer the News channel it answers 200 with no videos (CN, KP, IR, AF, NP, MM on
+     * 2026-10-23), so an empty feed is read again for the US. Failures are not retried: they would fail for the US too.
+     */
+    internal fun <T> withUsFallback(preferredCountry: ContentCountry, fetchFor: (ContentCountry) -> List<T>): List<T> {
+        val items = fetchFor(preferredCountry)
+        if (items.isNotEmpty() || preferredCountry == FALLBACK_COUNTRY) {
+            return items
+        }
+        return fetchFor(FALLBACK_COUNTRY)
+    }
+
+    private fun fetchFor(contentCountry: ContentCountry): List<StreamInfoItem> {
         val localization = NewPipe.getPreferredLocalization()
-        val contentCountry = NewPipe.getPreferredContentCountry()
         val requestBody = JsonWriter.string(
             YoutubeParsingHelper.prepareDesktopJsonBuilder(localization, contentCountry)
                 .value("browseId", NEWS_CHANNEL_BROWSE_ID)

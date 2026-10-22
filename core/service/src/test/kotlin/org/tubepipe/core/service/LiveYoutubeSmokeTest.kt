@@ -53,6 +53,14 @@ class LiveYoutubeSmokeTest {
         }
     }
 
+    // YouTube offers no News channel feed in China, so the tab shows the US one.
+    @Test
+    fun newsFallsBackToTheUnitedStatesWhereItIsNotOffered() = runTest(timeout = 60.seconds) {
+        ExtractorInitializer.setContentCountry("CN")
+        val videos = repository.trending(TrendingKind.News)
+        assertTrue("News returned ${videos.size} videos", videos.size >= 10)
+    }
+
     @Test
     fun videoDetailsIncludeRelatedVideos() = runTest(timeout = 60.seconds) {
         val details = repository.videoDetails("https://www.youtube.com/watch?v=dQw4w9WgXcQ")
