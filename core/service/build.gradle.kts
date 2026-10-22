@@ -6,7 +6,7 @@ android {
     namespace = "org.tubepipe.core.service"
     compileSdk = 37
     defaultConfig {
-        minSdk = 23
+        minSdk = 24
     }
     compileOptions {
         // The extractor uses java.time, which API 23 to 25 lack.

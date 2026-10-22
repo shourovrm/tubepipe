@@ -3,7 +3,7 @@
 ## Current state
 Confirmed by the user 2026-10-22; the Gradle skeleton (five modules, theme tokens, drawer with placeholders) builds.
 
-Stack: Kotlin 2.3, AGP 9.2, JDK 21 (overrides the JDK 25 toolchain PipePipeExtractor declares), minSdk 23, compileSdk 37, Jetpack Compose for TV
+Stack: Kotlin 2.3, AGP 9.2, JDK 21 (overrides the JDK 25 toolchain PipePipeExtractor declares), minSdk 24, compileSdk 37, Jetpack Compose for TV
 (`androidx.tv:tv-material` 1.1.0), Media3 ExoPlayer 1.11.1 (spike passed, see `player.md`), Room, DataStore, Coil, OkHttp, coroutines + StateFlow, manual DI.
 
 Reference roles. PipePipe gives the data and playback layers: the extractor (pure Java), `DownloaderImpl` (OkHttp,

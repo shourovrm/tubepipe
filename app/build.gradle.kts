@@ -19,7 +19,7 @@ android {
     compileSdk = 37
     defaultConfig {
         applicationId = "org.tubepipe.tv"
-        minSdk = 23
+        minSdk = 24
         targetSdk = 36
         versionCode = 1
         versionName = "0.1.0"
@@ -68,5 +68,12 @@ dependencies {
     implementation(libs.activity.compose)
     implementation(libs.lifecycle.runtime.compose)
     implementation(libs.compose.material.icons.core)
+    implementation(libs.lifecycle.viewmodel.compose)
+    implementation(libs.datastore.preferences)
+    implementation(libs.coroutines.android)
+    implementation(libs.coil.compose)
+    implementation(libs.coil.network.okhttp)
+    implementation(libs.media3.ui.compose)
     testImplementation(libs.junit4)
+    testImplementation(libs.coroutines.test)
 }

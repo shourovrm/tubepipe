@@ -7,7 +7,7 @@ android {
     namespace = "org.tubepipe.core.ui"
     compileSdk = 37
     defaultConfig {
-        minSdk = 23
+        minSdk = 24
     }
     compileOptions {
         isCoreLibraryDesugaringEnabled = true
