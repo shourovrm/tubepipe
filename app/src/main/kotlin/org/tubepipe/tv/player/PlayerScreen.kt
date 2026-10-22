@@ -182,7 +182,12 @@ private fun PlayerContent(
             coroutineScope.launch { container.settings.setAutoplayNext(enabled) }
         },
         onOpenChannel = { details.video.channelUrl?.let(navigator::openChannel) },
-        onHideControls = { isBarVisible = false },
+        onHideControls = {
+            // Focus moves to the root first. Hiding alone drops focus when the chip leaves composition, and the
+            // framework then hands it to the nearest focusable, which on the box was the Pause button (a flash).
+            rootFocus.requestFocus()
+            isBarVisible = false
+        },
     )
 
     // The bar stays while paused, so the viewer can read it; it hides 4 s after the last key when playing.
