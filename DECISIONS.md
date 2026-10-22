@@ -6,9 +6,9 @@
 
 ## Next
 - User confirms or vetoes the proposed stack in architecture.md, then the Gradle skeleton and extractor submodule are created.
-- User decides the sidebar set and whether the Video screen is dropped for play-on-select (see architecture.md open items).
+- User confirms play-on-select; then the Gradle skeleton, extractor submodule and theme tokens are created.
 - CI/CD section in AGENTS.md is still `<FILL>`: enable GitHub Actions or decline.
 
 ## Gotchas (cross-cutting)
-- `~/repos/pipepipe` and `~/repos/smarttube` are read-only reference checkouts; never edit them.
+- `~/repos/pipepipe`, `~/repos/smarttube` and `~/repos/newpipe-extractor` are read-only reference checkouts; never edit them.
 - Extractor toolchain is JDK 25; build with JDK 25 or the included build fails.
