@@ -246,7 +246,7 @@ private fun HomeSectionRow(
 
 private fun HomeSection.labelResource(): Int = when (this) {
     HomeSection.ContinueWatching -> R.string.settings_section_continue_watching
-    HomeSection.BecauseYouWatched -> R.string.settings_section_because_you_watched
+    HomeSection.Recommended -> R.string.settings_section_recommended
     HomeSection.Mix -> R.string.settings_section_mix
     HomeSection.NewFromSubscriptions -> R.string.settings_section_new_from_subscriptions
     HomeSection.TrendingMusic -> R.string.settings_section_trending_music

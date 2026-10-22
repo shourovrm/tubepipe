@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import java.io.IOException
 import java.util.logging.Level
 import java.util.logging.Logger
+import kotlin.random.Random
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
@@ -32,7 +33,7 @@ import org.tubepipe.tv.data.HomeSection
 
 data class HomeVideo(val video: VideoItem, val watchedFraction: Float = 0f)
 
-/** One shelf on Home. [seedTitle] is the video a "Because you watched" or "Mix" row grew from. */
+/** One shelf on Home. [seedTitle] is the video a "Mix" row grew from. */
 data class HomeRow(val section: HomeSection, val seedTitle: String?, val items: List<HomeVideo>)
 
 data class HomeState(
@@ -46,6 +47,9 @@ class HomeViewModel(
     private val history: HistoryDao,
     private val subscriptions: SubscriptionDao,
     settings: Flow<AppSettings>,
+    private val recommendationStore: RecommendationStore,
+    private val clock: () -> Long = System::currentTimeMillis,
+    private val random: Random = Random.Default,
 ) : ViewModel() {
     private val mutableState = MutableStateFlow(HomeState())
     val state: StateFlow<HomeState> = mutableState.asStateFlow()
@@ -93,6 +97,7 @@ class HomeViewModel(
     private suspend fun load(inputs: LoadInputs) {
         // Keep showing the old rows while reloading; a spinner only replaces an empty screen.
         mutableState.update { current -> if (current.rows.isEmpty()) HomeState(isLoading = true) else current }
+        showSavedRecommendations(inputs)
         val outcomes = coroutineScope {
             inputs.sections.map { section -> async { loadSection(section, inputs) } }.awaitAll()
         }
@@ -101,9 +106,27 @@ class HomeViewModel(
         mutableState.value = HomeState(rows = rows, isLoading = false, hasError = rows.isEmpty() && anySourceFailed)
     }
 
+    /**
+     * Shows the Recommended row saved by the last run while the network loads, so Home is not
+     * a spinner on every start. Skipped once any rows are on screen; they are already newer.
+     */
+    private suspend fun showSavedRecommendations(inputs: LoadInputs) {
+        if (HomeSection.Recommended !in inputs.sections || mutableState.value.rows.isNotEmpty()) {
+            return
+        }
+        val savedVideos = recommendationStore.load()
+        if (savedVideos.isEmpty()) {
+            return
+        }
+        val savedRow = HomeRow(HomeSection.Recommended, seedTitle = null, items = savedVideos.asHomeVideos())
+        mutableState.update { current ->
+            if (current.rows.isEmpty()) HomeState(rows = listOf(savedRow), isLoading = false) else current
+        }
+    }
+
     private suspend fun loadSection(section: HomeSection, inputs: LoadInputs): SectionOutcome = when (section) {
         HomeSection.ContinueWatching -> SectionOutcome(continueWatchingRows(inputs.recentHistory), hadFailure = false)
-        HomeSection.BecauseYouWatched -> becauseYouWatchedRows(inputs.recentHistory)
+        HomeSection.Recommended -> recommendedRows(inputs.recentHistory)
         HomeSection.Mix -> mixRows(inputs.recentHistory)
         HomeSection.NewFromSubscriptions -> subscriptionFeedRows(inputs.subscribedChannelUrls)
         HomeSection.TrendingMusic -> trendingRows(TrendingKind.Music, section, inputs.contentCountry)
@@ -122,15 +145,34 @@ class HomeViewModel(
         return rowIfNotEmpty(HomeSection.ContinueWatching, seedTitle = null, items = partlyWatched)
     }
 
-    private suspend fun becauseYouWatchedRows(recentHistory: List<HistoryEntity>): SectionOutcome = coroutineScope {
-        val seeds = recentHistory.take(BECAUSE_YOU_WATCHED_SEED_COUNT)
-        val perSeed = seeds.map { seed ->
-            async {
-                val related = fetchSource("related:${seed.url}") { content.videoDetails(seed.url).related }
-                seed to related
-            }
+    private suspend fun recommendedRows(recentHistory: List<HistoryEntity>): SectionOutcome = coroutineScope {
+        val seeds = recommendationSeeds(recentHistory)
+        val relatedPerSeed = seeds.map { seed ->
+            async { fetchSource("related:${seed.url}") { content.videoDetails(seed.url).related } }
         }.awaitAll()
-        outcomeOf(perSeed, HomeSection.BecauseYouWatched)
+        val alreadyWatchedUrls = recentHistory.map { entry -> entry.url }.toSet()
+        val recommended = relatedPerSeed
+            .filterNotNull()
+            .flatten()
+            .distinctBy { video -> video.url }
+            .filter { video -> video.url !in alreadyWatchedUrls }
+            .shuffled(random)
+            .take(RECOMMENDED_LIMIT)
+        if (recommended.isNotEmpty()) {
+            recommendationStore.save(recommended)
+        }
+        SectionOutcome(
+            rows = rowIfNotEmpty(HomeSection.Recommended, seedTitle = null, items = recommended.asHomeVideos()),
+            hadFailure = relatedPerSeed.any { related -> related == null },
+        )
+    }
+
+    /** History videos from the last few days; when there are none, the newest few, so a lapsed viewer still gets a row. */
+    private fun recommendationSeeds(recentHistory: List<HistoryEntity>): List<HistoryEntity> {
+        val oldestSeedMillis = clock() - RECOMMENDED_WINDOW_MILLIS
+        val watchedLately = recentHistory.filter { entry -> entry.lastWatchedAtMillis >= oldestSeedMillis }
+        val seeds = watchedLately.ifEmpty { recentHistory.take(RECOMMENDED_FALLBACK_SEED_COUNT) }
+        return seeds.take(RECOMMENDED_SEED_LIMIT)
     }
 
     private suspend fun mixRows(recentHistory: List<HistoryEntity>): SectionOutcome {
@@ -199,7 +241,10 @@ class HomeViewModel(
 
     private companion object {
         const val HISTORY_LIMIT = 50
-        const val BECAUSE_YOU_WATCHED_SEED_COUNT = 3
+        const val RECOMMENDED_WINDOW_MILLIS = 3 * 24 * 60 * 60 * 1_000L
+        const val RECOMMENDED_FALLBACK_SEED_COUNT = 3
+        const val RECOMMENDED_SEED_LIMIT = 5
+        const val RECOMMENDED_LIMIT = 30
         const val FINISHED_FRACTION = 0.95f
         val logger: Logger = Logger.getLogger(HomeViewModel::class.java.name)
     }

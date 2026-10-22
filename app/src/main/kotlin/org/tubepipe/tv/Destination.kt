@@ -12,10 +12,10 @@ import androidx.compose.ui.graphics.vector.ImageVector
 
 /** Top-level drawer entries, in the order docs/decisions/architecture.md fixes ("Product structure"). */
 enum class Destination(@param:StringRes val labelResource: Int, val icon: ImageVector) {
+    Search(R.string.destination_search, Icons.Filled.Search),
     Home(R.string.destination_home, Icons.Filled.Home),
     Trending(R.string.destination_trending, Icons.Filled.Star),
     Subscriptions(R.string.destination_subscriptions, Icons.Filled.AccountBox),
-    Search(R.string.destination_search, Icons.Filled.Search),
     Library(R.string.destination_library, Icons.AutoMirrored.Filled.List),
     Settings(R.string.destination_settings, Icons.Filled.Settings),
     ;

@@ -13,7 +13,7 @@ import kotlinx.coroutines.flow.map
 /** Home sections, in the default order from docs/decisions/architecture.md ("Product structure"). */
 enum class HomeSection {
     ContinueWatching,
-    BecauseYouWatched,
+    Recommended,
     Mix,
     NewFromSubscriptions,
     TrendingMusic,

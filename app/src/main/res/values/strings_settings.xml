@@ -9,7 +9,7 @@
     <string name="settings_selected_marker">Selected</string>
     <string name="settings_home_sections">Home sections</string>
     <string name="settings_section_continue_watching">Continue watching</string>
-    <string name="settings_section_because_you_watched">Because you watched</string>
+    <string name="settings_section_recommended">Recommended</string>
     <string name="settings_section_mix">Mix</string>
     <string name="settings_section_new_from_subscriptions">New from subscriptions</string>
     <string name="settings_section_trending_music">Trending music</string>

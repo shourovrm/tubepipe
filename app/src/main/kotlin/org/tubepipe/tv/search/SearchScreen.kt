@@ -3,6 +3,7 @@ package org.tubepipe.tv.search
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.focusGroup
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -24,6 +25,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusProperties
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.input.key.Key
@@ -69,6 +73,22 @@ fun SearchScreen(container: AppContainer, navigator: AppNavigator) {
     // toCardModel needs composition (plural strings) but VideoGrid asks for models outside it, so build them here.
     val cardModels = state.results.associate { video -> video.url to video.toCardModel() }
 
+    val resultsFocusRequester = remember { FocusRequester() }
+    val keyboardController = LocalSoftwareKeyboardController.current
+    val isShowingResults = state.submittedQuery != null &&
+        !state.isLoading &&
+        !state.hasError &&
+        state.results.isNotEmpty()
+
+    // Once per submitted query, when its first results arrive: hide the keyboard and put focus on
+    // the first card, so one Enter takes the viewer straight to the top result.
+    LaunchedEffect(state.submittedQuery, isShowingResults) {
+        if (isShowingResults) {
+            keyboardController?.hide()
+            resultsFocusRequester.requestFocus()
+        }
+    }
+
     // A query handed over from another screen (a saved search, a Home section) is run once, then cleared.
     LaunchedEffect(Unit) {
         val pendingQuery = navigator.pendingSearchQuery
@@ -93,6 +113,7 @@ fun SearchScreen(container: AppContainer, navigator: AppNavigator) {
                 query = state.query,
                 onQueryChange = viewModel::onQueryChange,
                 onSubmit = { viewModel.submit(state.query) },
+                downFocusTarget = if (isShowingResults) resultsFocusRequester else FocusRequester.Default,
                 modifier = Modifier.weight(1f),
             )
             if (state.submittedQuery != null && state.results.isNotEmpty()) {
@@ -129,15 +150,18 @@ fun SearchScreen(container: AppContainer, navigator: AppNavigator) {
                 message = stringResource(R.string.search_no_results),
                 modifier = bodyModifier,
             )
-            else -> VideoGrid(
-                items = state.results,
-                itemKey = { video -> video.url },
-                cardModel = { video -> cardModels.getValue(video.url) },
-                onItemClick = { video -> navigator.openVideo(video.url) },
-                onItemLongClick = { video -> actionsVideo = video },
-                onNearEnd = if (state.canLoadMore) viewModel::loadMore else null,
-                modifier = bodyModifier,
-            )
+            // The focus group lets the requester land on the grid's first card.
+            else -> Box(modifier = bodyModifier.focusRequester(resultsFocusRequester).focusGroup()) {
+                VideoGrid(
+                    items = state.results,
+                    itemKey = { video -> video.url },
+                    cardModel = { video -> cardModels.getValue(video.url) },
+                    onItemClick = { video -> navigator.openVideo(video.url) },
+                    onItemLongClick = { video -> actionsVideo = video },
+                    onNearEnd = if (state.canLoadMore) viewModel::loadMore else null,
+                    modifier = Modifier.fillMaxSize(),
+                )
+            }
         }
     }
 
@@ -157,6 +181,7 @@ private fun SearchField(
     query: String,
     onQueryChange: (String) -> Unit,
     onSubmit: () -> Unit,
+    downFocusTarget: FocusRequester,
     modifier: Modifier = Modifier,
 ) {
     var isFocused by remember { mutableStateOf(false) }
@@ -173,6 +198,8 @@ private fun SearchField(
         keyboardActions = KeyboardActions(onSearch = { onSubmit() }),
         modifier = modifier
             .onFocusChanged { focusState -> isFocused = focusState.isFocused }
+            // Down goes to the first card explicitly; left to itself it picks whichever card is nearest the wide field, often the second. Default keeps normal search while no results are shown.
+            .focusProperties { down = downFocusTarget }
             // A remote has no tap, so Centre must open the keyboard itself.
             .onPreviewKeyEvent { keyEvent ->
                 val isCentreRelease = keyEvent.key == Key.DirectionCenter && keyEvent.type == KeyEventType.KeyUp

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="home_continue_watching">Continue watching</string>
-    <string name="home_because_you_watched">Because you watched %1$s</string>
+    <string name="home_recommended">Recommended</string>
     <string name="home_mix_for">Mix for %1$s</string>
     <string name="home_new_from_subscriptions">New from subscriptions</string>
     <string name="home_trending_music">Trending music</string>
