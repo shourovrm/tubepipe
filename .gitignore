@@ -1,0 +1,43 @@
+# Gradle
+.gradle/
+build/
+**/build/
+!gradle/wrapper/gradle-wrapper.jar
+.kotlin/
+
+# Android
+local.properties
+*.apk
+*.aab
+*.ap_
+*.dex
+captures/
+lint-report*
+**/lint-results*.xml
+*.hprof
+
+# Signing: keystores and their passwords never enter history
+*.jks
+*.keystore
+keystore.properties
+signing.properties
+
+# IDE
+.idea/
+*.iml
+.vscode/
+.cxx/
+.externalNativeBuild/
+.navigation/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Session-local files (see AGENTS.md "Local-only files")
+.claude/
+sessions/
+
+# Logs and temp
+*.log
+*.tmp
