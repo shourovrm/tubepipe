@@ -129,6 +129,14 @@ class SettingsViewModel(
         viewModelScope.launch { settingsRepository.setHidePaid(enabled) }
     }
 
+    fun setHideSensitiveContent(enabled: Boolean) {
+        viewModelScope.launch { settingsRepository.setHideSensitiveContent(enabled) }
+    }
+
+    fun setHideAdultVideos(enabled: Boolean) {
+        viewModelScope.launch { settingsRepository.setHideAdultVideos(enabled) }
+    }
+
     fun setSponsorBlockShowNotice(enabled: Boolean) {
         viewModelScope.launch { settingsRepository.setSponsorBlockShowNotice(enabled) }
     }

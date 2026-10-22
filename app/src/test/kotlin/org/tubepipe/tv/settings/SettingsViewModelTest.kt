@@ -118,4 +118,18 @@ class SettingsViewModelTest {
         }.settings!!
         assertEquals(VideoQuality.P720, settings.defaultQuality)
     }
+
+    @Test
+    fun parentalSwitchesAreSavedIndependently() = runTest(timeout = 30.seconds) {
+        val viewModel = SettingsViewModel(repository(backgroundScope), displayLocale = Locale.ENGLISH)
+        viewModel.state.first { it.settings != null }
+
+        viewModel.setHideSensitiveContent(true)
+        val sensitiveOnly = viewModel.state.first { it.settings?.hideSensitiveContent == true }.settings!!
+        assertTrue(!sensitiveOnly.hideAdultVideos)
+
+        viewModel.setHideAdultVideos(true)
+        val both = viewModel.state.first { it.settings?.hideAdultVideos == true }.settings!!
+        assertTrue(both.hideSensitiveContent)
+    }
 }

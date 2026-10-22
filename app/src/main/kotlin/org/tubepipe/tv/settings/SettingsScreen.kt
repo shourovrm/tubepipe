@@ -68,7 +68,7 @@ fun SettingsScreen(container: AppContainer, navigator: AppNavigator) {
         SettingsCategory.Captions -> CaptionsPage(settings, viewModel)
         SettingsCategory.SponsorBlock -> SponsorBlockPage(settings, viewModel)
         SettingsCategory.HomeScreen -> HomeScreenPage(settings, viewModel)
-        SettingsCategory.ContentFilters -> ContentFiltersPage(settings, viewModel)
+        SettingsCategory.Parental -> ParentalPage(settings, viewModel)
         SettingsCategory.HistoryAndPrivacy -> HistoryAndPrivacyPage(settings, viewModel, clearActions)
         SettingsCategory.RegionAndEngine -> RegionAndEnginePage(settings, state.countries, viewModel)
         SettingsCategory.About -> AboutPage(versionName)

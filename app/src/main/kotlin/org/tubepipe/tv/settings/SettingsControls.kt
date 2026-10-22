@@ -36,7 +36,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -88,12 +87,6 @@ internal fun <T : Number> steppedChoice(choices: List<T>, current: T, step: Int)
     return choices[targetIndex]
 }
 
-/** The title and explanation the help panel shows while a row has focus. */
-internal class HelpText(val title: String, val body: String)
-
-/** Where a focused row reports its [HelpText]; the page scaffold supplies the real receiver. */
-internal val LocalHelpSink = staticCompositionLocalOf<(HelpText) -> Unit> { {} }
-
 private val RowShape = RoundedCornerShape(6.dp)
 private val FocusRingWidth = 3.dp
 private val RowMinHeight = 48.dp
@@ -106,17 +99,11 @@ private fun Modifier.focusRing(focused: Boolean, shape: Shape): Modifier =
     if (focused) border(FocusRingWidth, TubepipeColors.FocusBorder, shape) else this
 
 /**
- * The shared look of a settings row: dark surface, lighter when focused, with the red ring. It tells the help
- * panel about itself whenever focus lands on the row or on a control inside it. [interaction] carries the
- * focusable behaviour of the row; rows whose chips are the focus targets pass none.
+ * The shared look of a settings row: dark surface, lighter when focused, with the red ring. [interaction] carries
+ * the focusable behaviour of the row; rows whose chips are the focus targets pass none.
  */
 @Composable
-private fun SettingsRowFrame(
-    help: HelpText,
-    interaction: Modifier = Modifier,
-    content: @Composable RowScope.() -> Unit,
-) {
-    val helpSink = LocalHelpSink.current
+private fun SettingsRowFrame(interaction: Modifier = Modifier, content: @Composable RowScope.() -> Unit) {
     var hasFocus by remember { mutableStateOf(false) }
     Row(
         verticalAlignment = Alignment.CenterVertically,
@@ -126,10 +113,7 @@ private fun SettingsRowFrame(
             .heightIn(min = RowMinHeight)
             .background(if (hasFocus) TubepipeColors.SurfaceVariant else TubepipeColors.Surface, RowShape)
             .focusRing(hasFocus, RowShape)
-            .onFocusChanged { focusState ->
-                hasFocus = focusState.hasFocus
-                if (focusState.hasFocus) helpSink(help)
-            }
+            .onFocusChanged { focusState -> hasFocus = focusState.hasFocus }
             .then(interaction)
             .padding(horizontal = 14.dp, vertical = 6.dp),
         content = content,
@@ -165,13 +149,11 @@ private fun RowScope.RowName(name: String, icon: ImageVector?) {
 @Composable
 internal fun SettingsToggleRow(
     name: String,
-    help: HelpText,
     checked: Boolean,
     onCheckedChange: (Boolean) -> Unit,
     icon: ImageVector? = null,
 ) {
     SettingsRowFrame(
-        help = help,
         interaction = Modifier.toggleable(value = checked, role = Role.Switch, onValueChange = onCheckedChange),
     ) {
         RowName(name, icon)
@@ -203,7 +185,6 @@ private fun SwitchTrack(checked: Boolean) {
 @Composable
 internal fun <T : Number> SettingsSliderRow(
     name: String,
-    help: HelpText,
     choices: List<T>,
     current: T,
     valueLabel: String,
@@ -213,7 +194,6 @@ internal fun <T : Number> SettingsSliderRow(
     val shownValue = steppedChoice(choices, current, step = 0)
     val fraction = choices.indexOf(shownValue).toFloat() / (choices.size - 1).coerceAtLeast(1)
     SettingsRowFrame(
-        help = help,
         interaction = Modifier
             .onKeyEvent { keyEvent ->
                 val step = when (keyEvent.key) {
@@ -276,7 +256,6 @@ internal class PickerOption<T>(val value: T, val label: String)
 @Composable
 internal fun <T> SettingsSegmentedRow(
     name: String,
-    help: HelpText,
     options: List<PickerOption<T>>,
     current: T,
     onChosen: (T) -> Unit,
@@ -284,7 +263,7 @@ internal fun <T> SettingsSegmentedRow(
     chipText: (PickerOption<T>) -> String = { option -> option.label },
     chipFontSize: (PickerOption<T>) -> TextUnit = { ChipTextSize },
 ) {
-    SettingsRowFrame(help = help) {
+    SettingsRowFrame {
         RowName(name, icon)
         Row(
             horizontalArrangement = Arrangement.spacedBy(4.dp),
@@ -335,7 +314,6 @@ internal fun ChipButton(
 @Composable
 internal fun <T> SettingsDropdownRow(
     name: String,
-    help: HelpText,
     options: List<PickerOption<T>>,
     current: T,
     onChosen: (T) -> Unit,
@@ -344,7 +322,7 @@ internal fun <T> SettingsDropdownRow(
 ) {
     var isOpen by remember { mutableStateOf(false) }
     val currentLabel = options.firstOrNull { it.value == current }?.label.orEmpty()
-    SettingsRowFrame(help = help, interaction = Modifier.clickable(role = Role.Button) { isOpen = true }) {
+    SettingsRowFrame(interaction = Modifier.clickable(role = Role.Button) { isOpen = true }) {
         RowName(name, icon)
         Row(
             verticalAlignment = Alignment.CenterVertically,
@@ -383,13 +361,12 @@ internal fun <T> SettingsDropdownRow(
 @Composable
 internal fun SettingsConfirmActionRow(
     name: String,
-    help: HelpText,
     confirmMessage: String,
     confirmLabel: String,
     onConfirm: () -> Unit,
 ) {
     var isConfirming by remember { mutableStateOf(false) }
-    SettingsRowFrame(help = help, interaction = Modifier.clickable(role = Role.Button) { isConfirming = true }) {
+    SettingsRowFrame(interaction = Modifier.clickable(role = Role.Button) { isConfirming = true }) {
         RowName(name, icon = null)
         Text(text = confirmLabel, fontSize = ChipTextSize, color = TubepipeColors.Error, maxLines = 1)
     }
@@ -404,10 +381,10 @@ internal fun SettingsConfirmActionRow(
     }
 }
 
-/** A focusable row that only shows information; focusing it puts its explanation in the help panel. */
+/** A focusable row that only shows information; it holds focus so the list can scroll to it. */
 @Composable
-internal fun SettingsInfoRow(name: String, help: HelpText, value: String? = null) {
-    SettingsRowFrame(help = help, interaction = Modifier.focusable()) {
+internal fun SettingsInfoRow(name: String, value: String? = null) {
+    SettingsRowFrame(interaction = Modifier.focusable()) {
         RowName(name, icon = null)
         if (value != null) {
             Text(text = value, fontSize = ControlTextSize, color = TubepipeColors.OnSurfaceVariant, maxLines = 1)
@@ -591,13 +568,11 @@ private fun PickerSearchField(
 @Composable
 internal fun SettingsToggleChip(
     name: String,
-    help: HelpText,
     dotColor: Color,
     checked: Boolean,
     onCheckedChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val helpSink = LocalHelpSink.current
     var hasFocus by remember { mutableStateOf(false) }
     val shape = RoundedCornerShape(6.dp)
     Row(
@@ -607,10 +582,7 @@ internal fun SettingsToggleChip(
             .heightIn(min = 48.dp)
             .background(if (hasFocus) TubepipeColors.SurfaceVariant else TubepipeColors.Surface, shape)
             .focusRing(hasFocus, shape)
-            .onFocusChanged { focusState ->
-                hasFocus = focusState.hasFocus
-                if (focusState.hasFocus) helpSink(help)
-            }
+            .onFocusChanged { focusState -> hasFocus = focusState.hasFocus }
             .toggleable(value = checked, role = Role.Checkbox, onValueChange = onCheckedChange)
             .padding(horizontal = 7.dp, vertical = 4.dp),
     ) {
@@ -641,13 +613,8 @@ internal fun SettingsToggleChip(
 
 /** A row with a name and a few chip buttons on the right. Each chip is a focus target; the row only lights up. */
 @Composable
-internal fun SettingsChipsRow(
-    name: String,
-    help: HelpText,
-    dimmed: Boolean = false,
-    chips: @Composable RowScope.() -> Unit,
-) {
-    SettingsRowFrame(help = help) {
+internal fun SettingsChipsRow(name: String, dimmed: Boolean = false, chips: @Composable RowScope.() -> Unit) {
+    SettingsRowFrame {
         Text(
             text = name,
             fontSize = ControlTextSize,
