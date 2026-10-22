@@ -38,28 +38,28 @@ import org.tubepipe.core.service.kiosk.YoutubeTrendingMusicLinkHandlerFactory
 class YoutubeContentRepository(private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO) : ContentRepository {
     private val youtube = ServiceList.YouTube
 
-    override suspend fun search(query: String): ContentPage<VideoItem> = withContext(ioDispatcher) {
+    override suspend fun search(query: String): ContentPage<VideoItem> = extracting("search", query) {
         val searchInfo = SearchInfo.getInfo(youtube, videoSearchHandlerFor(query))
         videoPageOf(searchInfo.relatedItems, searchInfo.nextPage)
     }
 
     override suspend fun searchMore(query: String, cursor: PageCursor): ContentPage<VideoItem> =
-        withContext(ioDispatcher) {
+        extracting("searchMore", query) {
             val page = SearchInfo.getMoreItems(youtube, videoSearchHandlerFor(query), cursor.page)
             videoPageOf(page.items, page.nextPage)
         }
 
-    override suspend fun searchSuggestions(query: String): List<String> = withContext(ioDispatcher) {
+    override suspend fun searchSuggestions(query: String): List<String> = extracting("searchSuggestions", query) {
         youtube.suggestionExtractor.suggestionList(query)
     }
 
-    override suspend fun trending(kind: TrendingKind): List<VideoItem> = withContext(ioDispatcher) {
+    override suspend fun trending(kind: TrendingKind): List<VideoItem> = extracting("trending", kind) {
         val extractor = trendingExtractorFor(kind)
         extractor.fetchPage()
         extractor.initialPage.items.map { it.toVideoItem() }
     }
 
-    override suspend fun videoDetails(url: String): VideoDetails = withContext(ioDispatcher) {
+    override suspend fun videoDetails(url: String): VideoDetails = extracting("videoDetails", url) {
         val streamInfo = StreamInfo.getInfo(youtube, url)
         VideoDetails(
             video = streamInfo.toVideoItem(),
@@ -70,14 +70,14 @@ class YoutubeContentRepository(private val ioDispatcher: CoroutineDispatcher = D
         )
     }
 
-    override suspend fun mix(videoUrl: String): List<VideoItem> = withContext(ioDispatcher) {
+    override suspend fun mix(videoUrl: String): List<VideoItem> = extracting("mix", videoUrl) {
         // A YouTube Mix is the playlist "RD" + video id, opened on the seed video.
         val videoId = youtube.streamLHFactory.getId(videoUrl)
         val mixUrl = "https://www.youtube.com/watch?v=$videoId&list=RD$videoId"
         PlaylistInfo.getInfo(youtube, mixUrl).relatedItems.toVideoItems()
     }
 
-    override suspend fun channel(url: String): ChannelPage = withContext(ioDispatcher) {
+    override suspend fun channel(url: String): ChannelPage = extracting("channel", url) {
         val channelInfo = ChannelInfo.getInfo(youtube, url)
         ChannelPage(
             channel = ChannelSummary(
@@ -91,7 +91,7 @@ class YoutubeContentRepository(private val ioDispatcher: CoroutineDispatcher = D
     }
 
     override suspend fun channelVideosMore(url: String, cursor: PageCursor): ContentPage<VideoItem> =
-        withContext(ioDispatcher) {
+        extracting("channelVideosMore", url) {
             val page = ChannelInfo.getMoreItems(youtube, url, cursor.page)
             videoPageOf(page.items, page.nextPage)
         }
@@ -166,5 +166,17 @@ class YoutubeContentRepository(private val ioDispatcher: CoroutineDispatcher = D
     private companion object {
         const val MAX_CONCURRENT_CHANNEL_FETCHES = 4
         val logger: Logger = Logger.getLogger(YoutubeContentRepository::class.java.name)
+    }
+
+    /**
+     * Runs one extractor call on [ioDispatcher]. ExtractionException is invisible outside this
+     * module, so it is rethrown as IOException naming the call and its subject.
+     */
+    private suspend fun <T> extracting(operation: String, subject: Any, block: () -> T): T = withContext(ioDispatcher) {
+        try {
+            block()
+        } catch (error: ExtractionException) {
+            throw IOException("YouTube $operation failed for $subject: ${error.message}", error)
+        }
     }
 }
