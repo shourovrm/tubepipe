@@ -38,15 +38,15 @@ import org.tubepipe.core.service.kiosk.YoutubeTrendingMusicLinkHandlerFactory
 class YoutubeContentRepository(private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO) : ContentRepository {
     private val youtube = ServiceList.YouTube
 
-    override suspend fun search(query: String): ContentPage<VideoItem> = extracting("search", query) {
-        val searchInfo = SearchInfo.getInfo(youtube, videoSearchHandlerFor(query))
-        videoPageOf(searchInfo.relatedItems, searchInfo.nextPage)
+    override suspend fun search(query: String): ContentPage<SearchResult> = extracting("search", query) {
+        val searchInfo = SearchInfo.getInfo(youtube, allKindsSearchHandlerFor(query))
+        searchPageOf(searchInfo.relatedItems, searchInfo.nextPage)
     }
 
-    override suspend fun searchMore(query: String, cursor: PageCursor): ContentPage<VideoItem> =
+    override suspend fun searchMore(query: String, cursor: PageCursor): ContentPage<SearchResult> =
         extracting("searchMore", query) {
-            val page = SearchInfo.getMoreItems(youtube, videoSearchHandlerFor(query), cursor.page)
-            videoPageOf(page.items, page.nextPage)
+            val page = SearchInfo.getMoreItems(youtube, allKindsSearchHandlerFor(query), cursor.page)
+            searchPageOf(page.items, page.nextPage)
         }
 
     override suspend fun searchSuggestions(query: String): List<String> = extracting("searchSuggestions", query) {
@@ -102,6 +102,26 @@ class YoutubeContentRepository(private val ioDispatcher: CoroutineDispatcher = D
             videoPageOf(page.items, page.nextPage)
         }
 
+    override suspend fun playlist(url: String): PlaylistPage = extracting("playlist", url) {
+        val playlistInfo = PlaylistInfo.getInfo(youtube, url)
+        PlaylistPage(
+            playlist = PlaylistSummary(
+                url = playlistInfo.url,
+                title = playlistInfo.name,
+                thumbnailUrl = playlistInfo.thumbnailUrl,
+                uploaderName = playlistInfo.uploaderName,
+                videoCount = playlistInfo.streamCount.nullIfNegative(),
+            ),
+            videos = videoPageOf(playlistInfo.relatedItems, playlistInfo.nextPage),
+        )
+    }
+
+    override suspend fun playlistMore(url: String, cursor: PageCursor): ContentPage<VideoItem> =
+        extracting("playlistMore", url) {
+            val page = PlaylistInfo.getMoreItems(youtube, url, cursor.page)
+            videoPageOf(page.items, page.nextPage)
+        }
+
     /** Newest first across all channels. A channel that fails is logged and left out of the feed. */
     override suspend fun latestFromChannels(channelUrls: List<String>): List<VideoItem> = coroutineScope {
         val concurrencyLimit = Semaphore(MAX_CONCURRENT_CHANNEL_FETCHES)
@@ -134,12 +154,12 @@ class YoutubeContentRepository(private val ioDispatcher: CoroutineDispatcher = D
         logger.log(Level.WARNING, "Skipping channel $channelUrl in the subscription feed", failure)
     }
 
-    // YouTube's query handler throws unless a content filter is chosen, so pick the "videos" one.
-    private fun videoSearchHandlerFor(query: String): SearchQueryHandler {
-        val videosFilter = youtube.searchQHFactory.availableContentFilter.filterGroups
+    // YouTube's query handler throws unless a content filter is chosen, so pick "all" (videos, channels, playlists).
+    private fun allKindsSearchHandlerFor(query: String): SearchQueryHandler {
+        val allFilter = youtube.searchQHFactory.availableContentFilter.filterGroups
             .flatMap { group -> group.filterItems.asList() }
-            .first { filterItem -> filterItem.name == YoutubeFilters.VIDEOS }
-        return youtube.searchQHFactory.fromQuery(query, listOf(videosFilter), null)
+            .first { filterItem -> filterItem.name == YoutubeFilters.ALL }
+        return youtube.searchQHFactory.fromQuery(query, listOf(allFilter), null)
     }
 
     private fun trendingExtractorFor(kind: TrendingKind): KioskExtractor<StreamInfoItem> = when (kind) {
@@ -167,7 +187,12 @@ class YoutubeContentRepository(private val ioDispatcher: CoroutineDispatcher = D
         next = nextPage?.let { PageCursor(it) },
     )
 
-    // Search and related lists also hold channels and playlists; the app shows videos only.
+    private fun searchPageOf(items: List<InfoItem>, nextPage: Page?): ContentPage<SearchResult> = ContentPage(
+        items = items.mapNotNull { it.toSearchResultOrNull() },
+        next = nextPage?.let { PageCursor(it) },
+    )
+
+    // Search and related lists also hold channels and playlists; related lists and channel tabs show videos only.
     private fun List<InfoItem>.toVideoItems(): List<VideoItem> =
         filterIsInstance<StreamInfoItem>().map { it.toVideoItem() }
 

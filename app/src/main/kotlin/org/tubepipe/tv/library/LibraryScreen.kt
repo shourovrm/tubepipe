@@ -1,6 +1,5 @@
 package org.tubepipe.tv.library
 
-import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -42,9 +41,7 @@ import androidx.tv.material3.Text
 import org.tubepipe.core.database.PlaylistEntity
 import org.tubepipe.core.database.SavedSearchEntity
 import org.tubepipe.core.service.VideoItem
-import org.tubepipe.core.ui.component.EmptyView
 import org.tubepipe.core.ui.component.MediaRow
-import org.tubepipe.core.ui.component.VideoGrid
 import org.tubepipe.core.ui.theme.TubepipeColors
 import org.tubepipe.core.ui.theme.TubepipeSpacing
 import org.tubepipe.tv.AppContainer
@@ -52,6 +49,7 @@ import org.tubepipe.tv.R
 import org.tubepipe.tv.common.VideoActionsDialog
 import org.tubepipe.tv.common.toCardModel
 import org.tubepipe.tv.navigation.AppNavigator
+import org.tubepipe.tv.navigation.PlaylistSource
 
 @Composable
 fun LibraryScreen(container: AppContainer, navigator: AppNavigator) {
@@ -65,22 +63,12 @@ fun LibraryScreen(container: AppContainer, navigator: AppNavigator) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     var actionsVideo by remember { mutableStateOf<VideoItem?>(null) }
 
-    val openedPlaylistId = state.openedPlaylistId
-    if (openedPlaylistId != null) {
-        OpenedPlaylist(
-            videos = state.openedPlaylistVideos,
-            onVideoClick = { video -> navigator.openVideo(video.url) },
-            onVideoLongClick = { video -> actionsVideo = video },
-            onBack = viewModel::closePlaylist,
-        )
-    } else {
-        LibrarySections(
-            state = state,
-            viewModel = viewModel,
-            navigator = navigator,
-            onVideoLongClick = { video -> actionsVideo = video },
-        )
-    }
+    LibrarySections(
+        state = state,
+        viewModel = viewModel,
+        navigator = navigator,
+        onVideoLongClick = { video -> actionsVideo = video },
+    )
 
     val selectedVideo = actionsVideo
     if (selectedVideo != null) {
@@ -92,30 +80,6 @@ fun LibraryScreen(container: AppContainer, navigator: AppNavigator) {
             onDismiss = { actionsVideo = null },
         )
     }
-}
-
-@Composable
-private fun OpenedPlaylist(
-    videos: List<VideoItem>,
-    onVideoClick: (VideoItem) -> Unit,
-    onVideoLongClick: (VideoItem) -> Unit,
-    onBack: () -> Unit,
-) {
-    BackHandler(onBack = onBack)
-    if (videos.isEmpty()) {
-        EmptyView(message = stringResource(R.string.library_playlist_empty))
-        return
-    }
-    // toCardModel is @Composable (it formats plurals), so the models are built here, outside the grid's lambdas.
-    val cardModelByUrl = videos.associate { video -> video.url to video.toCardModel() }
-    VideoGrid(
-        items = videos,
-        itemKey = { video -> video.url },
-        cardModel = { video -> cardModelByUrl.getValue(video.url) },
-        onItemClick = onVideoClick,
-        onItemLongClick = onVideoLongClick,
-        modifier = Modifier.fillMaxSize(),
-    )
 }
 
 @Composable
@@ -149,7 +113,7 @@ private fun LibrarySections(
             val isLiked = playlist.id == PlaylistEntity.LIKED_ID
             ListRow(
                 headline = if (isLiked) stringResource(R.string.library_liked_playlist) else playlist.name,
-                onClick = { viewModel.openPlaylist(playlist.id) },
+                onClick = { navigator.openPlaylist(PlaylistSource.Local(playlist.id)) },
                 // Liked is built in, so it has no long-press menu.
                 onLongClick = if (isLiked) null else ({ playlistForDeletion = playlist }),
             )

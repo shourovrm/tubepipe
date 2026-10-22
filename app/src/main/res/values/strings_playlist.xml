@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="playlist_play_all">Play all</string>
+    <string name="playlist_shuffle">Shuffle</string>
+    <string name="playlist_empty">This playlist has no videos.</string>
+    <string name="playlist_local_owner">Your playlist</string>
+    <plurals name="playlist_header_video_count">
+        <item quantity="one">%d video</item>
+        <item quantity="other">%d videos</item>
+    </plurals>
+</resources>

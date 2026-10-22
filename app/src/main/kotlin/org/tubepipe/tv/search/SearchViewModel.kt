@@ -15,14 +15,17 @@ import kotlinx.coroutines.launch
 import org.tubepipe.core.database.SearchDao
 import org.tubepipe.core.service.ContentRepository
 import org.tubepipe.core.service.PageCursor
+import org.tubepipe.core.service.SearchResult
 import org.tubepipe.core.service.VideoItem
+import org.tubepipe.core.service.videoItems
 import org.tubepipe.tv.data.AppSettings
 
 data class SearchState(
     val query: String = "",
     val suggestions: List<String> = emptyList(),
     val recentSearches: List<String> = emptyList(),
-    val results: List<VideoItem> = emptyList(),
+    /** Videos, channels and playlists in the order YouTube returned them. */
+    val items: List<SearchResult> = emptyList(),
     val isLoading: Boolean = false,
     val hasError: Boolean = false,
     val submittedQuery: String? = null,
@@ -30,6 +33,9 @@ data class SearchState(
     val savedQueries: Set<String> = emptySet(),
 ) {
     val isCurrentSearchSaved: Boolean get() = submittedQuery != null && submittedQuery in savedQueries
+
+    /** Only the videos among [items]. */
+    val results: List<VideoItem> get() = items.videoItems()
 }
 
 class SearchViewModel(
@@ -90,7 +96,7 @@ class SearchViewModel(
             it.copy(
                 query = trimmedQuery,
                 suggestions = emptyList(),
-                results = emptyList(),
+                items = emptyList(),
                 isLoading = true,
                 hasError = false,
                 submittedQuery = trimmedQuery,
@@ -121,7 +127,7 @@ class SearchViewModel(
                 val page = content.searchMore(query, cursor)
                 nextPageCursor = page.next
                 mutableState.update {
-                    it.copy(results = it.results + page.items, canLoadMore = page.next != null)
+                    it.copy(items = it.items + page.items, canLoadMore = page.next != null)
                 }
             } catch (failure: IOException) {
                 // Keep the results already shown and the cursor, so a later scroll can try again.
@@ -140,7 +146,7 @@ class SearchViewModel(
             val page = content.search(query)
             nextPageCursor = page.next
             mutableState.update {
-                it.copy(results = page.items, isLoading = false, canLoadMore = page.next != null)
+                it.copy(items = page.items, isLoading = false, canLoadMore = page.next != null)
             }
         } catch (failure: IOException) {
             Log.e(TAG, "Search for \"$query\" failed", failure)
