@@ -22,6 +22,8 @@ dependencies {
     api(libs.compose.ui)
     api(libs.compose.foundation)
     api(libs.tv.material)
+    implementation(libs.coil.compose)
+    implementation(libs.coil.network.okhttp)
     implementation(libs.compose.ui.tooling.preview)
     debugImplementation(libs.compose.ui.tooling)
     testImplementation(libs.junit4)
