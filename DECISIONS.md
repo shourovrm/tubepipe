@@ -7,7 +7,10 @@
 - `docs/design-system.md` — androidtv skeleton plus the PipePipe-derived direction tokens (two reds, black theme).
 
 ## Next
-- Wave 1 (parallel): `:core:service`, `:core:player`, `:core:database`. Wave 2: screens. Then release APK on the box.
+- v0.1.0 release APK built and running on the Mi Box (Home, play one video). Not pushed or tagged yet.
+- Device-untested: seek, Down panel, media keys, Search keyboard, Channel/Library/Settings D-pad walks.
+- Time to play is ~8 s on the box (budget 2 s): prefetch on card dwell and pre-warm the WebView runtime.
+- View models are activity-scoped (no nav library); clear them when a screen leaves the stack.
 
 ## Gotchas (cross-cutting)
 - `~/repos/pipepipe`, `~/repos/smarttube` and `~/repos/newpipe-extractor` are read-only reference checkouts; never edit them.

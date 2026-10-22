@@ -20,3 +20,4 @@
 2026-10-22 | Own release key outside the repo, no Play Store | sideload and GitHub releases need one stable signing key
 2026-10-22 | CI declined for now | user will revisit later
 2026-10-22 | minSdk 24 instead of 23 | DataStore 1.3 requires 24; Android 6 TV boxes are rare
+2026-10-22 | PlaybackRuntime starts on first playback, not in Application | WebView setup must not delay cold start to Home
