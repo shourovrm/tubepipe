@@ -78,8 +78,11 @@ dependencies {
     implementation(libs.coil.compose)
     implementation(libs.coil.network.okhttp)
     implementation(libs.media3.ui.compose)
+    implementation(libs.media3.session)
     testImplementation(libs.junit4)
     testImplementation(libs.coroutines.test)
+    // Real org.json for JVM tests; android.jar only has stubs that throw.
+    testImplementation(libs.org.json)
     testImplementation(libs.robolectric)
     testImplementation(libs.androidx.test.core)
 }
