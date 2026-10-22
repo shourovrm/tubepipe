@@ -34,3 +34,4 @@
 2026-10-22 | Parental: YouTube Restricted Mode cookie (PipePipe's) and an 18+ playback block | user chose these two over a PIN
 2026-10-22 | Settings hub is variant D colour cards, no explanatory text | user choice from four mockups in .design-mockups/round3
 2026-10-22 | Search field owns its TextFieldValue, view model gets each change | async state made the field restart input and close the keyboard
+2026-10-22 | Up on the player's channel chip hides the control overlay | user request

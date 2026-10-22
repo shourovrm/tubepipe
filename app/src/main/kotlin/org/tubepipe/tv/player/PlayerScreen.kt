@@ -182,6 +182,7 @@ private fun PlayerContent(
             coroutineScope.launch { container.settings.setAutoplayNext(enabled) }
         },
         onOpenChannel = { details.video.channelUrl?.let(navigator::openChannel) },
+        onHideControls = { isBarVisible = false },
     )
 
     // The bar stays while paused, so the viewer can read it; it hides 4 s after the last key when playing.

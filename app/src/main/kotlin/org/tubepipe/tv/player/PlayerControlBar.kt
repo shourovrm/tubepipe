@@ -104,6 +104,8 @@ internal class ControlBarActions(
     val onToggleLoop: () -> Unit,
     val onToggleAutoplay: () -> Unit,
     val onOpenChannel: () -> Unit,
+    /** Up on the channel chip, the top of the focus path, hides the whole overlay. */
+    val onHideControls: () -> Unit,
 )
 
 /**
@@ -162,6 +164,7 @@ internal fun PlayerControlBar(
             details = details,
             queue = queue,
             onOpenChannel = actions.onOpenChannel,
+            onHideControls = actions.onHideControls,
             chipFocus = channelChipFocus,
             downTarget = seekBarFocus,
         )
@@ -199,6 +202,7 @@ private fun ChannelLine(
     details: VideoDetails,
     queue: PlaybackQueue?,
     onOpenChannel: () -> Unit,
+    onHideControls: () -> Unit,
     chipFocus: FocusRequester,
     downTarget: FocusRequester,
 ) {
@@ -230,6 +234,12 @@ private fun ChannelLine(
             scale = ClickableSurfaceDefaults.scale(focusedScale = 1.05f),
             border = focusBorder(),
             modifier = Modifier
+                // Nothing lies above the chip, so 2D search would find no target; Up is the hide gesture.
+                .onPreviewKeyEvent { event ->
+                    val isUpPress = event.key == Key.DirectionUp && event.type == KeyEventType.KeyDown
+                    if (isUpPress) onHideControls()
+                    isUpPress
+                }
                 .focusRequester(chipFocus)
                 .focusProperties { down = downTarget },
         ) {
