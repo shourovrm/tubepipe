@@ -6,7 +6,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -24,12 +23,13 @@ import org.tubepipe.core.player.PlayerClient
 import org.tubepipe.core.player.TubepipePlayer
 import org.tubepipe.tv.AppContainer
 import org.tubepipe.tv.navigation.AppNavigator
+import org.tubepipe.tv.navigation.Screen
 
 private const val OVERLAY_POLL_MILLIS = 250L
 private const val SAVE_INTERVAL_MILLIS = 5_000L
 private const val SKIPPED_LABEL_MILLIS = 2_500L
 
-/** The view model of one video; the player screen and the corner window share the instance by its key. */
+/** The view model of one video; the player screen and the channel bar share the instance by its key. */
 @Composable
 internal fun rememberPlayerViewModel(videoUrl: String, container: AppContainer): PlayerViewModel =
     viewModel(key = videoUrl) {
@@ -47,11 +47,22 @@ internal fun rememberPlayerViewModel(videoUrl: String, container: AppContainer):
 /**
  * Lives in the app shell, outside any screen, so playback goes on when the player screen is left: it loads the
  * video, keeps the media session, saves the position, skips SponsorBlock segments and starts the next video.
- * It also draws the corner window while the player is minimised.
+ * It also decides, from the screen stack, whether the video plays full screen, in the channel bar, or not at all.
  */
 @Composable
-fun PlaybackHost(container: AppContainer, navigator: AppNavigator, miniPlayerModifier: Modifier = Modifier) {
+fun PlaybackHost(container: AppContainer, navigator: AppNavigator) {
     val controller = container.playback
+    val screen = navigator.current
+    val isChannelOverPlayer = navigator.isChannelOverPlayer
+    // Leaving the player stops the video, except for the channel page that opens over it. The player screen
+    // itself takes the video back to full screen when it is shown again.
+    LaunchedEffect(screen, isChannelOverPlayer) {
+        when {
+            screen is Screen.Player -> Unit
+            isChannelOverPlayer -> controller.showAsBar()
+            controller.state.value != null -> controller.stop()
+        }
+    }
     val nowPlaying by controller.state.collectAsStateWithLifecycle()
     val currentEngine by controller.engine.collectAsStateWithLifecycle()
     val current = nowPlaying ?: return
@@ -59,9 +70,6 @@ fun PlaybackHost(container: AppContainer, navigator: AppNavigator, miniPlayerMod
     // A new engine (another video, or a retry) starts a fresh session.
     key(engine) {
         PlaybackSession(current.videoUrl, engine, container, navigator)
-        if (current.mode == PlayerMode.Mini) {
-            MiniPlayerWindow(current.videoUrl, engine, container, navigator, miniPlayerModifier)
-        }
     }
 }
 
@@ -76,7 +84,8 @@ private fun PlaybackSession(
     val controller = container.playback
     val viewModel = rememberPlayerViewModel(videoUrl, container)
     val state by viewModel.state.collectAsStateWithLifecycle()
-    val hasDetails = state.details != null
+    // A video hidden by parental controls is never loaded.
+    val hasDetails = state.details != null && !state.isBlockedAsAdult
 
     LaunchedEffect(engine, hasDetails) {
         if (hasDetails && engine.loadState == LoadState.Idle) {
@@ -92,10 +101,10 @@ private fun PlaybackSession(
         }
     }
 
-    // The player screen shows its own error; a minimised player that fails has nobody to show it to.
+    // The player screen shows its own error; a bar that fails has nobody to show it to.
     val hasFailed = state.hasError || engine.loadState == LoadState.Failed
     LaunchedEffect(hasFailed) {
-        if (hasFailed && controller.state.value?.mode == PlayerMode.Mini) {
+        if (hasFailed && controller.state.value?.mode == PlayerMode.Bar) {
             controller.stop()
         }
     }
@@ -118,16 +127,18 @@ private fun PlayerBinding(
 ) {
     val context = LocalContext.current
     val view = LocalView.current
-    val controller = container.playback
     val scope = rememberCoroutineScope()
 
-    fun playNext(nextVideoUrl: String) {
-        if (controller.state.value?.mode == PlayerMode.Mini) {
-            // Nobody is watching full screen, so the next video also starts in the corner.
-            controller.engineFor(nextVideoUrl)
-            controller.minimize()
+    // Runs after the video ended. Only the full-screen player moves on: a bar on a channel page must not pull
+    // the viewer away from the channel they are browsing.
+    fun playAfterEnd() {
+        val screen = navigator.current as? Screen.Player ?: return
+        val queue = screen.queue
+        if (queue != null) {
+            // A playlist plays through even with Autoplay off; the last entry just stops.
+            queue.next()?.let(navigator::playQueue)
         } else {
-            navigator.openVideo(nextVideoUrl)
+            viewModel.videoToAutoplayAfterEnd()?.let(navigator::openVideo)
         }
     }
 
@@ -154,7 +165,7 @@ private fun PlayerBinding(
                 if (playbackState == Player.STATE_ENDED) {
                     viewModel.savePosition(exoPlayer.duration.coerceAtLeast(0L))
                     // Releasing a player from inside its own callback is unsafe, so the switch runs afterwards.
-                    scope.launch { viewModel.videoToAutoplayAfterEnd()?.let(::playNext) }
+                    scope.launch { playAfterEnd() }
                 }
             }
         }

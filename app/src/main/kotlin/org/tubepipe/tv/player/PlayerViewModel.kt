@@ -37,7 +37,11 @@ data class PlayerState(
     val autoplayNext: Boolean = true,
     val showSkipNotice: Boolean = true,
     val captionSize: CaptionSize = CaptionSize.Normal,
-)
+    val hideAdultVideos: Boolean = false,
+) {
+    /** True when parental controls hide this video; the stream is then never loaded. */
+    val isBlockedAsAdult: Boolean get() = hideAdultVideos && details?.isAdultOnly == true
+}
 
 private const val MILLIS_PER_SECOND = 1_000L
 
@@ -67,6 +71,7 @@ class PlayerViewModel(
                         autoplayNext = latest.autoplayNext,
                         showSkipNotice = latest.sponsorBlockShowNotice,
                         captionSize = latest.captionSize,
+                        hideAdultVideos = latest.hideAdultVideos,
                     )
                 }
             }
