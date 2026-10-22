@@ -40,3 +40,6 @@
 2026-10-22 | Drawer opens a tab when focus lands on it (250 ms delay), no Centre needed | user request
 2026-10-22 | No login for now | mweb retry gives 1080p logged out; revisit only for bot checks, 18+ or own history (phone code sign-in)
 2026-10-23 | News falls back to the US feed when the country's feed is empty | YouTube returns 200 with no videos where News is not offered
+2026-10-23 | Prefetch dwell 1.15 s, cap 6 a minute, one at a time | user asked for 1.15 s; limits keep traffic near YouTube's own hover previews
+2026-10-23 | Release key tubepipe-release.jks (gitignored), first used for v0.2.1 | a debug-signed public build would force a reinstall when the key changes
+2026-10-23 | Public repo github.com/shourovrm/tubepipe; v0.2.1 is a pre-release | box offline, device check skipped by user choice
