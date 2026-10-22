@@ -310,13 +310,24 @@ private fun SearchField(
             .onFocusChanged { focusState -> isFocused = focusState.isFocused }
             // Down goes to the body's first item explicitly; left to itself it picks whichever card is nearest the wide field, often the second. Default is used while the body has nothing focusable.
             .focusProperties { down = downFocusTarget }
-            // A remote has no tap, so Centre must open the keyboard itself.
             .onPreviewKeyEvent { keyEvent ->
                 val isCentreRelease = keyEvent.key == Key.DirectionCenter && keyEvent.type == KeyEventType.KeyUp
-                if (isCentreRelease) {
-                    keyboardController?.show()
+                val isDownPress = keyEvent.key == Key.DirectionDown && keyEvent.type == KeyEventType.KeyDown
+                when {
+                    // A remote has no tap, so Centre must open the keyboard itself.
+                    isCentreRelease -> {
+                        keyboardController?.show()
+                        true
+                    }
+                    // The text field keeps Down as a cursor move, so focusProperties alone never fired on the
+                    // Mi Box; the move to the list below is made here.
+                    isDownPress && downFocusTarget != FocusRequester.Default -> {
+                        keyboardController?.hide()
+                        downFocusTarget.requestFocus()
+                        true
+                    }
+                    else -> false
                 }
-                isCentreRelease
             },
         decorationBox = { innerTextField ->
             Box(

@@ -51,7 +51,8 @@ fun VideoItem.toCardModel(watchedFraction: Float = 0f): VideoCardModel = VideoCa
     title = title,
     subtitle = videoSubtitle(this),
     thumbnailUrl = thumbnailUrl,
-    durationSeconds = durationSeconds,
+    // Shorts in search results come with a duration of 0; no badge reads better than "0:00".
+    durationSeconds = durationSeconds?.takeIf { it > 0 },
     isLive = isLive,
     watchedFraction = watchedFraction,
 )
