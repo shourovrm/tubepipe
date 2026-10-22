@@ -204,11 +204,12 @@ class YoutubeContentRepository(private val ioDispatcher: CoroutineDispatcher = D
      * Runs one extractor call on [ioDispatcher]. ExtractionException is invisible outside this
      * module, so it is rethrown as IOException naming the call and its subject.
      */
-    private suspend fun <T> extracting(operation: String, subject: Any, block: suspend () -> T): T = withContext(ioDispatcher) {
-        try {
-            block()
-        } catch (error: ExtractionException) {
-            throw IOException("YouTube $operation failed for $subject: ${error.message}", error)
+    private suspend fun <T> extracting(operation: String, subject: Any, block: suspend () -> T): T =
+        withContext(ioDispatcher) {
+            try {
+                block()
+            } catch (error: ExtractionException) {
+                throw IOException("YouTube $operation failed for $subject: ${error.message}", error)
+            }
         }
-    }
 }

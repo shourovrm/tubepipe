@@ -10,9 +10,9 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import org.tubepipe.core.database.TubepipeDatabase
 import org.tubepipe.core.player.PlaybackRuntime
 import org.tubepipe.core.player.PlayerClient
-import org.tubepipe.core.database.TubepipeDatabase
 import org.tubepipe.core.service.ContentRepository
 import org.tubepipe.core.service.StreamInfoCache
 import org.tubepipe.core.service.YoutubeContentRepository

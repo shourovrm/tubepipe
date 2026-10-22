@@ -41,8 +41,7 @@ object StreamInfoCache {
         get(videoUrl, playerClientName)
     }
 
-    fun contains(videoUrl: String, playerClientName: String?): Boolean =
-        cache.contains(Key(videoUrl, playerClientName))
+    fun contains(videoUrl: String, playerClientName: String?): Boolean = cache.contains(Key(videoUrl, playerClientName))
 
     fun invalidate(videoUrl: String, playerClientName: String?) {
         cache.invalidate(Key(videoUrl, playerClientName))

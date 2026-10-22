@@ -203,7 +203,8 @@ private fun PlayerBinding(
             snapshot.positionMillis = position
             snapshot.durationMillis = exoPlayer.duration.takeIf { it != C.TIME_UNSET } ?: 0L
             // Once per video, from the poll that already runs, so the next video starts in about a second.
-            if (!hasPrefetchedNext && exoPlayer.isPlaying &&
+            if (!hasPrefetchedNext &&
+                exoPlayer.isPlaying &&
                 isNextVideoPrefetchDue(position, snapshot.durationMillis)
             ) {
                 hasPrefetchedNext = true
