@@ -36,6 +36,7 @@ fun HomeScreen(container: AppContainer, navigator: AppNavigator) {
             subscriptions = container.database.subscriptionDao(),
             settings = container.settings.settings,
             recommendationStore = FileRecommendationStore(File(context.filesDir, "recommended.json")),
+            rowsMemory = container.homeRowsMemory,
         )
     }
     val state by viewModel.state.collectAsStateWithLifecycle()

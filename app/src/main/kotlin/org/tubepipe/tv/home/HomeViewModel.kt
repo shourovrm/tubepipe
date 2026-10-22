@@ -42,6 +42,11 @@ data class HomeState(
     val hasError: Boolean = false,
 )
 
+/** The rows Home last showed. Held by the app container, which outlives the view model. */
+class HomeRowsMemory {
+    var rows: List<HomeRow> = emptyList()
+}
+
 class HomeViewModel(
     private val content: ContentRepository,
     private val history: HistoryDao,
@@ -50,8 +55,11 @@ class HomeViewModel(
     private val recommendationStore: RecommendationStore,
     private val clock: () -> Long = System::currentTimeMillis,
     private val random: Random = Random.Default,
+    private val rowsMemory: HomeRowsMemory = HomeRowsMemory(),
 ) : ViewModel() {
-    private val mutableState = MutableStateFlow(HomeState())
+    private val mutableState = MutableStateFlow(
+        HomeState(rows = rowsMemory.rows, isLoading = rowsMemory.rows.isEmpty()),
+    )
     val state: StateFlow<HomeState> = mutableState.asStateFlow()
 
     private val refreshCount = MutableStateFlow(0)
@@ -104,6 +112,9 @@ class HomeViewModel(
         val rows = outcomes.flatMap { it.rows }
         val anySourceFailed = outcomes.any { it.hadFailure }
         mutableState.value = HomeState(rows = rows, isLoading = false, hasError = rows.isEmpty() && anySourceFailed)
+        if (rows.isNotEmpty()) {
+            rowsMemory.rows = rows
+        }
     }
 
     /**
