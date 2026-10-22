@@ -9,3 +9,5 @@
 2026-10-22 | Channel page = header + tab strip + grid; Home = reorderable sections | fewest D-pad presses to reach each tab content
 2026-10-22 | Build on JDK 21, override extractor's JDK 25 toolchain | user choice; no toolchain download; extractor compiles on 21
 2026-10-22 | Skip the trending podcasts kiosk | YouTube returns an empty page logged-out; upstream has the same bug
+2026-10-22 | Media3 1.11.1 over ExoPlayer 2.18.7 | spike: 60 s 1080p, 0 rebuffers on Mi Box; Media3 edits in 3 files
+2026-10-22 | PoToken via system WebView, not QuickJS | the WebView path worked in the spike on WebView 138

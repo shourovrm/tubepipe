@@ -2,6 +2,7 @@
 
 ## Topics
 - `docs/decisions/architecture.md` — stack, modules, layering, what is reused from PipePipe and SmartTube.
+- `docs/decisions/player.md` — Media3 SABR port: spike result, what to restore, player gotchas.
 - `docs/design-system.md` — androidtv skeleton plus the PipePipe-derived direction tokens (two reds, black theme).
 
 ## Next

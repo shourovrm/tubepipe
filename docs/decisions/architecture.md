@@ -4,7 +4,7 @@
 Proposed 2026-10-22 from a survey of `~/repos/pipepipe` and `~/repos/smarttube`; not yet confirmed by the user.
 
 Stack: Kotlin 2.3, AGP 9.2, JDK 21 (overrides the JDK 25 toolchain PipePipeExtractor declares), minSdk 23, compileSdk 37, Jetpack Compose for TV
-(`androidx.tv:tv-material` 1.1.0), Media3 ExoPlayer, Room, DataStore, Coil, OkHttp, coroutines + StateFlow, manual DI.
+(`androidx.tv:tv-material` 1.1.0), Media3 ExoPlayer 1.11.1 (spike passed, see `player.md`), Room, DataStore, Coil, OkHttp, coroutines + StateFlow, manual DI.
 
 Reference roles. PipePipe gives the data and playback layers: the extractor (pure Java), `DownloaderImpl` (OkHttp,
 cookies, ReCaptcha), the YouTube playback glue (`player/datasource/Sabr*`, `YoutubeHttpDataSource`, `youtube/*PoToken*`,
@@ -61,9 +61,6 @@ Roborazzi for composable screenshots, the Android TV 1080p AVD for instrumented 
 
 ## Open items
 - User confirms or vetoes the stack; then `settings.gradle.kts`, the five modules and the extractor submodule are created.
-- Spike: port `SabrDashMediaSource`, `SabrSegmentDataSource`, `YoutubeHttpDataSource` to Media3. If it exceeds two days,
-  fall back to ExoPlayer 2.18.7 and copy the glue verbatim.
-- PoToken needs the JS solver asset (`assets/ejs/yt.solver.lib.min.js`) and a JS runtime; decide WebView vs QuickJS.
 - Confirm play-on-select (no separate Video screen; info and Related live under the player).
 - Music has no YouTube Charts data for BD (`UnsupportedContentInCountryException`); pick a BD fallback (plain trending?).
 
