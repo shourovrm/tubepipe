@@ -10,10 +10,12 @@ import androidx.media3.common.util.UnstableApi
 /**
  * Switches an HLS stream with several audio languages to its original-language track.
  * Media3 would otherwise pick the track that matches the device language, which on YouTube is often a dub.
+ * A track in [preferredLanguage] is chosen instead when there is one.
  * Call [reset] before each new media source so the choice is made again for it.
  */
 @OptIn(UnstableApi::class)
-class OriginalAudioTrackSelector(private val player: Player) : Player.Listener {
+class OriginalAudioTrackSelector(private val player: Player, private val preferredLanguage: String? = null) :
+    Player.Listener {
     private var hasChosen = false
 
     fun reset() {
@@ -33,7 +35,7 @@ class OriginalAudioTrackSelector(private val player: Player) : Player.Listener {
             return
         }
         val candidates = audioTracks.map { audioTrack -> audioTrack.toCandidate() }
-        val chosen = audioTracks[AudioTrackChoice.pickIndex(candidates)]
+        val chosen = audioTracks[AudioTrackChoice.pickIndex(candidates, preferredLanguage)]
         if (chosen.isSelected) {
             return
         }

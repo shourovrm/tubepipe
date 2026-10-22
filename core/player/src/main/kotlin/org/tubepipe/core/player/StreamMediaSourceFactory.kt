@@ -42,9 +42,23 @@ class StreamMediaSourceFactory(
     private val context: Context,
     private val maxVideoHeight: Int = MAX_VIDEO_HEIGHT,
     private val preferredCodecPrefix: String = PREFERRED_CODEC_PREFIX,
+    private val preferredAudioLanguage: String? = null,
 ) {
+    /** Builds the video source and side-loads the video's subtitles into it. */
     @Throws(IOException::class)
     fun build(streamInfo: StreamInfo, startPositionMs: Long): BuiltMediaSource {
+        val withoutSubtitles = buildWithoutSubtitles(streamInfo, startPositionMs)
+        // No range or rn parameters: those belong to media segments, not to a plain timed-text download.
+        val subtitleDataSourceFactory = youtubeDataSourceFactory(rangeParameter = false, rnParameter = false)
+        val withSubtitles = SubtitleSources.attach(
+            withoutSubtitles.mediaSource,
+            streamInfo.subtitles,
+            subtitleDataSourceFactory,
+        )
+        return BuiltMediaSource(withSubtitles, withoutSubtitles.delivery)
+    }
+
+    private fun buildWithoutSubtitles(streamInfo: StreamInfo, startPositionMs: Long): BuiltMediaSource {
         val hlsVariants = streamInfo.videoStreams.filter { stream -> stream.deliveryMethod == DeliveryMethod.HLS }
         val sabrVideos = streamInfo.videoOnlyStreams.filter { stream -> isSabrStream(stream) }
         val adaptiveVideos = (streamInfo.videoOnlyStreams + streamInfo.videoStreams).filter { stream ->
@@ -103,7 +117,7 @@ class StreamMediaSourceFactory(
             return BuiltMediaSource(videoSource, delivery)
         }
         val audioStreams = streamInfo.audioStreams.filter { stream -> isDashOrProgressive(stream) }
-        val audioIndex = AudioTrackChoice.pickIndexOfStreams(audioStreams)
+        val audioIndex = AudioTrackChoice.pickIndexOfStreams(audioStreams, preferredAudioLanguage)
         if (audioIndex < 0) {
             throw IOException("Video-only stream chosen but ${streamInfo.url} has no audio stream")
         }
@@ -178,7 +192,7 @@ class StreamMediaSourceFactory(
             val variantOfTrack = variants.first { variant -> variant.audioTrackId == trackId }
             AudioCandidate(trackId, variantOfTrack.audioTrackName, bitrate = 0)
         }
-        val chosenTrackId = trackIds[AudioTrackChoice.pickIndex(tracks)]
+        val chosenTrackId = trackIds[AudioTrackChoice.pickIndex(tracks, preferredAudioLanguage)]
         return variants.filter { variant -> variant.audioTrackId == chosenTrackId }
     }
 
