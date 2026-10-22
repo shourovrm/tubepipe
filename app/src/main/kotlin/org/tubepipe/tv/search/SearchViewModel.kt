@@ -31,6 +31,8 @@ data class SearchState(
     val submittedQuery: String? = null,
     val canLoadMore: Boolean = false,
     val savedQueries: Set<String> = emptySet(),
+    /** Counts every accepted submit (retry included); typing leaves it alone. */
+    val submissionCount: Int = 0,
 ) {
     val isCurrentSearchSaved: Boolean get() = submittedQuery != null && submittedQuery in savedQueries
 
@@ -101,6 +103,7 @@ class SearchViewModel(
                 hasError = false,
                 submittedQuery = trimmedQuery,
                 canLoadMore = false,
+                submissionCount = it.submissionCount + 1,
             )
         }
         searchJob = viewModelScope.launch {

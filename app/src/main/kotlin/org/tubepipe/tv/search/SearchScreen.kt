@@ -20,8 +20,10 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -95,14 +97,17 @@ fun SearchScreen(container: AppContainer, navigator: AppNavigator) {
     val bodyFocusRequester = remember { FocusRequester() }
     val keyboardController = LocalSoftwareKeyboardController.current
     val bodyContent = bodyContentFor(state)
-    val isShowingResults = bodyContent == SearchBodyContent.Results
+    // Saved across Back navigation so returning to results already focused for this submission does not
+    // steal focus again; 0 means none yet, so a fresh screen with results still focuses them.
+    var lastFocusedSubmissionCount by rememberSaveable { mutableIntStateOf(0) }
 
-    // Once per submitted query, when its first results arrive: hide the keyboard and put focus on
-    // the first card, so one Enter takes the viewer straight to the top result.
-    LaunchedEffect(state.submittedQuery, isShowingResults) {
-        if (isShowingResults) {
+    // Once per submission, when its results show: hide the keyboard and put focus on the first card, so one
+    // Enter takes the viewer straight to the top result. Typing alone never changes the submission count.
+    LaunchedEffect(bodyContent, state.submissionCount) {
+        if (shouldMoveFocusToResults(bodyContent, state.submissionCount, lastFocusedSubmissionCount)) {
             keyboardController?.hide()
             bodyFocusRequester.requestFocus()
+            lastFocusedSubmissionCount = state.submissionCount
         }
     }
 
@@ -154,7 +159,7 @@ fun SearchScreen(container: AppContainer, navigator: AppNavigator) {
                 onQueryClick = viewModel::submit,
                 modifier = focusableBodyModifier,
             )
-            SearchBodyContent.Prompt -> EmptyView(
+            SearchBodyContent.Prompt, SearchBodyContent.Typing -> EmptyView(
                 message = stringResource(R.string.search_prompt),
                 modifier = bodyModifier,
             )
@@ -199,30 +204,6 @@ fun SearchScreen(container: AppContainer, navigator: AppNavigator) {
             onOpenChannel = navigator::openChannel,
             onDismiss = { actionsVideo = null },
         )
-    }
-}
-
-/** What the area under the search field shows; decides whether Down from the field has a target. */
-private enum class SearchBodyContent(val hasFocusableItems: Boolean) {
-    Suggestions(true),
-    RecentSearches(true),
-    Prompt(false),
-    Loading(false),
-    Error(false),
-    NoResults(false),
-    Results(true),
-}
-
-private fun bodyContentFor(state: SearchState): SearchBodyContent {
-    val isTypingNewQuery = state.query.isNotBlank() && state.query != state.submittedQuery
-    return when {
-        isTypingNewQuery && state.suggestions.isNotEmpty() -> SearchBodyContent.Suggestions
-        state.query.isBlank() && state.recentSearches.isNotEmpty() -> SearchBodyContent.RecentSearches
-        state.submittedQuery == null -> SearchBodyContent.Prompt
-        state.isLoading -> SearchBodyContent.Loading
-        state.hasError -> SearchBodyContent.Error
-        state.items.isEmpty() -> SearchBodyContent.NoResults
-        else -> SearchBodyContent.Results
     }
 }
 
