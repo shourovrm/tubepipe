@@ -23,8 +23,7 @@ Gradle modules (five; features are packages inside `:app` until build time says 
   extractor on `Dispatchers.IO`, mapping to UI models. Nothing above this module imports `org.schabi.*`.
 - `:core:database` — Room: subscriptions, stream history + resume position, local playlists, search history. Entity
   shapes follow PipePipe so its export JSON imports unchanged.
-- `:core:player` — Media3 player, the PipePipe YouTube data sources ported to Media3, quality resolver, play queue,
-  SponsorBlock skipping, media session for the TV remote.
+- `:core:player` — Media3 player, the PipePipe YouTube data sources ported to Media3, quality resolver, play queue, SponsorBlock skipping, media session for the TV remote.
 
 Speed budget (the user's "slick and quick like PipePipe"), measured on a 2 GB Google TV box, enforced before a release:
 - Cold start to an interactive Home under 1.5 s. No network on the critical path: Home renders from the Room and disk
@@ -40,7 +39,7 @@ DataStore. ViewModels never touch Android views or the extractor directly.
 
 Product structure (decided 2026-10-22 with the user). YouTube only in v1; the extractor's other services stay unwired.
 Drawer, 6 of the 7 allowed slots: Home, Trending, Subscriptions, Search, Library, Settings; the seventh is one pinned
-saved search. Trending is a tab strip over a grid: Music, Movies and shows, Gaming, Podcasts. Home is sections the user
+saved search. Trending is a tab strip over a grid: Music, Movies and shows, Gaming. Home is sections the user
 can reorder or hide in Settings: Continue watching (history with resume), Because you watched X (related items of the
 three most recent seeds), Mix for X (YouTube mix playlists), New from subscriptions (feed extractor), Trending music,
 Trending movies and shows. Library holds History, Playlists, Liked (a built-in local playlist), Saved searches; a saved
@@ -53,8 +52,8 @@ double Back on Home = exit. No Live tab.
 Kiosks: PipePipeExtractor ships only "Recommended Lives". Upstream NewPipeExtractor (`~/repos/newpipe-extractor`,
 commit 405f549, shipped in NewPipe 0.29.1, verified on the user's phone) adds Trending music and Trending movies and
 shows from YouTube Charts (`charts.youtube.com` browse, `FEmusic_analytics_charts_home`, charts `TRENDING_VIDEOS` and
-`TRENDING_MOVIES`), Trending gaming (channel `UCOpNcN46UbXVtpKMrmU4Abg`) and Trending podcasts (`FEpodcasts_destination`).
-Those four kiosk extractors (about 500 lines) are ported into `:core:service`
+`TRENDING_MOVIES`), Trending gaming (channel `UCOpNcN46UbXVtpKMrmU4Abg`) and Trending podcasts (skipped, see below).
+The three kept extractors (spike: about 790 lines with two base classes) are ported into `:core:service`
 as subclasses of PipePipeExtractor's `KioskExtractor`, with `COURSES` added to our channel tab list the same way.
 
 Tooling: ktlint for format and lint, Android Lint with `HardcodedText` at error, JUnit 4 + coroutines-test + Turbine,
@@ -66,7 +65,7 @@ Roborazzi for composable screenshots, the Android TV 1080p AVD for instrumented 
   fall back to ExoPlayer 2.18.7 and copy the glue verbatim.
 - PoToken needs the JS solver asset (`assets/ejs/yt.solver.lib.min.js`) and a JS runtime; decide WebView vs QuickJS.
 - Confirm play-on-select (no separate Video screen; info and Related live under the player).
-- Port the four upstream kiosks and check YouTube Charts availability for the user's country.
+- Music has no YouTube Charts data for BD (`UnsupportedContentInCountryException`); pick a BD fallback (plain trending?).
 
 ## Gotchas
 - The extractor declares a JDK 25 toolchain; we force it to 21 (init script in the spike) with auto-download off. It compiles on 21.
@@ -78,3 +77,4 @@ Roborazzi for composable screenshots, the Android TV 1080p AVD for instrumented 
 - Leanback (androidx.leanback): maintenance mode; SmartTube had to fork it to get modern focus behaviour. Dead.
 - Reusing SmartTube MediaServiceCore: YouTube innertube only, no extractor abstraction. Dead.
 - Hilt: adds a compiler step for one graph with under twenty bindings; manual `AppContainer` first. Revisit at 40+.
+- Trending podcasts kiosk: `FEpodcasts_destination` returns an empty page to logged-out web clients (2026-10-22). Skipped.
