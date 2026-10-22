@@ -9,6 +9,8 @@ Stack, modules and commands are decided in the first session and recorded in `do
 - Setup: `git submodule update --init extractor` then `./gradlew help` (JDK 21; the extractor's JDK 25 toolchain request is overridden to 21, never downloaded)
 - Build: `./gradlew :app:assembleRelease` (R8; signed with `keystore.properties`, else the debug key)
 - Test: `./gradlew test`; instrumented: `./gradlew :app:connectedDebugAndroidTest` (needs the TV emulator or the TV box)
+- Verify (slice, cheap, for workers): `./gradlew :<module>:compileDebugKotlin :<module>:testDebugUnitTest --tests '<TestClass>'` for the one module the slice owns, e.g. `./gradlew :core:player:compileDebugKotlin :core:player:testDebugUnitTest --tests 'org.tubepipe.player.*'`. No lint, no other modules, no connected tests, no release build.
+- Verify (full, main session only): steps 1 to 5 of the pre-push list under CI/CD, once on the merged tree.
 - Lint / format: `./gradlew ktlintCheck lint`; fix formatting with `./gradlew ktlintFormat`
 - Run locally: start the Android TV 1080p AVD (or `adb connect <tv-ip>`), then `./gradlew :app:installRelease && adb shell monkey -p org.tubepipe.tv -c android.intent.category.LEANBACK_LAUNCHER 1`. Test every screen with the D-pad only: `adb shell input keyevent DPAD_DOWN|DPAD_CENTER|BACK`.
 - Release, in order: 1 bump `versionCode`/`versionName` in `app/build.gradle.kts`; 2 `./gradlew :app:assembleRelease` with `keystore.properties` (gitignored); 3 `git tag vN`; 4 `gh release create vN app/build/outputs/apk/release/*.apk --generate-notes`; 5 sideload notes in the release body, F-Droid later.
@@ -53,9 +55,10 @@ Rules:
 Every Agent call names its model; a call without one runs on the main session's model, which is a bug. Tiers: haiku reads and searches, never writes production code; sonnet implements one slice and runs its tests; opus plans, writes tests and reviews. Fable is chosen by the user for the main session only, never a subagent.
 - Before spawning more than one worker, propose the split in at most five lines (slices, files each owns, model, worktree yes/no) and wait for a yes. Procedure: the `fan-out` skill.
 - One worker per slice of disjoint files, each in its own worktree. Concurrency equals the number of disjoint slices, usually 3 or 4.
-- Tests for a slice are written and committed by the main session before its worker starts. The worker runs them plus the format check before reporting, with real output.
+- Tests for a slice are written and committed by the main session before its worker starts. The worker writes its whole slice, then runs the slice verify from Commands once, again only on failure, and reports with real output. It never runs the full verify.
+- A slice that is docs, config or a single file with no new API calls needs no worker build.
 - Serialize true conflicts: same-file edits and the exclusive resources under Commands. Build-tool and git locks self-queue; workers retry once on lock errors.
-- Workers never claim a build passed; the main session builds and verifies the merged tree.
+- Workers never claim a build passed; the main session runs the full verify once on the merged tree.
 - Delegate work that touches three or more files or needs research; do small edits in the main session.
 
 ## Token economy
