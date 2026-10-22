@@ -34,14 +34,17 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.type
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
@@ -126,6 +129,7 @@ internal fun PlayerControlBar(
 ) {
     val openerFocus = remember { ControlList.entries.associateWith { FocusRequester() } }
     val seekBarFocus = remember { FocusRequester() }
+    val channelChipFocus = remember { FocusRequester() }
     var lastOpened by remember { mutableStateOf<ControlList?>(null) }
     LaunchedEffect(openList) {
         if (openList != null) {
@@ -154,7 +158,13 @@ internal fun PlayerControlBar(
             maxLines = 2,
             overflow = TextOverflow.Ellipsis,
         )
-        ChannelLine(details, queue, onOpenChannel = actions.onOpenChannel)
+        ChannelLine(
+            details = details,
+            queue = queue,
+            onOpenChannel = actions.onOpenChannel,
+            chipFocus = channelChipFocus,
+            downTarget = seekBarFocus,
+        )
         SeekRow(
             snapshot = snapshot,
             details = details,
@@ -163,6 +173,7 @@ internal fun PlayerControlBar(
                 requester = seekBarFocus,
                 onSeekBack = actions.onSeekBack,
                 onSeekForward = actions.onSeekForward,
+                upTarget = channelChipFocus,
                 downTarget = playPauseFocus,
             ),
         )
@@ -175,6 +186,7 @@ internal fun PlayerControlBar(
             listOptions = listOptions,
             listKey = listKey,
             playPauseFocus = playPauseFocus,
+            seekBarFocus = seekBarFocus,
             openerFocus = openerFocus,
             onButtonRowFocusChanged = onButtonRowFocusChanged,
             actions = actions,
@@ -183,7 +195,13 @@ internal fun PlayerControlBar(
 }
 
 @Composable
-private fun ChannelLine(details: VideoDetails, queue: PlaybackQueue?, onOpenChannel: () -> Unit) {
+private fun ChannelLine(
+    details: VideoDetails,
+    queue: PlaybackQueue?,
+    onOpenChannel: () -> Unit,
+    chipFocus: FocusRequester,
+    downTarget: FocusRequester,
+) {
     val video = details.video
     val viewsAndAge = listOfNotNull(
         video.viewCount?.let { views ->
@@ -211,6 +229,9 @@ private fun ChannelLine(details: VideoDetails, queue: PlaybackQueue?, onOpenChan
             ),
             scale = ClickableSurfaceDefaults.scale(focusedScale = 1.05f),
             border = focusBorder(),
+            modifier = Modifier
+                .focusRequester(chipFocus)
+                .focusProperties { down = downTarget },
         ) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
@@ -306,6 +327,7 @@ private fun ButtonRow(
     listOptions: List<ListOption>,
     listKey: Any,
     playPauseFocus: FocusRequester,
+    seekBarFocus: FocusRequester,
     openerFocus: Map<ControlList, FocusRequester>,
     onButtonRowFocusChanged: (Boolean) -> Unit,
     actions: ControlBarActions,
@@ -325,7 +347,20 @@ private fun ButtonRow(
         verticalAlignment = Alignment.Top,
         // Thirteen buttons must fit the 844 dp between the safe margins of a 960 dp screen.
         horizontalArrangement = Arrangement.spacedBy(ButtonRowGap),
-        modifier = Modifier.fillMaxWidth().onFocusChanged { onButtonRowFocusChanged(it.hasFocus) },
+        modifier = Modifier
+            .fillMaxWidth()
+            .onFocusChanged { onButtonRowFocusChanged(it.hasFocus) }
+            // On the Mi Box the default search never picked the seek bar above the buttons, so Up is explicit.
+            // An open option list sits inside this row and needs Up for itself.
+            .onPreviewKeyEvent { event ->
+                val isUpPress = event.key == Key.DirectionUp && event.type == KeyEventType.KeyDown
+                if (isUpPress && openList == null) {
+                    seekBarFocus.requestFocus()
+                    true
+                } else {
+                    false
+                }
+            },
     ) {
         RoundControl(stringResource(R.string.player_previous), SmallButtonSize, actions.onPrevious) {
             ButtonIcon(PlayerIcons.SkipPrevious)

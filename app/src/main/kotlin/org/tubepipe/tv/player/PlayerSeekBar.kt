@@ -41,11 +41,15 @@ internal fun segmentColor(category: String): Color = when (category) {
     else -> Color.White
 }
 
-/** Left and Right seeks, Down hands focus on; Up is left to the focus search, which finds the channel chip. */
+/**
+ * Left and Right seek; Up and Down hand focus on explicitly, because on the Mi Box the default search between
+ * the bar's rows found nothing and focus stayed put.
+ */
 internal class SeekBarFocus(
     val requester: FocusRequester,
     val onSeekBack: () -> Unit,
     val onSeekForward: () -> Unit,
+    val upTarget: FocusRequester,
     val downTarget: FocusRequester,
 )
 
@@ -66,9 +70,7 @@ internal fun PlayerSeekBar(
         Modifier
     } else {
         Modifier
-            .focusRequester(focus.requester)
-            .onFocusChanged { isFocused = it.isFocused }
-            .focusable()
+            // Key handlers only see events for a focus target that comes after them in the chain.
             .onKeyEvent { event ->
                 if (event.type != KeyEventType.KeyDown) {
                     return@onKeyEvent false
@@ -76,11 +78,15 @@ internal fun PlayerSeekBar(
                 when (event.key) {
                     Key.DirectionLeft -> focus.onSeekBack()
                     Key.DirectionRight -> focus.onSeekForward()
+                    Key.DirectionUp -> focus.upTarget.requestFocus()
                     Key.DirectionDown -> focus.downTarget.requestFocus()
                     else -> return@onKeyEvent false
                 }
                 true
             }
+            .focusRequester(focus.requester)
+            .onFocusChanged { isFocused = it.isFocused }
+            .focusable()
     }
     Canvas(modifier = modifier.then(focusModifier).fillMaxWidth().height(FocusedThumbRadius * 2)) {
         val trackHeightPx = (if (isFocused) FocusedTrackHeight else TrackHeight).toPx()
