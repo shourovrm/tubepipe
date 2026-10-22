@@ -24,7 +24,7 @@ class LiveYoutubeSmokeTest {
     fun searchReturnsVideos() = runTest(timeout = 60.seconds) {
         val page = repository.search("never gonna give you up")
         assertTrue("search returned ${page.items.size} videos", page.items.size >= 5)
-        assertTrue(page.items.all { it.url.isNotBlank() && it.title.isNotBlank() })
+        assertTrue(page.items.videoItems().all { it.url.isNotBlank() && it.title.isNotBlank() })
 
         val nextPage = repository.searchMore("never gonna give you up", page.next!!)
         assertTrue("second page returned ${nextPage.items.size} videos", nextPage.items.isNotEmpty())

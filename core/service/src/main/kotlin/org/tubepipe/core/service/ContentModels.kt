@@ -38,6 +38,29 @@ data class VideoDetails(
 
 data class ChannelSummary(val url: String, val name: String, val avatarUrl: String?, val subscriberCount: Long?)
 
+data class PlaylistSummary(
+    val url: String,
+    val title: String,
+    val thumbnailUrl: String?,
+    val uploaderName: String?,
+    /** Null when YouTube does not say how many videos the playlist has. */
+    val videoCount: Long?,
+)
+
+/** One row of search results; YouTube mixes the three kinds in one list. */
+sealed interface SearchResult {
+    data class Video(val video: VideoItem) : SearchResult
+
+    data class Channel(val channel: ChannelSummary) : SearchResult
+
+    data class Playlist(val playlist: PlaylistSummary) : SearchResult
+}
+
+/** The videos among [this], in order; filters and the player queue only deal with videos. */
+fun List<SearchResult>.videoItems(): List<VideoItem> = filterIsInstance<SearchResult.Video>().map { it.video }
+
+data class PlaylistPage(val playlist: PlaylistSummary, val videos: ContentPage<VideoItem>)
+
 data class ChannelPage(val channel: ChannelSummary, val videos: ContentPage<VideoItem>)
 
 data class ContentPage<T>(val items: List<T>, val next: PageCursor?)

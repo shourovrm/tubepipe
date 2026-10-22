@@ -6,7 +6,11 @@
     <string name="search_suggestions_title">Suggestions</string>
     <string name="search_save">Save search</string>
     <string name="search_saved">Saved</string>
-    <string name="search_no_results">No videos found for this search.</string>
+    <string name="search_no_results">Nothing found for this search.</string>
     <string name="search_save_title">Save this search?</string>
     <string name="search_save_message">\"%1$s\" will appear under Saved searches in the Library.</string>
+    <plurals name="search_playlist_video_count">
+        <item quantity="one">%s video</item>
+        <item quantity="other">%s videos</item>
+    </plurals>
 </resources>

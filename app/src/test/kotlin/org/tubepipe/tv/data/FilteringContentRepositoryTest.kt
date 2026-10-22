@@ -5,6 +5,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Test
 import org.tubepipe.core.service.TrendingKind
 import org.tubepipe.core.service.VideoItem
+import org.tubepipe.core.service.videoItems
 import org.tubepipe.tv.testing.FakeContentRepository
 import org.tubepipe.tv.testing.testSettings
 import org.tubepipe.tv.testing.video
@@ -35,7 +36,7 @@ class FilteringContentRepositoryTest {
         }
         val filtering = FilteringContentRepository(content, settings)
 
-        assertEquals(titles(listOf(normal)), titles(filtering.search("q").items))
+        assertEquals(titles(listOf(normal)), titles(filtering.search("q").items.videoItems()))
         assertEquals(titles(listOf(normal)), titles(filtering.trending(TrendingKind.Gaming)))
         assertEquals(titles(listOf(normal)), titles(filtering.mix(normal.url)))
         assertEquals(titles(listOf(normal)), titles(filtering.latestFromChannels(listOf("x"))))
@@ -55,7 +56,7 @@ class FilteringContentRepositoryTest {
 
         assertEquals(
             titles(listOf(normal, upcoming, membersOnly)),
-            titles(FilteringContentRepository(content, settings).search("q").items),
+            titles(FilteringContentRepository(content, settings).search("q").items.videoItems()),
         )
     }
 
@@ -66,7 +67,10 @@ class FilteringContentRepositoryTest {
                 value.copy(hideShorts = false, hideUpcoming = false, hidePaid = false)
         }
 
-        assertEquals(titles(mixed), titles(FilteringContentRepository(content, settings).search("q").items))
+        assertEquals(
+            titles(mixed),
+            titles(FilteringContentRepository(content, settings).search("q").items.videoItems()),
+        )
     }
 
     @Test

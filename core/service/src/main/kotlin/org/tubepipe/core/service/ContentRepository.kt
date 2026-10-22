@@ -2,9 +2,9 @@ package org.tubepipe.core.service
 
 /** YouTube content as plain models; screens depend on this so their tests can use a fake. */
 interface ContentRepository {
-    suspend fun search(query: String): ContentPage<VideoItem>
+    suspend fun search(query: String): ContentPage<SearchResult>
 
-    suspend fun searchMore(query: String, cursor: PageCursor): ContentPage<VideoItem>
+    suspend fun searchMore(query: String, cursor: PageCursor): ContentPage<SearchResult>
 
     suspend fun searchSuggestions(query: String): List<String>
 
@@ -18,6 +18,11 @@ interface ContentRepository {
     suspend fun channel(url: String): ChannelPage
 
     suspend fun channelVideosMore(url: String, cursor: PageCursor): ContentPage<VideoItem>
+
+    /** A YouTube playlist's header and first page of videos. */
+    suspend fun playlist(url: String): PlaylistPage
+
+    suspend fun playlistMore(url: String, cursor: PageCursor): ContentPage<VideoItem>
 
     suspend fun latestFromChannels(channelUrls: List<String>): List<VideoItem>
 }

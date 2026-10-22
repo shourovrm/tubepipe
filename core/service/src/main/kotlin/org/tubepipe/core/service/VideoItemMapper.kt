@@ -1,7 +1,10 @@
 package org.tubepipe.core.service
 
 import java.time.OffsetDateTime
+import org.schabi.newpipe.extractor.InfoItem
+import org.schabi.newpipe.extractor.channel.ChannelInfoItem
 import org.schabi.newpipe.extractor.localization.DateWrapper
+import org.schabi.newpipe.extractor.playlist.PlaylistInfoItem
 import org.schabi.newpipe.extractor.stream.StreamInfo
 import org.schabi.newpipe.extractor.stream.StreamInfoItem
 import org.schabi.newpipe.extractor.stream.StreamType
@@ -32,6 +35,29 @@ internal fun StreamInfo.toVideoItem(): VideoItem = VideoItem(
     uploadedText = UploadDateText.from(textualUploadDate),
     isLive = streamType.isLive(),
 )
+
+internal fun ChannelInfoItem.toChannelSummary(): ChannelSummary = ChannelSummary(
+    url = url,
+    name = name,
+    avatarUrl = thumbnailUrl,
+    subscriberCount = subscriberCount.nullIfNegative(),
+)
+
+internal fun PlaylistInfoItem.toPlaylistSummary(): PlaylistSummary = PlaylistSummary(
+    url = url,
+    title = name,
+    thumbnailUrl = thumbnailUrl,
+    uploaderName = uploaderName,
+    videoCount = streamCount.nullIfNegative(),
+)
+
+/** Null for item kinds the app has no card for (for example a mix-type shelf entry). */
+internal fun InfoItem.toSearchResultOrNull(): SearchResult? = when (this) {
+    is StreamInfoItem -> SearchResult.Video(toVideoItem())
+    is ChannelInfoItem -> SearchResult.Channel(toChannelSummary())
+    is PlaylistInfoItem -> SearchResult.Playlist(toPlaylistSummary())
+    else -> null
+}
 
 // The extractor reports "unknown" as -1 (and a few other negative markers).
 internal fun Long.nullIfNegative(): Long? = if (this >= 0) this else null

@@ -36,6 +36,7 @@ import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
@@ -48,19 +49,29 @@ import androidx.tv.material3.ListItem
 import androidx.tv.material3.ListItemDefaults
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
+import org.tubepipe.core.service.ChannelSummary
+import org.tubepipe.core.service.PlaylistSummary
+import org.tubepipe.core.service.SearchResult
 import org.tubepipe.core.service.VideoItem
+import org.tubepipe.core.ui.component.ChannelCard
+import org.tubepipe.core.ui.component.ChannelCardModel
+import org.tubepipe.core.ui.component.ContentGrid
 import org.tubepipe.core.ui.component.EmptyView
 import org.tubepipe.core.ui.component.ErrorView
 import org.tubepipe.core.ui.component.LoadingView
-import org.tubepipe.core.ui.component.VideoGrid
+import org.tubepipe.core.ui.component.PlaylistCard
+import org.tubepipe.core.ui.component.PlaylistCardModel
+import org.tubepipe.core.ui.component.VideoCard
 import org.tubepipe.core.ui.theme.TubepipeColors
 import org.tubepipe.core.ui.theme.TubepipeSpacing
 import org.tubepipe.tv.AppContainer
 import org.tubepipe.tv.R
+import org.tubepipe.tv.common.CountFormatting
 import org.tubepipe.tv.common.VideoActionsDialog
 import org.tubepipe.tv.common.toCardModel
 import org.tubepipe.tv.library.ConfirmDialog
 import org.tubepipe.tv.navigation.AppNavigator
+import org.tubepipe.tv.navigation.PlaylistSource
 
 private val SearchFieldShape = RoundedCornerShape(12.dp)
 
@@ -76,22 +87,20 @@ fun SearchScreen(container: AppContainer, navigator: AppNavigator) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     var actionsVideo by remember { mutableStateOf<VideoItem?>(null) }
     var confirmingSave by remember { mutableStateOf(false) }
-    // toCardModel needs composition (plural strings) but VideoGrid asks for models outside it, so build them here.
-    val cardModels = state.results.associate { video -> video.url to video.toCardModel() }
 
-    val resultsFocusRequester = remember { FocusRequester() }
+    // One requester serves whichever list the body shows (suggestions, recent searches or results),
+    // so Down from the field always lands on what is on screen.
+    val bodyFocusRequester = remember { FocusRequester() }
     val keyboardController = LocalSoftwareKeyboardController.current
-    val isShowingResults = state.submittedQuery != null &&
-        !state.isLoading &&
-        !state.hasError &&
-        state.results.isNotEmpty()
+    val bodyContent = bodyContentFor(state)
+    val isShowingResults = bodyContent == SearchBodyContent.Results
 
     // Once per submitted query, when its first results arrive: hide the keyboard and put focus on
     // the first card, so one Enter takes the viewer straight to the top result.
     LaunchedEffect(state.submittedQuery, isShowingResults) {
         if (isShowingResults) {
             keyboardController?.hide()
-            resultsFocusRequester.requestFocus()
+            bodyFocusRequester.requestFocus()
         }
     }
 
@@ -119,54 +128,53 @@ fun SearchScreen(container: AppContainer, navigator: AppNavigator) {
                 query = state.query,
                 onQueryChange = viewModel::onQueryChange,
                 onSubmit = { viewModel.submit(state.query) },
-                downFocusTarget = if (isShowingResults) resultsFocusRequester else FocusRequester.Default,
+                downFocusTarget = if (bodyContent.hasFocusableItems) bodyFocusRequester else FocusRequester.Default,
                 modifier = Modifier.weight(1f),
             )
-            if (state.submittedQuery != null && state.results.isNotEmpty()) {
+            if (state.submittedQuery != null && state.items.isNotEmpty()) {
                 SaveSearchButton(isSaved = state.isCurrentSearchSaved, onClick = { confirmingSave = true })
             }
         }
 
         val bodyModifier = Modifier.weight(1f).fillMaxWidth()
-        val isTypingNewQuery = state.query.isNotBlank() && state.query != state.submittedQuery
-        when {
-            isTypingNewQuery && state.suggestions.isNotEmpty() -> QueryList(
+        // The focus group lets the requester land on the first item of the list or grid.
+        val focusableBodyModifier = bodyModifier.focusRequester(bodyFocusRequester).focusGroup()
+        when (bodyContent) {
+            SearchBodyContent.Suggestions -> QueryList(
                 title = stringResource(R.string.search_suggestions_title),
                 queries = state.suggestions,
                 onQueryClick = viewModel::submit,
-                modifier = bodyModifier,
+                modifier = focusableBodyModifier,
             )
-            state.query.isBlank() && state.recentSearches.isNotEmpty() -> QueryList(
+            SearchBodyContent.RecentSearches -> QueryList(
                 title = stringResource(R.string.search_recent_title),
                 queries = state.recentSearches,
                 onQueryClick = viewModel::submit,
-                modifier = bodyModifier,
+                modifier = focusableBodyModifier,
             )
-            state.submittedQuery == null -> EmptyView(
+            SearchBodyContent.Prompt -> EmptyView(
                 message = stringResource(R.string.search_prompt),
                 modifier = bodyModifier,
             )
-            state.isLoading -> LoadingView(modifier = bodyModifier)
-            state.hasError -> ErrorView(
+            SearchBodyContent.Loading -> LoadingView(modifier = bodyModifier)
+            SearchBodyContent.Error -> ErrorView(
                 message = stringResource(R.string.error_network),
                 onRetry = viewModel::retry,
                 modifier = bodyModifier,
             )
-            state.results.isEmpty() -> EmptyView(
+            SearchBodyContent.NoResults -> EmptyView(
                 message = stringResource(R.string.search_no_results),
                 modifier = bodyModifier,
             )
-            // The focus group lets the requester land on the grid's first card.
-            else -> Box(modifier = bodyModifier.focusRequester(resultsFocusRequester).focusGroup()) {
-                VideoGrid(
-                    items = state.results,
-                    itemKey = { video -> video.url },
-                    cardModel = { video -> cardModels.getValue(video.url) },
-                    onItemClick = { video -> navigator.openVideo(video.url) },
-                    onItemLongClick = { video -> actionsVideo = video },
+            SearchBodyContent.Results -> Box(modifier = focusableBodyModifier) {
+                ContentGrid(
+                    items = state.items,
+                    itemKey = ::searchResultKey,
                     onNearEnd = if (state.canLoadMore) viewModel::loadMore else null,
                     modifier = Modifier.fillMaxSize(),
-                )
+                ) { result ->
+                    SearchResultCard(result = result, navigator = navigator, onVideoLongClick = { actionsVideo = it })
+                }
             }
         }
     }
@@ -192,6 +200,92 @@ fun SearchScreen(container: AppContainer, navigator: AppNavigator) {
     }
 }
 
+/** What the area under the search field shows; decides whether Down from the field has a target. */
+private enum class SearchBodyContent(val hasFocusableItems: Boolean) {
+    Suggestions(true),
+    RecentSearches(true),
+    Prompt(false),
+    Loading(false),
+    Error(false),
+    NoResults(false),
+    Results(true),
+}
+
+private fun bodyContentFor(state: SearchState): SearchBodyContent {
+    val isTypingNewQuery = state.query.isNotBlank() && state.query != state.submittedQuery
+    return when {
+        isTypingNewQuery && state.suggestions.isNotEmpty() -> SearchBodyContent.Suggestions
+        state.query.isBlank() && state.recentSearches.isNotEmpty() -> SearchBodyContent.RecentSearches
+        state.submittedQuery == null -> SearchBodyContent.Prompt
+        state.isLoading -> SearchBodyContent.Loading
+        state.hasError -> SearchBodyContent.Error
+        state.items.isEmpty() -> SearchBodyContent.NoResults
+        else -> SearchBodyContent.Results
+    }
+}
+
+private fun searchResultKey(result: SearchResult): String = when (result) {
+    is SearchResult.Video -> "video:${result.video.url}"
+    is SearchResult.Channel -> "channel:${result.channel.url}"
+    is SearchResult.Playlist -> "playlist:${result.playlist.url}"
+}
+
+@Composable
+private fun SearchResultCard(result: SearchResult, navigator: AppNavigator, onVideoLongClick: (VideoItem) -> Unit) {
+    when (result) {
+        is SearchResult.Video -> VideoCard(
+            model = result.video.toCardModel(),
+            onClick = { navigator.openVideo(result.video.url) },
+            onLongClick = { onVideoLongClick(result.video) },
+        )
+        is SearchResult.Channel -> ChannelCard(
+            model = result.channel.toCardModel(),
+            onClick = { navigator.openChannel(result.channel.url) },
+        )
+        is SearchResult.Playlist -> PlaylistCard(
+            model = result.playlist.toCardModel(),
+            onClick = { navigator.openPlaylist(PlaylistSource.Remote(result.playlist.url)) },
+        )
+    }
+}
+
+@Composable
+private fun ChannelSummary.toCardModel(): ChannelCardModel {
+    val count = subscriberCount
+    return ChannelCardModel(
+        name = name,
+        subtitle = if (count == null) {
+            ""
+        } else {
+            pluralStringResource(
+                R.plurals.channel_subscriber_count,
+                count.coerceAtMost(Int.MAX_VALUE.toLong()).toInt(),
+                CountFormatting.compact(count),
+            )
+        },
+        avatarUrl = avatarUrl,
+    )
+}
+
+@Composable
+private fun PlaylistSummary.toCardModel(): PlaylistCardModel {
+    val count = videoCount
+    return PlaylistCardModel(
+        title = title,
+        subtitle = uploaderName.orEmpty(),
+        thumbnailUrl = thumbnailUrl,
+        badgeText = if (count == null) {
+            null
+        } else {
+            pluralStringResource(
+                R.plurals.search_playlist_video_count,
+                count.coerceAtMost(Int.MAX_VALUE.toLong()).toInt(),
+                CountFormatting.compact(count),
+            )
+        },
+    )
+}
+
 @Composable
 private fun SearchField(
     query: String,
@@ -214,7 +308,7 @@ private fun SearchField(
         keyboardActions = KeyboardActions(onSearch = { onSubmit() }),
         modifier = modifier
             .onFocusChanged { focusState -> isFocused = focusState.isFocused }
-            // Down goes to the first card explicitly; left to itself it picks whichever card is nearest the wide field, often the second. Default keeps normal search while no results are shown.
+            // Down goes to the body's first item explicitly; left to itself it picks whichever card is nearest the wide field, often the second. Default is used while the body has nothing focusable.
             .focusProperties { down = downFocusTarget }
             // A remote has no tap, so Centre must open the keyboard itself.
             .onPreviewKeyEvent { keyEvent ->
