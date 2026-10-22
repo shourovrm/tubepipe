@@ -3,7 +3,7 @@
 ## Current state
 Proposed 2026-10-22 from a survey of `~/repos/pipepipe` and `~/repos/smarttube`; not yet confirmed by the user.
 
-Stack: Kotlin 2.3, AGP 9.2, JDK 25 (PipePipeExtractor's toolchain), minSdk 23, compileSdk 37, Jetpack Compose for TV
+Stack: Kotlin 2.3, AGP 9.2, JDK 21 (overrides the JDK 25 toolchain PipePipeExtractor declares), minSdk 23, compileSdk 37, Jetpack Compose for TV
 (`androidx.tv:tv-material` 1.1.0), Media3 ExoPlayer, Room, DataStore, Coil, OkHttp, coroutines + StateFlow, manual DI.
 
 Reference roles. PipePipe gives the data and playback layers: the extractor (pure Java), `DownloaderImpl` (OkHttp,
@@ -69,7 +69,7 @@ Roborazzi for composable screenshots, the Android TV 1080p AVD for instrumented 
 - Port the four upstream kiosks and check YouTube Charts availability for the user's country.
 
 ## Gotchas
-- The extractor toolchain is JDK 25; the Android build must run on JDK 25 too (AGP 9.2 handles the bytecode).
+- The extractor declares a JDK 25 toolchain; we force it to 21 (init script in the spike) with auto-download off. It compiles on 21.
 - The extractor is blocking Java with OkHttp; every call goes through `withContext(Dispatchers.IO)`.
 - Compose for TV uses `androidx.tv.material3.MaterialTheme`; never mix the phone `material3` theme into the same module.
 - PipePipeClient has `LEANBACK_LAUNCHER` but a phone UI; it is a data-layer reference, not a UI one.

@@ -11,4 +11,4 @@
 
 ## Gotchas (cross-cutting)
 - `~/repos/pipepipe`, `~/repos/smarttube` and `~/repos/newpipe-extractor` are read-only reference checkouts; never edit them.
-- Extractor toolchain is JDK 25; build with JDK 25 or the included build fails.
+- Build on the installed JDK 21; the extractor asks for a JDK 25 toolchain, so override it to 21 and keep toolchain auto-download off.

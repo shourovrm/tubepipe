@@ -7,3 +7,4 @@
 2026-10-22 | YouTube only in v1, drawer Home/Trending/Subscriptions/Search/Library/Settings + 1 pinned saved search, no Live tab | user decision
 2026-10-22 | Port 4 upstream NewPipeExtractor kiosks (music, movies, gaming, podcasts) into :core:service | PipePipeExtractor lacks them; NewPipe 0.29.1 proves they work
 2026-10-22 | Channel page = header + tab strip + grid; Home = reorderable sections | fewest D-pad presses to reach each tab content
+2026-10-22 | Build on JDK 21, override extractor's JDK 25 toolchain | user choice; no toolchain download; extractor compiles on 21

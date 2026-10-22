@@ -6,7 +6,7 @@ Reference checkout, read-only: `~/repos/pipepipe`. Read it with grep and ranges;
 
 ## Commands
 Stack, modules and commands are decided in the first session and recorded in `docs/decisions/architecture.md`; fill these lines then.
-- Setup: `git submodule update --init extractor` then `./gradlew help` (JDK 25 required, matches the extractor toolchain)
+- Setup: `git submodule update --init extractor` then `./gradlew help` (JDK 21; the extractor's JDK 25 toolchain request is overridden to 21, never downloaded)
 - Build: `./gradlew :app:assembleDebug`
 - Test: `./gradlew test`; instrumented: `./gradlew :app:connectedDebugAndroidTest` (needs the TV emulator or the TV box)
 - Lint / format: `./gradlew ktlintCheck lint`; fix formatting with `./gradlew ktlintFormat`
