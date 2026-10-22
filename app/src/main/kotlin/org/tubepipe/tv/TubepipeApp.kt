@@ -3,6 +3,7 @@ package org.tubepipe.tv
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.focusGroup
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -96,7 +97,9 @@ private fun NavigationDrawerScope.DrawerItems(
         modifier = Modifier
             .fillMaxHeight()
             .padding(vertical = TubepipeSpacing.SafeMarginVertical, horizontal = TubepipeSpacing.Grid * 2)
+            // enter only applies to a focus group, so the column must be one.
             .focusProperties { enter = { selectedItemRequester } }
+            .focusGroup()
             .selectableGroup(),
     ) {
         if (miniVideoUrl != null) {
