@@ -7,7 +7,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.key.Key
@@ -34,16 +33,19 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            val navigator = remember { AppNavigator() }
             val container = (application as TubepipeApplication).container
+            val navigator = container.navigator
             TubepipeTheme {
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
                         .background(MaterialTheme.colorScheme.background)
-                        .onPreviewKeyEvent { event -> handleMediaKey(event, container) },
+                        .onPreviewKeyEvent { event ->
+                            handleMediaKey(event, container) ||
+                                handleBackKey(event, container)
+                        },
                 ) {
-                    TubepipeApp(navigator = navigator, onExit = ::finish) { screen ->
+                    TubepipeApp(container = container, onExit = ::finish) { screen ->
                         when (screen) {
                             is Screen.Top -> TopLevelScreen(screen.destination, container, navigator)
                             is Screen.Channel -> ChannelScreen(screen.channelUrl, container, navigator)
@@ -79,6 +81,14 @@ private fun handleMediaKey(event: KeyEvent, container: AppContainer): Boolean {
         else -> false
     }
 }
+
+/**
+ * The first Back moves focus onto the corner window. This runs as a preview handler on the root, above every
+ * screen, because screens such as Channel and Search install their own BackHandler, which would otherwise take
+ * the key before the shell's handler sees it.
+ */
+private fun handleBackKey(event: KeyEvent, container: AppContainer): Boolean =
+    event.type == KeyEventType.KeyDown && event.key == Key.Back && container.miniPlayerFocus.focusOnBack()
 
 @Composable
 private fun TopLevelScreen(destination: Destination, container: AppContainer, navigator: AppNavigator) {
