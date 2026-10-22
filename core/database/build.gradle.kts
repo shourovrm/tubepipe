@@ -28,7 +28,8 @@ room {
 
 dependencies {
     coreLibraryDesugaring(libs.desugar.jdk.libs)
-    implementation(libs.room.runtime)
+    // Callers see RoomDatabase (close, transactions) through TubepipeDatabase.
+    api(libs.room.runtime)
     implementation(libs.room.ktx)
     ksp(libs.room.compiler)
     api(libs.coroutines.core)

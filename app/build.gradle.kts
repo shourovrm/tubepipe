@@ -52,6 +52,10 @@ android {
     buildFeatures {
         compose = true
     }
+    testOptions {
+        // Robolectric needs merged resources (strings, Room) to boot a Context in JVM tests.
+        unitTests.isIncludeAndroidResources = true
+    }
     lint {
         // Every user-facing string goes through strings.xml (AGENTS.md, architecture.md tooling).
         error += "HardcodedText"
@@ -76,4 +80,6 @@ dependencies {
     implementation(libs.media3.ui.compose)
     testImplementation(libs.junit4)
     testImplementation(libs.coroutines.test)
+    testImplementation(libs.robolectric)
+    testImplementation(libs.androidx.test.core)
 }
