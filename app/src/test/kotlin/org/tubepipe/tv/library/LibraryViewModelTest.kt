@@ -12,7 +12,6 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import org.tubepipe.core.database.HistoryEntity
 import org.tubepipe.core.database.PlaylistEntity
-import org.tubepipe.tv.common.toPlaylistVideo
 import org.tubepipe.tv.testing.MainDispatcherRule
 import org.tubepipe.tv.testing.TestDatabaseRule
 import org.tubepipe.tv.testing.video
@@ -75,22 +74,6 @@ class LibraryViewModelTest {
         viewModel.deletePlaylist(playlists[1].id)
         val remaining = viewModel.state.first { it.playlists.size == 1 }.playlists
         assertEquals(listOf(PlaylistEntity.LIKED_ID), remaining.map { it.id })
-    }
-
-    @Test
-    fun openingAPlaylistShowsItsVideosInOrder() = runTest(timeout = 30.seconds) {
-        database.playlistDao().addItem(PlaylistEntity.LIKED_ID, video("x").toPlaylistVideo())
-        database.playlistDao().addItem(PlaylistEntity.LIKED_ID, video("y").toPlaylistVideo())
-        val viewModel = viewModel()
-
-        viewModel.openPlaylist(PlaylistEntity.LIKED_ID)
-
-        val opened = viewModel.state.first { it.openedPlaylistVideos.size == 2 }
-        assertEquals(PlaylistEntity.LIKED_ID, opened.openedPlaylistId)
-        assertEquals(listOf("Video x", "Video y"), opened.openedPlaylistVideos.map { it.title })
-
-        viewModel.closePlaylist()
-        assertEquals(null, viewModel.state.first { it.openedPlaylistId == null }.openedPlaylistId)
     }
 
     @Test

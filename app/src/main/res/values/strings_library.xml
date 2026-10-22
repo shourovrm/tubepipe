@@ -12,7 +12,6 @@
     <string name="library_new_playlist">New playlist</string>
     <string name="library_new_playlist_hint">Playlist name</string>
     <string name="library_create">Create</string>
-    <string name="library_playlist_empty">This playlist has no videos yet. Add some from any video\'s menu.</string>
     <string name="library_delete_playlist">Delete playlist</string>
     <string name="library_saved_searches">Saved searches</string>
     <string name="library_saved_searches_empty">Searches you save appear here.</string>
