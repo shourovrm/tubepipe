@@ -36,6 +36,7 @@
     <string name="player_autoplay_on">Autoplay on</string>
     <string name="player_autoplay_off">Autoplay off</string>
     <string name="bar_video_description">Playing. Press Centre for full screen.</string>
+    <string name="bar_close">Stop and close</string>
     <string name="bar_play">Play</string>
     <string name="bar_pause">Pause</string>
     <string name="bar_full_screen">Open full screen</string>

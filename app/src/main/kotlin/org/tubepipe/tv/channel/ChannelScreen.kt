@@ -44,6 +44,8 @@ import org.tubepipe.tv.common.VideoActionsDialog
 import org.tubepipe.tv.common.toCardModel
 import org.tubepipe.tv.navigation.AppNavigator
 import org.tubepipe.tv.player.PlayerBar
+import org.tubepipe.tv.player.rememberPlayerBarFocus
+import org.tubepipe.tv.player.sendBackToBar
 
 private val AvatarSize = 96.dp
 
@@ -57,7 +59,9 @@ fun ChannelScreen(channelUrl: String, container: AppContainer, navigator: AppNav
     // toCardModel needs composition (plural strings) but VideoGrid asks for models outside it, so build them here.
     val cardModels = state.videos.associate { video -> video.url to video.toCardModel() }
 
-    Column(modifier = Modifier.fillMaxSize()) {
+    val barFocus = rememberPlayerBarFocus()
+
+    Column(modifier = Modifier.fillMaxSize().sendBackToBar(navigator.isChannelOverPlayer, barFocus)) {
         val channel = state.channel
         if (channel != null) {
             ChannelHeader(
@@ -83,9 +87,9 @@ fun ChannelScreen(channelUrl: String, container: AppContainer, navigator: AppNav
                 modifier = Modifier.weight(1f).fillMaxWidth(),
             )
         }
-        // Only a channel opened from the playing video has one; Down from the grid reaches it.
+        // Only a channel opened from the playing video has one; Down from the grid reaches it, and Back lands on it.
         if (navigator.isChannelOverPlayer) {
-            PlayerBar(container, navigator)
+            PlayerBar(container, navigator, barFocus)
         }
     }
 

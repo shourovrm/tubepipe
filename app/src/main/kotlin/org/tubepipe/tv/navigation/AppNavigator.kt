@@ -50,12 +50,21 @@ class AppNavigator(private val clock: () -> Long = System::currentTimeMillis) {
     /** Set by [openSearch]; the Search screen reads it once and clears it. */
     var pendingSearchQuery: String? by mutableStateOf(null)
 
+    /**
+     * The playlist queue whose video was left with Back and keeps playing in a bar on the playlist page below it;
+     * null whenever no such bar exists.
+     */
+    var minimizedQueue: PlaybackQueue? by mutableStateOf(null)
+        private set
+
     fun openDestination(destination: Destination) {
+        minimizedQueue = null
         stack.clear()
         stack.add(Screen.Top(destination))
     }
 
     fun openChannel(channelUrl: String) {
+        minimizedQueue = null
         stack.add(Screen.Channel(channelUrl))
     }
 
@@ -63,7 +72,50 @@ class AppNavigator(private val clock: () -> Long = System::currentTimeMillis) {
     val isChannelOverPlayer: Boolean
         get() = current is Screen.Channel && stack.size >= 2 && stack[stack.lastIndex - 1] is Screen.Player
 
+    /** True while the playing video shows as a bar: over a channel page opened from it, or on its playlist page. */
+    val isBarOverPage: Boolean
+        get() = isChannelOverPlayer || isPlaylistBarVisible
+
+    private val isPlaylistBarVisible: Boolean
+        get() {
+            val queue = minimizedQueue ?: return false
+            val page = current
+            return page is Screen.Playlist && page.source == queue.source
+        }
+
+    /**
+     * Brings the bar's video back to full screen: from a channel page that is Back, from a playlist page the
+     * queue's current video is opened again (the running engine is reused).
+     */
+    fun openBarFullScreen() {
+        val queue = minimizedQueue
+        if (queue != null) {
+            playQueue(queue)
+        } else {
+            back()
+        }
+    }
+
+    /**
+     * Removes the bar after its video was stopped. Under a channel page the player entry goes too, or Back
+     * from the channel would open that video again.
+     */
+    fun closeBar() {
+        if (isChannelOverPlayer) {
+            stack.removeAt(stack.lastIndex - 1)
+        }
+        minimizedQueue = null
+    }
+
+    /** Moves the bar to the next entry of its queue; false when the queue was at its end. */
+    fun advanceMinimizedQueue(): Boolean {
+        val next = minimizedQueue?.next() ?: return false
+        minimizedQueue = next
+        return true
+    }
+
     fun openVideo(videoUrl: String) {
+        minimizedQueue = null
         // Picking a related video replaces the one playing, so Back leaves the player in one step.
         if (current is Screen.Player) {
             stack.removeAt(stack.lastIndex)
@@ -72,11 +124,13 @@ class AppNavigator(private val clock: () -> Long = System::currentTimeMillis) {
     }
 
     fun openPlaylist(source: PlaylistSource) {
+        minimizedQueue = null
         stack.add(Screen.Playlist(source))
     }
 
     /** Plays [queue]'s current video; the next entry replaces the player, so Back still reaches the playlist. */
     fun playQueue(queue: PlaybackQueue) {
+        minimizedQueue = null
         if (current is Screen.Player) {
             stack.removeAt(stack.lastIndex)
         }
@@ -91,13 +145,19 @@ class AppNavigator(private val clock: () -> Long = System::currentTimeMillis) {
     /** Returns false when the app should exit (second Back on Home within the window). */
     fun back(): Boolean {
         val top = stack.last()
-        // A single video ends at Home; only a playlist video goes back to its playlist.
+        // A single video ends at Home; only a playlist video goes back to its playlist, still playing.
         if (top is Screen.Player && top.queue == null) {
             openDestination(Destination.Home)
             return true
         }
         if (stack.size > 1) {
             stack.removeAt(stack.lastIndex)
+            // A playlist video keeps playing in a bar on the playlist page it was started from.
+            val leftQueue = (top as? Screen.Player)?.queue
+            val page = current
+            val isReturningToItsPlaylist =
+                leftQueue != null && page is Screen.Playlist && page.source == leftQueue.source
+            minimizedQueue = if (isReturningToItsPlaylist) leftQueue else null
             return true
         }
         if (top is Screen.Top && top.destination != Destination.Home) {

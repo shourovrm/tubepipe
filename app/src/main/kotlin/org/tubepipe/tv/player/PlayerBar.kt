@@ -1,8 +1,10 @@
 package org.tubepipe.tv.player
 
+import androidx.activity.compose.BackHandler
 import androidx.annotation.OptIn
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.focusGroup
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -16,12 +18,25 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusProperties
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.type
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -50,15 +65,58 @@ private val BarButtonSize = 48.dp
 private val BarRadius = 8.dp
 private val ProgressLineHeight = 3.dp
 
+/** Where the focus is in a [PlayerBar]; the page that shows the bar owns one and sends Back to it. */
+class PlayerBarFocus {
+    /** The bar's centre, the live picture. */
+    val centre = FocusRequester()
+    var hasFocus by mutableStateOf(false)
+}
+
+@Composable
+fun rememberPlayerBarFocus(): PlayerBarFocus = remember { PlayerBarFocus() }
+
 /**
- * The strip along the bottom of a channel page that opened over a playing video: a small live picture, the
- * title with a thin progress line, a Play/Pause button and an "open full screen" button. Centre on the picture
- * or the full-screen button returns to the player; the navigator's Back does the same from the page above.
+ * Makes Back on the page above a bar move focus to the bar's centre first; once focus is in the bar, Back
+ * does its usual page-level job. Handled on the key itself as well as through BackHandler, because on the box
+ * the first Back otherwise only clears focus.
+ */
+@Composable
+fun Modifier.sendBackToBar(isBarShown: Boolean, barFocus: PlayerBarFocus): Modifier {
+    val isEnabled = isBarShown && !barFocus.hasFocus
+    var isBackKeyUpPending by remember { mutableStateOf(false) }
+    BackHandler(enabled = isEnabled) { barFocus.centre.requestFocus() }
+    return onPreviewKeyEvent { event ->
+        val isBackKey = event.key == Key.Back
+        when {
+            isEnabled && isBackKey && event.type == KeyEventType.KeyDown -> {
+                barFocus.centre.requestFocus()
+                isBackKeyUpPending = true
+                true
+            }
+            isBackKey && event.type == KeyEventType.KeyUp && isBackKeyUpPending -> {
+                isBackKeyUpPending = false
+                true
+            }
+            else -> false
+        }
+    }
+}
+
+/**
+ * The strip along the bottom of a page that sits over a playing video (a channel page opened from the video, or
+ * the playlist page its queue came from): a close button, a small live picture, the title with a thin progress
+ * line, a Play/Pause button and an "open full screen" button. Left from the picture reaches the close button,
+ * which stops the video; Centre on the picture or the full-screen button returns to the player.
  * Draws nothing unless the video is in [PlayerMode.Bar].
  */
 @OptIn(UnstableApi::class)
 @Composable
-fun PlayerBar(container: AppContainer, navigator: AppNavigator, modifier: Modifier = Modifier) {
+fun PlayerBar(
+    container: AppContainer,
+    navigator: AppNavigator,
+    barFocus: PlayerBarFocus,
+    modifier: Modifier = Modifier,
+) {
     val controller = container.playback
     val nowPlaying by controller.state.collectAsStateWithLifecycle()
     val engine by controller.engine.collectAsStateWithLifecycle()
@@ -68,12 +126,14 @@ fun PlayerBar(container: AppContainer, navigator: AppNavigator, modifier: Modifi
     val state by viewModel.state.collectAsStateWithLifecycle()
     val snapshot = tubepipeEngine.snapshot
     val videoDescription = stringResource(R.string.bar_video_description)
-    // Back from the channel page pops to the player, which takes the same running engine back to full screen.
-    val openFullScreen = { navigator.back() }
+    val openFullScreen = navigator::openBarFullScreen
+    val closeFocus = remember { FocusRequester() }
 
     Column(
         modifier = modifier
             .fillMaxWidth()
+            .onFocusChanged { focusState -> barFocus.hasFocus = focusState.hasFocus }
+            .focusGroup()
             .background(TubepipeColors.Surface)
             .padding(horizontal = TubepipeSpacing.SafeMarginHorizontal),
     ) {
@@ -82,6 +142,22 @@ fun PlayerBar(container: AppContainer, navigator: AppNavigator, modifier: Modifi
             horizontalArrangement = Arrangement.spacedBy(TubepipeSpacing.Gutter),
             modifier = Modifier.fillMaxWidth().height(BarHeight),
         ) {
+            BarButton(
+                description = stringResource(R.string.bar_close),
+                onClick = {
+                    controller.stop()
+                    navigator.closeBar()
+                },
+                modifier = Modifier
+                    .focusRequester(closeFocus)
+                    .focusProperties { right = barFocus.centre },
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.Close,
+                    contentDescription = null,
+                    modifier = Modifier.size(BarButtonSize / 2),
+                )
+            }
             Surface(
                 onClick = { openFullScreen() },
                 shape = ClickableSurfaceDefaults.shape(RoundedCornerShape(BarRadius)),
@@ -93,6 +169,8 @@ fun PlayerBar(container: AppContainer, navigator: AppNavigator, modifier: Modifi
                 border = barFocusBorder(RoundedCornerShape(BarRadius)),
                 modifier = Modifier
                     .size(width = BarVideoWidth, height = BarVideoHeight)
+                    .focusRequester(barFocus.centre)
+                    .focusProperties { left = closeFocus }
                     .semantics { contentDescription = videoDescription },
             ) {
                 PlayerSurface(
@@ -132,7 +210,12 @@ fun PlayerBar(container: AppContainer, navigator: AppNavigator, modifier: Modifi
 }
 
 @Composable
-private fun BarButton(description: String, onClick: () -> Unit, icon: @Composable () -> Unit) {
+private fun BarButton(
+    description: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    icon: @Composable () -> Unit,
+) {
     Surface(
         onClick = onClick,
         shape = ClickableSurfaceDefaults.shape(CircleShape),
@@ -144,7 +227,7 @@ private fun BarButton(description: String, onClick: () -> Unit, icon: @Composabl
         ),
         scale = ClickableSurfaceDefaults.scale(focusedScale = 1.1f),
         border = barFocusBorder(CircleShape),
-        modifier = Modifier.size(BarButtonSize).semantics { contentDescription = description },
+        modifier = modifier.size(BarButtonSize).semantics { contentDescription = description },
     ) {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { icon() }
     }

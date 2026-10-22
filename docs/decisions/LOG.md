@@ -35,3 +35,4 @@
 2026-10-22 | Settings hub is variant D colour cards, no explanatory text | user choice from four mockups in .design-mockups/round3
 2026-10-22 | Search field owns its TextFieldValue, view model gets each change | async state made the field restart input and close the keyboard
 2026-10-22 | Up on the player's channel chip hides the control overlay | user request
+2026-10-22 | Playlist video Back keeps playing in the shared PlayerBar; bar has X left of centre, Back focuses centre | user request

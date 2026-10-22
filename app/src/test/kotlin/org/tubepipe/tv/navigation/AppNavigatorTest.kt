@@ -64,6 +64,96 @@ class AppNavigatorTest {
     }
 
     @Test
+    fun backFromAPlaylistVideoLeavesItPlayingInABarOnThePlaylist() {
+        val playlist = PlaylistSource.Remote("https://www.youtube.com/playlist?list=P")
+        val playing = queue(index = 1, source = playlist)
+        navigator.openPlaylist(playlist)
+        navigator.playQueue(playing)
+
+        navigator.back()
+
+        assertEquals(playing, navigator.minimizedQueue)
+        assertTrue(navigator.isBarOverPage)
+    }
+
+    @Test
+    fun theFullScreenButtonOfThePlaylistBarOpensTheQueueAgain() {
+        val playlist = PlaylistSource.Local(playlistId = 3)
+        val playing = queue(index = 2, source = playlist)
+        navigator.openPlaylist(playlist)
+        navigator.playQueue(playing)
+        navigator.back()
+
+        navigator.openBarFullScreen()
+
+        assertEquals(Screen.Player(playing.currentUrl, playing), navigator.current)
+        assertEquals(null, navigator.minimizedQueue)
+        navigator.back()
+        assertEquals(playing, navigator.minimizedQueue)
+    }
+
+    @Test
+    fun closingThePlaylistBarRemovesItAndBackLeavesThePlaylist() {
+        val playlist = PlaylistSource.Local(playlistId = 3)
+        navigator.openPlaylist(playlist)
+        navigator.playQueue(queue(index = 0, source = playlist))
+        navigator.back()
+
+        navigator.closeBar()
+
+        assertFalse(navigator.isBarOverPage)
+        assertEquals(Screen.Playlist(playlist), navigator.current)
+    }
+
+    @Test
+    fun leavingThePlaylistPageEndsItsBar() {
+        val playlist = PlaylistSource.Local(playlistId = 3)
+        navigator.openPlaylist(playlist)
+        navigator.playQueue(queue(index = 0, source = playlist))
+        navigator.back()
+
+        navigator.back()
+
+        assertEquals(null, navigator.minimizedQueue)
+        assertFalse(navigator.isBarOverPage)
+    }
+
+    @Test
+    fun theBarMovesToTheNextQueueEntryUntilTheEnd() {
+        val playlist = PlaylistSource.Local(playlistId = 3)
+        navigator.openPlaylist(playlist)
+        navigator.playQueue(queue(index = 1, source = playlist))
+        navigator.back()
+
+        assertTrue(navigator.advanceMinimizedQueue())
+        assertEquals(2, navigator.minimizedQueue?.index)
+        assertFalse(navigator.advanceMinimizedQueue())
+    }
+
+    @Test
+    fun closingTheChannelBarDropsThePlayerBelowTheChannel() {
+        navigator.openVideo("https://www.youtube.com/watch?v=x")
+        navigator.openChannel("https://www.youtube.com/channel/A")
+
+        navigator.closeBar()
+
+        assertFalse(navigator.isBarOverPage)
+        assertEquals(Screen.Channel("https://www.youtube.com/channel/A"), navigator.current)
+        navigator.back()
+        assertEquals(Screen.Top(Destination.Home), navigator.current)
+    }
+
+    @Test
+    fun theFullScreenButtonOfTheChannelBarGoesBackToTheVideo() {
+        navigator.openVideo("https://www.youtube.com/watch?v=x")
+        navigator.openChannel("https://www.youtube.com/channel/A")
+
+        navigator.openBarFullScreen()
+
+        assertEquals(Screen.Player("https://www.youtube.com/watch?v=x"), navigator.current)
+    }
+
+    @Test
     fun theNextQueueEntryReplacesThePlayerSoBackStillReachesThePlaylist() {
         val playlist = PlaylistSource.Local(playlistId = 7)
         navigator.openPlaylist(playlist)
