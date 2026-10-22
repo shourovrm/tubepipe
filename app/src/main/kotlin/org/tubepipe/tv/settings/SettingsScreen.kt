@@ -49,14 +49,8 @@ fun SettingsScreen(container: AppContainer, navigator: AppNavigator) {
         LoadingView()
         return
     }
-    val currentCountryName = state.countries.firstOrNull { it.code == settings.contentCountry }?.name
-        ?: settings.contentCountry
-
     when (openCategory) {
         null -> SettingsHub(
-            settings = settings,
-            countryName = currentCountryName,
-            versionName = versionName,
             restoreFocusTo = lastOpenedCategory,
             onOpen = { category ->
                 lastOpenedCategory = category

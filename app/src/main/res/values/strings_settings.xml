@@ -13,29 +13,6 @@
     <string name="settings_about">About</string>
 
     <!-- Hub summaries -->
-    <string name="settings_summary_separator">" · "</string>
-    <string name="settings_summary_seek">%1$d s seek</string>
-    <string name="settings_summary_autoplay_on">Autoplay on</string>
-    <string name="settings_summary_autoplay_off">Autoplay off</string>
-    <string name="settings_summary_audio_original">Original audio</string>
-    <string name="settings_summary_audio_language">%1$s audio</string>
-    <string name="settings_summary_caption_size">%1$s size</string>
-    <string name="settings_summary_categories">%1$d of %2$d categories</string>
-    <plurals name="settings_summary_home_rows">
-        <item quantity="one">%d row shown</item>
-        <item quantity="other">%d rows shown</item>
-    </plurals>
-    <string name="settings_summary_hiding">Hiding %1$s</string>
-    <string name="settings_summary_hiding_shorts">Shorts</string>
-    <string name="settings_summary_hiding_upcoming">upcoming</string>
-    <string name="settings_summary_hiding_paid">paid</string>
-    <string name="settings_summary_sensitive_hidden">Sensitive hidden</string>
-    <string name="settings_summary_adult_hidden">18+ hidden</string>
-    <string name="settings_summary_history_both">Watch and search history on</string>
-    <string name="settings_summary_history_watch">Watch history on</string>
-    <string name="settings_summary_history_search">Search history on</string>
-    <string name="settings_summary_history_none">History off</string>
-    <string name="settings_summary_about">%1$s %2$s · GPL-3.0</string>
 
     <!-- Shared -->
     <string name="settings_on">On</string>
