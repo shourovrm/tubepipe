@@ -40,6 +40,8 @@ data class HomeState(
     val rows: List<HomeRow> = emptyList(),
     val isLoading: Boolean = true,
     val hasError: Boolean = false,
+    /** True while [rows] already shows the sections that are ready and slower ones are still loading. */
+    val isLoadingMoreSections: Boolean = false,
 )
 
 /** The rows Home last showed. Held by the app container, which outlives the view model. */
@@ -106,15 +108,38 @@ class HomeViewModel(
         // Keep showing the old rows while reloading; a spinner only replaces an empty screen.
         mutableState.update { current -> if (current.rows.isEmpty()) HomeState(isLoading = true) else current }
         showSavedRecommendations(inputs)
-        val outcomes = coroutineScope {
-            inputs.sections.map { section -> async { loadSection(section, inputs) } }.awaitAll()
+        // One slow source (a Mix lookup can take many seconds) must not hold back the rows that are ready, so each
+        // section is shown as it arrives. Until then a section keeps whatever rows it had on screen.
+        val rowsShownBefore = mutableState.value.rows
+        val outcomes = arrayOfNulls<SectionOutcome>(inputs.sections.size)
+        coroutineScope {
+            inputs.sections.forEachIndexed { index, section ->
+                launch {
+                    outcomes[index] = loadSection(section, inputs)
+                    if (outcomes.any { it == null }) {
+                        mutableState.value = HomeState(
+                            rows = rowsSoFar(inputs.sections, outcomes, rowsShownBefore),
+                            isLoading = false,
+                            isLoadingMoreSections = true,
+                        )
+                    }
+                }
+            }
         }
-        val rows = outcomes.flatMap { it.rows }
-        val anySourceFailed = outcomes.any { it.hadFailure }
+        val rows = outcomes.flatMap { it?.rows.orEmpty() }
+        val anySourceFailed = outcomes.any { it?.hadFailure == true }
         mutableState.value = HomeState(rows = rows, isLoading = false, hasError = rows.isEmpty() && anySourceFailed)
         if (rows.isNotEmpty()) {
             rowsMemory.rows = rows
         }
+    }
+
+    private fun rowsSoFar(
+        sections: List<HomeSection>,
+        outcomes: Array<SectionOutcome?>,
+        rowsShownBefore: List<HomeRow>,
+    ): List<HomeRow> = sections.flatMapIndexed { index, section ->
+        outcomes[index]?.rows ?: rowsShownBefore.filter { it.section == section }
     }
 
     /**

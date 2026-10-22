@@ -78,7 +78,8 @@ class HomeViewModelTest {
         random = Random(42),
     )
 
-    private suspend fun HomeViewModel.loaded(): HomeState = state.first { !it.isLoading }
+    // Waits for every section, not the first partial state that shows the fast ones.
+    private suspend fun HomeViewModel.loaded(): HomeState = state.first { !it.isLoading && !it.isLoadingMoreSections }
 
     @Test
     fun rowsFollowTheSettingsOrderAndSkipHiddenSections() = runTest(timeout = 30.seconds) {
@@ -203,6 +204,28 @@ class HomeViewModelTest {
         }
         assertTrue(fresh.rows.isNotEmpty())
         assertTrue("fresh list is saved for the next start", recommendationStore.saved.any { "related-r1" in it.url })
+    }
+
+    @Test
+    fun readySectionsShowWhileASlowOneStillLoads() = runTest(timeout = 30.seconds) {
+        watch(video("r1"), watchedAtMillis = nowMillis - dayMillis)
+        // Recommended needs video details, so holding them back makes it the slow section.
+        val gate = CompletableDeferred<Unit>()
+        content.detailsGate = gate
+        val viewModel = viewModel()
+
+        val early = viewModel.state.first { state -> state.rows.any { it.section == HomeSection.TrendingMovies } }
+
+        assertTrue("more sections are still on their way", early.isLoadingMoreSections)
+        assertFalse(early.rows.any { it.section == HomeSection.Recommended })
+        gate.complete(Unit)
+        val complete = viewModel.loaded()
+        assertTrue(complete.rows.any { it.section == HomeSection.Recommended })
+        assertEquals(
+            "the late row takes its place in the settings order",
+            complete.rows.map { it.section }.distinct(),
+            HomeSection.entries.filter { section -> complete.rows.any { it.section == section } },
+        )
     }
 
     @Test
