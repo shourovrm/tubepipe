@@ -28,3 +28,8 @@
 2026-10-22 | Loop lives on PlaybackController, carries to the next video, off on stop | one state for bar and mini window
 2026-10-22 | Home publishes each section as it loads | one slow Mix lookup held every row back on cold start
 2026-10-22 | AppNavigator lives on AppContainer; MainActivity is singleTask | TV launcher stacked a second activity at Home
+2026-10-22 | Mini player removed; Back from a video stops it and goes Home, except playlist videos | user found the corner window unusable
+2026-10-22 | Channel opened from a video shows the video in a bar; Back returns to it full screen | user request
+2026-10-22 | Search uses the ALL filter (videos, channels, playlists); 0-second durations hide the badge | Shorts shelf items have no duration
+2026-10-22 | Parental: YouTube Restricted Mode cookie (PipePipe's) and an 18+ playback block | user chose these two over a PIN
+2026-10-22 | Settings hub is variant D colour cards, no explanatory text | user choice from four mockups in .design-mockups/round3
