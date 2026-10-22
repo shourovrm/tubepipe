@@ -54,9 +54,14 @@ class YoutubeContentRepository(private val ioDispatcher: CoroutineDispatcher = D
     }
 
     override suspend fun trending(kind: TrendingKind): List<VideoItem> = extracting("trending", kind) {
-        val extractor = trendingExtractorFor(kind)
-        extractor.fetchPage()
-        extractor.initialPage.items.map { it.toVideoItem() }
+        val streamItems = if (kind == TrendingKind.News) {
+            YoutubeNewsFeed.fetch()
+        } else {
+            val extractor = trendingExtractorFor(kind)
+            extractor.fetchPage()
+            extractor.initialPage.items
+        }
+        streamItems.map { it.toVideoItem() }
     }
 
     override suspend fun videoDetails(url: String): VideoDetails = extracting("videoDetails", url) {
@@ -152,6 +157,8 @@ class YoutubeContentRepository(private val ioDispatcher: CoroutineDispatcher = D
             val linkHandler = YoutubeTrendingGamingVideosLinkHandlerFactory.INSTANCE.fromId(kioskId)
             YoutubeTrendingGamingVideosExtractor(youtube, linkHandler, kioskId)
         }
+        // News is not a kiosk: trending() reads it through YoutubeNewsFeed and never gets here.
+        TrendingKind.News -> throw IllegalArgumentException("News has no kiosk extractor")
     }
 
     private fun videoPageOf(items: List<InfoItem>, nextPage: Page?): ContentPage<VideoItem> = ContentPage(

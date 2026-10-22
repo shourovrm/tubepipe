@@ -4,7 +4,7 @@ import java.util.Locale
 import org.tubepipe.core.service.kiosk.YoutubeChartsBaseKioskExtractor
 
 /** The trending tabs, in the order the UI shows them. */
-enum class TrendingKind { Music, MoviesAndShows, Gaming }
+enum class TrendingKind { Music, MoviesAndShows, Gaming, News }
 
 object TrendingCatalog {
     /** YouTube Charts feeds the Music tab, and it is not offered in every country (not in BD). */
