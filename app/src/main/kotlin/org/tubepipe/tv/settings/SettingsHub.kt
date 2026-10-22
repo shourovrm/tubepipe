@@ -47,7 +47,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.tv.material3.Icon
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
@@ -71,8 +70,8 @@ internal enum class SettingsCategory(@StringRes val titleResource: Int, val icon
 }
 
 private const val TILES_PER_ROW = 3
-private val TileHeight = 176.dp
-private val TileGap = 24.dp
+private val TileHeight = 96.dp
+private val TileGap = 12.dp
 private const val FOCUSED_TILE_SCALE = 1.03f
 
 /**
@@ -97,7 +96,7 @@ internal fun SettingsHub(
     ) {
         Text(
             text = stringResource(R.string.destination_settings),
-            style = MaterialTheme.typography.displaySmall,
+            style = MaterialTheme.typography.headlineMedium,
             color = TubepipeColors.OnSurface,
         )
         SettingsCategory.entries.chunked(TILES_PER_ROW).forEach { rowCategories ->
@@ -128,7 +127,7 @@ internal fun SettingsHub(
 private fun SettingsTile(category: SettingsCategory, summary: String, onClick: () -> Unit, modifier: Modifier) {
     var hasFocus by remember { mutableStateOf(false) }
     val scale by animateFloatAsState(if (hasFocus) FOCUSED_TILE_SCALE else 1f, label = "tile scale")
-    val shape = RoundedCornerShape(16.dp)
+    val shape = RoundedCornerShape(8.dp)
     Box(
         modifier = modifier
             .height(TileHeight)
@@ -140,23 +139,23 @@ private fun SettingsTile(category: SettingsCategory, summary: String, onClick: (
             .then(if (hasFocus) Modifier.border(3.dp, TubepipeColors.FocusBorder, shape) else Modifier)
             .onFocusChanged { hasFocus = it.hasFocus }
             .clickable(role = Role.Button, onClick = onClick)
-            .padding(horizontal = 28.dp, vertical = 24.dp),
+            .padding(horizontal = 14.dp, vertical = 12.dp),
     ) {
         Box(
             contentAlignment = Alignment.Center,
             modifier = Modifier
-                .size(56.dp)
+                .size(28.dp)
                 .align(Alignment.TopStart)
                 .background(
                     if (hasFocus) TubepipeColors.PrimaryContainer else TubepipeColors.SurfaceVariant,
-                    RoundedCornerShape(14.dp),
+                    RoundedCornerShape(7.dp),
                 ),
         ) {
             Icon(
                 imageVector = category.icon,
                 contentDescription = null,
                 tint = TubepipeColors.OnSurface,
-                modifier = Modifier.size(32.dp),
+                modifier = Modifier.size(16.dp),
             )
         }
         Icon(
@@ -164,20 +163,20 @@ private fun SettingsTile(category: SettingsCategory, summary: String, onClick: (
             contentDescription = null,
             tint = TubepipeColors.OnSurfaceVariant,
             modifier = Modifier
-                .size(40.dp)
+                .size(20.dp)
                 .align(Alignment.TopEnd),
         )
         Column(modifier = Modifier.align(Alignment.BottomStart)) {
             Text(
                 text = stringResource(category.titleResource),
-                fontSize = 30.sp,
+                style = MaterialTheme.typography.titleMedium,
                 color = TubepipeColors.OnSurface,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
             Text(
                 text = summary,
-                fontSize = 24.sp,
+                style = MaterialTheme.typography.bodyMedium,
                 color = TubepipeColors.OnSurfaceVariant,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,

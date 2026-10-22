@@ -94,11 +94,11 @@ internal class HelpText(val title: String, val body: String)
 /** Where a focused row reports its [HelpText]; the page scaffold supplies the real receiver. */
 internal val LocalHelpSink = staticCompositionLocalOf<(HelpText) -> Unit> { {} }
 
-private val RowShape = RoundedCornerShape(12.dp)
+private val RowShape = RoundedCornerShape(6.dp)
 private val FocusRingWidth = 3.dp
-private val RowMinHeight = 84.dp
-private val ControlTextSize = 26.sp
-private val ChipTextSize = 24.sp
+private val RowMinHeight = 48.dp
+private val ControlTextSize = 16.sp
+private val ChipTextSize = 14.sp
 private val SwitchOffColor = Color(0xFF444444)
 private val SliderTrackColor = Color(0xFF333333)
 
@@ -120,7 +120,7 @@ private fun SettingsRowFrame(
     var hasFocus by remember { mutableStateOf(false) }
     Row(
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(TubepipeSpacing.Grid * 6),
+        horizontalArrangement = Arrangement.spacedBy(TubepipeSpacing.Grid * 3),
         modifier = Modifier
             .fillMaxWidth()
             .heightIn(min = RowMinHeight)
@@ -131,7 +131,7 @@ private fun SettingsRowFrame(
                 if (focusState.hasFocus) helpSink(help)
             }
             .then(interaction)
-            .padding(horizontal = 28.dp, vertical = 12.dp),
+            .padding(horizontal = 14.dp, vertical = 6.dp),
         content = content,
     )
 }
@@ -140,7 +140,7 @@ private fun SettingsRowFrame(
 private fun RowScope.RowName(name: String, icon: ImageVector?) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(18.dp),
+        horizontalArrangement = Arrangement.spacedBy(9.dp),
         modifier = Modifier.weight(1f),
     ) {
         if (icon != null) {
@@ -148,7 +148,7 @@ private fun RowScope.RowName(name: String, icon: ImageVector?) {
                 imageVector = icon,
                 contentDescription = null,
                 tint = TubepipeColors.OnSurfaceVariant,
-                modifier = Modifier.size(30.dp),
+                modifier = Modifier.size(15.dp),
             )
         }
         Text(
@@ -181,16 +181,16 @@ internal fun SettingsToggleRow(
 
 @Composable
 private fun SwitchTrack(checked: Boolean) {
-    val thumbOffset by animateDpAsState(if (checked) 40.dp else 4.dp, label = "switch thumb")
+    val thumbOffset by animateDpAsState(if (checked) 20.dp else 2.dp, label = "switch thumb")
     Box(
         modifier = Modifier
-            .size(width = 76.dp, height = 40.dp)
-            .background(if (checked) TubepipeColors.Primary else SwitchOffColor, RoundedCornerShape(20.dp)),
+            .size(width = 38.dp, height = 20.dp)
+            .background(if (checked) TubepipeColors.Primary else SwitchOffColor, RoundedCornerShape(10.dp)),
     ) {
         Box(
             modifier = Modifier
-                .offset(x = thumbOffset, y = 4.dp)
-                .size(32.dp)
+                .offset(x = thumbOffset, y = 2.dp)
+                .size(16.dp)
                 .background(if (checked) TubepipeColors.OnPrimary else TubepipeColors.OnSurfaceVariant, CircleShape),
         )
     }
@@ -230,30 +230,30 @@ internal fun <T : Number> SettingsSliderRow(
             .focusable(),
     ) {
         RowName(name, icon)
-        SliderTrack(fraction = fraction, modifier = Modifier.width(300.dp))
+        SliderTrack(fraction = fraction, modifier = Modifier.width(150.dp))
         Text(
             text = valueLabel,
             fontSize = ControlTextSize,
             color = TubepipeColors.OnSurface,
-            modifier = Modifier.width(96.dp),
+            modifier = Modifier.width(48.dp),
         )
     }
 }
 
 @Composable
 private fun SliderTrack(fraction: Float, modifier: Modifier = Modifier) {
-    val knobSize = 26.dp
+    val knobSize = 13.dp
     Box(modifier = modifier.height(knobSize), contentAlignment = Alignment.CenterStart) {
         Box(
             Modifier
                 .fillMaxWidth()
-                .height(6.dp)
+                .height(3.dp)
                 .background(SliderTrackColor, RoundedCornerShape(3.dp)),
         )
         Box(
             Modifier
                 .fillMaxWidth(fraction)
-                .height(6.dp)
+                .height(3.dp)
                 .background(TubepipeColors.Primary, RoundedCornerShape(3.dp)),
         )
         // Two weighted spacers around the knob place it at the fraction without measuring the track width.
@@ -290,7 +290,7 @@ internal fun <T> SettingsSegmentedRow(
             horizontalArrangement = Arrangement.spacedBy(4.dp),
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier
-                .background(TubepipeColors.Background, RoundedCornerShape(28.dp))
+                .background(TubepipeColors.Background, RoundedCornerShape(14.dp))
                 .padding(4.dp),
         ) {
             options.forEach { option ->
@@ -316,16 +316,16 @@ internal fun ChipButton(
     fontSize: TextUnit = ChipTextSize,
 ) {
     var hasFocus by remember { mutableStateOf(false) }
-    val shape = RoundedCornerShape(24.dp)
+    val shape = RoundedCornerShape(12.dp)
     Box(
         contentAlignment = Alignment.Center,
         modifier = modifier
-            .heightIn(min = 48.dp)
+            .heightIn(min = 24.dp)
             .background(if (selected) TubepipeColors.PrimaryContainer else Color.Transparent, shape)
             .focusRing(hasFocus, shape)
             .onFocusChanged { hasFocus = it.hasFocus }
             .clickable(role = Role.Button, onClick = onClick)
-            .padding(horizontal = 20.dp, vertical = 6.dp),
+            .padding(horizontal = 10.dp, vertical = 3.dp),
     ) {
         Text(text = text, fontSize = fontSize, color = TubepipeColors.OnSurface, maxLines = 1)
     }
@@ -349,15 +349,15 @@ internal fun <T> SettingsDropdownRow(
         Row(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier
-                .background(TubepipeColors.Background, RoundedCornerShape(10.dp))
-                .padding(start = 20.dp, end = 10.dp, top = 8.dp, bottom = 8.dp),
+                .background(TubepipeColors.Background, RoundedCornerShape(5.dp))
+                .padding(start = 10.dp, end = 5.dp, top = 4.dp, bottom = 4.dp),
         ) {
             Text(text = currentLabel, fontSize = ChipTextSize, color = TubepipeColors.OnSurface, maxLines = 1)
             Icon(
                 imageVector = Icons.Filled.ArrowDropDown,
                 contentDescription = null,
                 tint = TubepipeColors.OnSurface,
-                modifier = Modifier.size(32.dp),
+                modifier = Modifier.size(16.dp),
             )
         }
     }
@@ -419,9 +419,9 @@ internal fun SettingsInfoRow(name: String, help: HelpText, value: String? = null
 internal fun SettingsGroupLabel(text: String) {
     Text(
         text = text,
-        fontSize = 24.sp,
+        fontSize = 14.sp,
         color = TubepipeColors.FocusBorder,
-        modifier = Modifier.padding(start = 8.dp, top = 18.dp, bottom = 4.dp),
+        modifier = Modifier.padding(start = 4.dp, top = 9.dp, bottom = 4.dp),
     )
 }
 
@@ -454,8 +454,8 @@ private fun <T> PickerDialog(
         Column(
             modifier = Modifier
                 .width(480.dp)
-                .heightIn(max = 560.dp)
-                .background(TubepipeColors.SurfaceVariant, RoundedCornerShape(12.dp))
+                .heightIn(max = 440.dp)
+                .background(TubepipeColors.SurfaceVariant, RoundedCornerShape(6.dp))
                 .padding(TubepipeSpacing.Grid * 4),
         ) {
             Text(
@@ -542,7 +542,7 @@ private fun PickerSearchField(
 ) {
     var isFocused by remember { mutableStateOf(false) }
     val keyboardController = LocalSoftwareKeyboardController.current
-    val shape = RoundedCornerShape(10.dp)
+    val shape = RoundedCornerShape(5.dp)
     BasicTextField(
         value = query,
         onValueChange = onQueryChange,
@@ -572,7 +572,7 @@ private fun PickerSearchField(
                         color = if (isFocused) TubepipeColors.FocusBorder else TubepipeColors.BorderVariant,
                         shape = shape,
                     )
-                    .padding(horizontal = 20.dp, vertical = 14.dp),
+                    .padding(horizontal = 10.dp, vertical = 7.dp),
             ) {
                 if (query.isEmpty()) {
                     Text(
@@ -599,12 +599,12 @@ internal fun SettingsToggleChip(
 ) {
     val helpSink = LocalHelpSink.current
     var hasFocus by remember { mutableStateOf(false) }
-    val shape = RoundedCornerShape(12.dp)
+    val shape = RoundedCornerShape(6.dp)
     Row(
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
         modifier = modifier
-            .heightIn(min = 72.dp)
+            .heightIn(min = 48.dp)
             .background(if (hasFocus) TubepipeColors.SurfaceVariant else TubepipeColors.Surface, shape)
             .focusRing(hasFocus, shape)
             .onFocusChanged { focusState ->
@@ -612,12 +612,12 @@ internal fun SettingsToggleChip(
                 if (focusState.hasFocus) helpSink(help)
             }
             .toggleable(value = checked, role = Role.Checkbox, onValueChange = onCheckedChange)
-            .padding(horizontal = 14.dp, vertical = 8.dp),
+            .padding(horizontal = 7.dp, vertical = 4.dp),
     ) {
         // A dimmed dot marks a category that is off, as the seek bar will not show it.
         Box(
             Modifier
-                .size(18.dp)
+                .size(9.dp)
                 .background(if (checked) dotColor else dotColor.copy(alpha = 0.3f), CircleShape),
         )
         Text(
@@ -633,7 +633,7 @@ internal fun SettingsToggleChip(
                 imageVector = Icons.Filled.Check,
                 contentDescription = null,
                 tint = TubepipeColors.Primary,
-                modifier = Modifier.size(28.dp),
+                modifier = Modifier.size(14.dp),
             )
         }
     }
@@ -656,6 +656,6 @@ internal fun SettingsChipsRow(
             overflow = TextOverflow.Ellipsis,
             modifier = Modifier.weight(1f),
         )
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), content = chips)
+        Row(horizontalArrangement = Arrangement.spacedBy(4.dp), content = chips)
     }
 }
