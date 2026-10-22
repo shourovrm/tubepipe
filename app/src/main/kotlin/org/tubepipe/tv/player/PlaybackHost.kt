@@ -16,10 +16,8 @@ import androidx.media3.common.text.CueGroup
 import androidx.media3.session.MediaSession
 import java.util.UUID
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import org.tubepipe.core.player.PlaybackRuntime
-import org.tubepipe.core.player.PlayerClient
 import org.tubepipe.core.player.TubepipePlayer
 import org.tubepipe.tv.AppContainer
 import org.tubepipe.tv.navigation.AppNavigator
@@ -90,10 +88,8 @@ private fun PlaybackSession(
     LaunchedEffect(engine, hasDetails) {
         if (hasDetails && engine.loadState == LoadState.Idle) {
             PlaybackRuntime.initialize(context)
-            val clientName = container.settings.settings.first().playerClientName
-            val client = PlayerClient.entries.firstOrNull { it.extractorName == clientName } ?: PlayerClient.DEFAULT
             engine.load(
-                client = client,
+                client = container.preferredPlayerClient(),
                 preferences = viewModel.playbackPreferences(),
                 videoUrl = videoUrl,
                 startPositionMillis = viewModel.state.value.resumePositionMillis ?: 0L,
@@ -191,12 +187,28 @@ private fun PlayerBinding(
         }
     }
 
+    // What playAfterEnd would play, so the prefetch fetches exactly that video. Null when nothing follows.
+    fun videoAfterEnd(): String? {
+        navigator.minimizedQueue?.let { queue -> return queue.next()?.currentUrl }
+        val screen = navigator.current as? Screen.Player ?: return null
+        val queue = screen.queue
+        return if (queue != null) queue.next()?.currentUrl else viewModel.videoToAutoplayAfterEnd()
+    }
+
     LaunchedEffect(player) {
+        var hasPrefetchedNext = false
         while (true) {
             val exoPlayer = player.exoPlayer
             val position = exoPlayer.currentPosition
             snapshot.positionMillis = position
             snapshot.durationMillis = exoPlayer.duration.takeIf { it != C.TIME_UNSET } ?: 0L
+            // Once per video, from the poll that already runs, so the next video starts in about a second.
+            if (!hasPrefetchedNext && exoPlayer.isPlaying &&
+                isNextVideoPrefetchDue(position, snapshot.durationMillis)
+            ) {
+                hasPrefetchedNext = true
+                videoAfterEnd()?.let(container.prefetchScheduler::prefetchNow)
+            }
             val skipTarget = if (exoPlayer.isPlaying) viewModel.skipTargetFor(position) else null
             if (skipTarget != null) {
                 if (viewModel.state.value.showSkipNotice) {

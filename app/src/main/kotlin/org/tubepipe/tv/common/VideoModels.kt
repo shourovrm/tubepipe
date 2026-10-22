@@ -55,6 +55,7 @@ fun VideoItem.toCardModel(watchedFraction: Float = 0f): VideoCardModel = VideoCa
     durationSeconds = durationSeconds?.takeIf { it > 0 },
     isLive = isLive,
     watchedFraction = watchedFraction,
+    videoUrl = url,
 )
 
 fun VideoItem.toPlaylistVideo(): PlaylistVideo = PlaylistVideo(
