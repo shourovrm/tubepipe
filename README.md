@@ -9,16 +9,34 @@ service access. Thanks to both teams.
 
 ## Status
 
-Pre-alpha. The stack and module layout are recorded in `docs/decisions/architecture.md`.
+Pre-alpha: the app starts and shows the navigation drawer; screens are placeholders. The stack and module layout are
+recorded in `docs/decisions/architecture.md`.
 
 ## Install
 
-Not yet buildable. See `AGENTS.md` for the planned commands.
+Needs JDK 21 and the Android SDK (compileSdk 37).
+
+```sh
+git clone --recurse-submodules <repo-url>
+# or, in an existing clone:
+git submodule update --init extractor
+./gradlew :app:assembleRelease
+```
+
+The APK is `app/build/outputs/apk/release/app-release.apk`.
 
 ## Run
 
-Not yet buildable.
+Connect an Android TV device (`adb connect <tv-ip>`), then:
+
+```sh
+./gradlew :app:installRelease
+```
+
+Tubepipe appears in the TV launcher's app list.
 
 ## Test
 
-Not yet buildable.
+```sh
+./gradlew ktlintCheck lint test
+```

@@ -7,10 +7,10 @@ Reference checkout, read-only: `~/repos/pipepipe`. Read it with grep and ranges;
 ## Commands
 Stack, modules and commands are decided in the first session and recorded in `docs/decisions/architecture.md`; fill these lines then.
 - Setup: `git submodule update --init extractor` then `./gradlew help` (JDK 21; the extractor's JDK 25 toolchain request is overridden to 21, never downloaded)
-- Build: `./gradlew :app:assembleDebug`
+- Build: `./gradlew :app:assembleRelease` (R8; signed with `keystore.properties`, else the debug key)
 - Test: `./gradlew test`; instrumented: `./gradlew :app:connectedDebugAndroidTest` (needs the TV emulator or the TV box)
 - Lint / format: `./gradlew ktlintCheck lint`; fix formatting with `./gradlew ktlintFormat`
-- Run locally: start the Android TV 1080p AVD (or `adb connect <tv-ip>`), then `./gradlew :app:installDebug && adb shell monkey -p org.tubepipe.tv 1`. Test every screen with the D-pad only: `adb shell input keyevent DPAD_DOWN|DPAD_CENTER|BACK`.
+- Run locally: start the Android TV 1080p AVD (or `adb connect <tv-ip>`), then `./gradlew :app:installRelease && adb shell monkey -p org.tubepipe.tv -c android.intent.category.LEANBACK_LAUNCHER 1`. Test every screen with the D-pad only: `adb shell input keyevent DPAD_DOWN|DPAD_CENTER|BACK`.
 - Release, in order: 1 bump `versionCode`/`versionName` in `app/build.gradle.kts`; 2 `./gradlew :app:assembleRelease` with `keystore.properties` (gitignored); 3 `git tag vN`; 4 `gh release create vN app/build/outputs/apk/release/*.apk --generate-notes`; 5 sideload notes in the release body, F-Droid later.
 - Exclusive resources (one session at a time): the TV emulator, the ADB-connected TV device.
 

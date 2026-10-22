@@ -11,3 +11,5 @@
 2026-10-22 | Skip the trending podcasts kiosk | YouTube returns an empty page logged-out; upstream has the same bug
 2026-10-22 | Media3 1.11.1 over ExoPlayer 2.18.7 | spike: 60 s 1080p, 0 rebuffers on Mi Box; Media3 edits in 3 files
 2026-10-22 | PoToken via system WebView, not QuickJS | the WebView path worked in the spike on WebView 138
+2026-10-22 | Compile extractor sources with our build files on JDK 21 | includeBuild keeps its JDK 25 toolchain; settings hooks can't reach it
+2026-10-22 | Release builds fall back to the debug key | user wants release APKs only; no release keystore exists yet

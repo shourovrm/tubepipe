@@ -1,7 +1,7 @@
 # Architecture
 
 ## Current state
-Proposed 2026-10-22 from a survey of `~/repos/pipepipe` and `~/repos/smarttube`; not yet confirmed by the user.
+Confirmed by the user 2026-10-22; the Gradle skeleton (five modules, theme tokens, drawer with placeholders) builds.
 
 Stack: Kotlin 2.3, AGP 9.2, JDK 21 (overrides the JDK 25 toolchain PipePipeExtractor declares), minSdk 23, compileSdk 37, Jetpack Compose for TV
 (`androidx.tv:tv-material` 1.1.0), Media3 ExoPlayer 1.11.1 (spike passed, see `player.md`), Room, DataStore, Coil, OkHttp, coroutines + StateFlow, manual DI.
@@ -11,13 +11,13 @@ cookies, ReCaptcha), the YouTube playback glue (`player/datasource/Sabr*`, `Yout
 DASH manifest creators), SponsorBlock, the Room schema and the subscriptions JSON format. SmartTube gives 10-foot UX
 patterns only (sections, long-press menu, remote key map, double-back exit, storyboard seek preview); none of its code.
 
-Extractor delivery: git submodule `extractor/` = PipePipeExtractor pinned to tag v5.5.0, consumed with
-`includeBuild("extractor")` exactly as PipePipeClient does. JitPack publication is unverified, so no Maven coordinate.
+Extractor delivery: git submodule `extractor/` = PipePipeExtractor pinned to tag v5.5.0, unmodified. Its sources are
+compiled by our `extractor-build/{extractor,timeago-parser}` build files on JDK 21 (projects `:extractor`, `:timeago-parser`).
 
 Gradle modules (five; features are packages inside `:app` until build time says otherwise):
 - `:app` — single Activity, Compose navigation, manifest (`LEANBACK_LAUNCHER`, touchscreen not required, 320x180 banner),
   `AppContainer` wiring. Feature packages: `home`, `player`, `video`, `search`, `channel`, `library`, `settings`.
-- `:core:ui` — TV theme as the token home (`Theme.kt`, `Color.kt`, `Type.kt`, `Spacing.kt`, `Focus.kt`), shared
+- `:core:ui` — TV theme as the token home (`Theme.kt`, `TubepipeColors.kt`, `Type.kt`, `TubepipeSpacing.kt`, `Focus.kt`), shared
   composables (`VideoCard`, `MediaRow`, `NavDrawer`, `SettingRow`), the design gate test.
 - `:core:service` — wraps the extractor: `Downloader` on OkHttp, `NewPipe.init`, repositories that run the blocking
   extractor on `Dispatchers.IO`, mapping to UI models. Nothing above this module imports `org.schabi.*`.
@@ -60,12 +60,15 @@ Tooling: ktlint for format and lint, Android Lint with `HardcodedText` at error,
 Roborazzi for composable screenshots, the Android TV 1080p AVD for instrumented tests and D-pad walks.
 
 ## Open items
-- User confirms or vetoes the stack; then `settings.gradle.kts`, the five modules and the extractor submodule are created.
+- Drawer: expand to labels on focus (256dp), focus = red border, selected = wine; now the tv-material default pill.
 - Confirm play-on-select (no separate Video screen; info and Related live under the player).
 - Music has no YouTube Charts data for BD (`UnsupportedContentInCountryException`); pick a BD fallback (plain trending?).
 
 ## Gotchas
-- The extractor declares a JDK 25 toolchain; we force it to 21 (init script in the spike) with auto-download off. It compiles on 21.
+- The extractor declares a JDK 25 toolchain and `includeBuild` cannot override it, so our build files compile it on 21.
+- `NewPipe.init` calls `trustEveryone()`, disabling TLS checks for all `HttpsURLConnection`s; `:core:service` must save
+  and restore the default socket factory and hostname verifier around it. OkHttp and WebView are unaffected.
+- Extractor bump: copy dependency changes from `extractor/extractor/build.gradle` into `extractor-build/` and the catalog.
 - The extractor is blocking Java with OkHttp; every call goes through `withContext(Dispatchers.IO)`.
 - Compose for TV uses `androidx.tv.material3.MaterialTheme`; never mix the phone `material3` theme into the same module.
 - PipePipeClient has `LEANBACK_LAUNCHER` but a phone UI; it is a data-layer reference, not a UI one.

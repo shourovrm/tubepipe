@@ -1,0 +1,56 @@
+[versions]
+agp = "9.2.1"
+kotlin = "2.3.21"
+ktlint-plugin = "14.2.0"
+wire = "6.4.1"
+compose-bom = "2026.09.00"
+tv-material = "1.1.0"
+activity-compose = "1.13.0"
+lifecycle = "2.11.0"
+core-ktx = "1.19.1"
+desugar-jdk-libs = "2.1.5"
+junit4 = "4.13.2"
+# Pinned to the versions PipePipeExtractor v5.5.0 declares (extractor/build.gradle); update together.
+nanojson = "1d9e1aea9049fc9f85e68b43ba39fe7be1c1f751"
+spotbugs = "4.10.2"
+jsoup = "1.22.2"
+java-websocket = "1.6.0"
+autolink = "0.12.0"
+protobuf = "4.35.1"
+okhttp = "5.4.0"
+brotli = "0.1.2"
+commons-lang3 = "3.20.0"
+bouncycastle = "1.85"
+org-json = "20260522"
+
+[libraries]
+compose-bom = { module = "androidx.compose:compose-bom", version.ref = "compose-bom" }
+compose-ui = { module = "androidx.compose.ui:ui" }
+compose-ui-tooling-preview = { module = "androidx.compose.ui:ui-tooling-preview" }
+compose-ui-tooling = { module = "androidx.compose.ui:ui-tooling" }
+compose-foundation = { module = "androidx.compose.foundation:foundation" }
+compose-material-icons-core = { module = "androidx.compose.material:material-icons-core" }
+tv-material = { module = "androidx.tv:tv-material", version.ref = "tv-material" }
+activity-compose = { module = "androidx.activity:activity-compose", version.ref = "activity-compose" }
+lifecycle-runtime-compose = { module = "androidx.lifecycle:lifecycle-runtime-compose", version.ref = "lifecycle" }
+core-ktx = { module = "androidx.core:core-ktx", version.ref = "core-ktx" }
+desugar-jdk-libs = { module = "com.android.tools:desugar_jdk_libs", version.ref = "desugar-jdk-libs" }
+junit4 = { module = "junit:junit", version.ref = "junit4" }
+nanojson = { module = "com.github.TeamNewPipe:nanojson", version.ref = "nanojson" }
+spotbugs-annotations = { module = "com.github.spotbugs:spotbugs-annotations", version.ref = "spotbugs" }
+jsoup = { module = "org.jsoup:jsoup", version.ref = "jsoup" }
+java-websocket = { module = "org.java-websocket:Java-WebSocket", version.ref = "java-websocket" }
+autolink = { module = "org.nibor.autolink:autolink", version.ref = "autolink" }
+protobuf-java = { module = "com.google.protobuf:protobuf-java", version.ref = "protobuf" }
+okhttp = { module = "com.squareup.okhttp3:okhttp", version.ref = "okhttp" }
+brotli-dec = { module = "org.brotli:dec", version.ref = "brotli" }
+commons-lang3 = { module = "org.apache.commons:commons-lang3", version.ref = "commons-lang3" }
+bouncycastle = { module = "org.bouncycastle:bcprov-jdk18on", version.ref = "bouncycastle" }
+org-json = { module = "org.json:json", version.ref = "org-json" }
+
+[plugins]
+android-application = { id = "com.android.application", version.ref = "agp" }
+android-library = { id = "com.android.library", version.ref = "agp" }
+kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
+ktlint = { id = "org.jlleitschuh.gradle.ktlint", version.ref = "ktlint-plugin" }
+wire = { id = "com.squareup.wire", version.ref = "wire" }
