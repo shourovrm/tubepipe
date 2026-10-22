@@ -1,11 +1,13 @@
 package org.tubepipe.core.service
 
+import java.io.IOException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import org.schabi.newpipe.extractor.NewPipe
 import org.schabi.newpipe.extractor.ServiceList
+import org.schabi.newpipe.extractor.exceptions.ExtractionException
 import org.schabi.newpipe.extractor.stream.StreamInfo
 
 /**
@@ -25,8 +27,19 @@ object StreamInfoCache {
      * The info of [videoUrl] fetched with the player client named [playerClientName]; null leaves the client as it is
      * (the video page request).
      */
-    suspend fun get(videoUrl: String, playerClientName: String?): StreamInfo =
-        cache.get(Key(videoUrl, playerClientName))
+    suspend fun get(videoUrl: String, playerClientName: String?): StreamInfo {
+        try {
+            return cache.get(Key(videoUrl, playerClientName))
+        } catch (failure: ExtractionException) {
+            // Callers outside this module cannot see ExtractionException (see RepositoryErrorTest).
+            throw IOException("YouTube stream info failed for $videoUrl: ${failure.message}", failure)
+        }
+    }
+
+    /** Fills the cache for [videoUrl] without handing the result out, for callers that cannot see [StreamInfo]. */
+    suspend fun prefetch(videoUrl: String, playerClientName: String?) {
+        get(videoUrl, playerClientName)
+    }
 
     fun contains(videoUrl: String, playerClientName: String?): Boolean =
         cache.contains(Key(videoUrl, playerClientName))

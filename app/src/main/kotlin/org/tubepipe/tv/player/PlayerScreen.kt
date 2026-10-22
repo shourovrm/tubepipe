@@ -47,8 +47,8 @@ import androidx.tv.material3.Text
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.tubepipe.core.database.PlaylistEntity
-import org.tubepipe.core.service.VideoDetails
 import org.tubepipe.core.service.StreamInfoCache
+import org.tubepipe.core.service.VideoDetails
 import org.tubepipe.core.ui.component.ErrorView
 import org.tubepipe.core.ui.component.LoadingView
 import org.tubepipe.core.ui.component.MediaRow
