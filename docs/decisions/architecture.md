@@ -29,6 +29,15 @@ Gradle modules (five; features are packages inside `:app` until build time says 
 - `:core:player` — Media3 player, the PipePipe YouTube data sources ported to Media3, quality resolver, play queue,
   SponsorBlock skipping, media session for the TV remote.
 
+Speed budget (the user's "slick and quick like PipePipe"), measured on a 2 GB Google TV box, enforced before a release:
+- Cold start to an interactive Home under 1.5 s. No network on the critical path: Home renders from the Room and disk
+  cache first and refreshes in the background. Baseline and startup profiles are generated from the D-pad walk.
+- Focus moves within one frame: scale and border via `graphicsLayer`, no relayout on focus, rows are lazy with keys.
+- Thumbnails via Coil sized to the card, memory and disk cached, 150 ms crossfade at most, decoded off the main thread.
+- Play within 2 s of Centre: stream info is prefetched after 300 ms dwell on a focused card, the player is pre-warmed.
+- Extractor and Room calls always on `Dispatchers.IO`; StrictMode in debug; one Macrobenchmark for startup and one for
+  row scroll jank in `:benchmark`. R8 full mode and resource shrinking in release; no ffmpeg module.
+
 Layering, one direction only: Compose screen -> ViewModel (StateFlow, unidirectional) -> repository -> extractor, Room,
 DataStore. ViewModels never touch Android views or the extractor directly.
 
@@ -46,7 +55,7 @@ JUnit 4 + kotlinx-coroutines-test + Turbine for unit tests, Roborazzi for compos
 - Spike: port `SabrDashMediaSource`, `SabrSegmentDataSource`, `YoutubeHttpDataSource` to Media3. If it exceeds two days,
   fall back to ExoPlayer 2.18.7 and copy the glue verbatim.
 - PoToken needs the JS solver asset (`assets/ejs/yt.solver.lib.min.js`) and a JS runtime; decide WebView vs QuickJS.
-- Pick the design direction from `.design-mockups/direction-{1,2,3}.html` and record tokens in `docs/design-system.md`.
+- Decide the sidebar set; proposal: Home, Subscriptions, Live, Search, Library, Settings plus user channel groups.
 - Decide whether non-YouTube services ship in v1 or stay behind a settings toggle.
 
 ## Gotchas
