@@ -21,6 +21,7 @@ class TrendingViewModelTest {
         trendingVideos[TrendingKind.Music] = videos("music", 12)
         trendingVideos[TrendingKind.MoviesAndShows] = videos("movie", 12)
         trendingVideos[TrendingKind.Gaming] = videos("game", 12)
+        trendingVideos[TrendingKind.News] = videos("news", 12)
     }
 
     @Test
@@ -29,7 +30,7 @@ class TrendingViewModelTest {
 
         val state = viewModel.state.first { !it.isLoading && it.videos.isNotEmpty() }
 
-        assertEquals(listOf(TrendingKind.MoviesAndShows, TrendingKind.Gaming), state.tabs)
+        assertEquals(listOf(TrendingKind.MoviesAndShows, TrendingKind.Gaming, TrendingKind.News), state.tabs)
         assertEquals(TrendingKind.MoviesAndShows, state.selected)
         assertEquals(videos("movie", 12), state.videos)
     }
@@ -74,7 +75,7 @@ class TrendingViewModelTest {
 
         settings.value = settings.value.copy(contentCountry = "BD")
 
-        val state = viewModel.state.first { it.tabs.size == 2 && !it.isLoading && it.videos.isNotEmpty() }
+        val state = viewModel.state.first { it.tabs.size == 3 && !it.isLoading && it.videos.isNotEmpty() }
         assertEquals(TrendingKind.MoviesAndShows, state.selected)
     }
 }

@@ -5,16 +5,19 @@ import org.junit.Test
 
 class TrendingCatalogTest {
     @Test
-    fun trendingTabsAreMusicMoviesAndGamingInThatOrder() {
+    fun trendingTabsAreMusicMoviesGamingAndNewsInThatOrder() {
         assertEquals(
-            listOf(TrendingKind.Music, TrendingKind.MoviesAndShows, TrendingKind.Gaming),
+            listOf(TrendingKind.Music, TrendingKind.MoviesAndShows, TrendingKind.Gaming, TrendingKind.News),
             TrendingKind.entries,
         )
     }
 
     @Test
     fun musicIsHiddenWhereYoutubeChartsHasNoData() {
-        assertEquals(listOf(TrendingKind.MoviesAndShows, TrendingKind.Gaming), TrendingCatalog.kindsFor("BD"))
+        assertEquals(
+            listOf(TrendingKind.MoviesAndShows, TrendingKind.Gaming, TrendingKind.News),
+            TrendingCatalog.kindsFor("BD"),
+        )
     }
 
     @Test
