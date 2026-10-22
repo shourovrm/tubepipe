@@ -7,6 +7,8 @@ SABR glue and played one 1080p avc1 stream for 60 s on the Mi Box S with 0 rebuf
   The only API change is `MediaPeriod.continueLoading(long)` becoming `continueLoading(LoadingInfo)`; the rest is imports.
 - Every other ported file has no player dependency and is copied as is: the `Sabr*` helpers, `youtube/*`
   (PoToken provider, attestation), `SharedWebViewRuntime`, `WebViewJavaScriptDecoder`, `assets/ejs/*`, `assets/sabr_po_token.js`.
+- `PlaybackPreferences` (max height, codec, audio language, captions, speed) and live `setMaxQuality`/`setCaptions`/`setSpeed`;
+  subtitles side-loaded from the extractor for every delivery. SABR/progressive apply a new quality cap at the next load.
 - PoToken runs in the system WebView (138 on the box); QuickJS was not needed for the spike.
 - Default client `visionos`: for normal videos the extractor gives progressive formats plus the HLS master playlist
   (`hlsUrl`), played adaptively; `mweb` (SABR) is the fallback and a Settings choice. Both 1080p, 0 rebuffers on the box.
