@@ -26,6 +26,9 @@ dependencies {
     implementation(project(":extractor"))
     api(libs.okhttp)
     implementation(libs.androidx.annotation)
+    // The ported kiosks parse JSON with nanojson and use the javax.annotation nullness annotations.
+    implementation(libs.nanojson)
+    implementation(libs.jsr305)
     implementation(libs.coroutines.core)
     testImplementation(libs.junit4)
     testImplementation(libs.coroutines.test)
