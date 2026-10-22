@@ -3,5 +3,6 @@
     <string name="trending_tab_music">Music</string>
     <string name="trending_tab_movies">Movies and shows</string>
     <string name="trending_tab_gaming">Gaming</string>
+    <string name="trending_tab_news">News</string>
     <string name="trending_empty">No trending videos for this category in your country.</string>
 </resources>

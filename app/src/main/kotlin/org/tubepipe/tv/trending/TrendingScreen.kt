@@ -111,4 +111,5 @@ private fun tabLabel(kind: TrendingKind): Int = when (kind) {
     TrendingKind.Music -> R.string.trending_tab_music
     TrendingKind.MoviesAndShows -> R.string.trending_tab_movies
     TrendingKind.Gaming -> R.string.trending_tab_gaming
+    TrendingKind.News -> R.string.trending_tab_news
 }
