@@ -1,5 +1,6 @@
 package org.tubepipe.core.service
 
+import androidx.annotation.VisibleForTesting
 import org.schabi.newpipe.extractor.Page
 
 /** A video as the UI needs it. Unknown counts and durations are null, never a negative sentinel. */
@@ -33,4 +34,10 @@ data class ContentPage<T>(val items: List<T>, val next: PageCursor?)
  * Opaque handle for "the page after this one". It wraps the extractor's Page so that no
  * org.schabi type appears in this module's public API; only this module can build or read it.
  */
-class PageCursor internal constructor(internal val page: Page)
+class PageCursor internal constructor(internal val page: Page) {
+    companion object {
+        /** Lets fakes in other modules' tests hand out a "next page" without touching extractor types. */
+        @VisibleForTesting
+        fun forTesting(token: String): PageCursor = PageCursor(Page(token))
+    }
+}
