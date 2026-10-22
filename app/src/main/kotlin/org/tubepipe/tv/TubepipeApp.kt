@@ -10,14 +10,18 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.tv.material3.Border
@@ -28,9 +32,13 @@ import androidx.tv.material3.NavigationDrawerItem
 import androidx.tv.material3.NavigationDrawerItemDefaults
 import androidx.tv.material3.NavigationDrawerScope
 import androidx.tv.material3.Text
+import kotlinx.coroutines.delay
 import org.tubepipe.core.ui.theme.TubepipeColors
 import org.tubepipe.core.ui.theme.TubepipeSpacing
 import org.tubepipe.tv.navigation.Screen
+
+/** Pause before a focused drawer item opens, so Down held across several items loads only the last one. */
+private const val FOCUS_SELECT_DELAY_MILLIS = 250L
 
 private val NowPlayingThumbnailWidth = 40.dp
 private val NowPlayingThumbnailHeight = 24.dp
@@ -68,6 +76,16 @@ private fun NavigationDrawerScope.DrawerItems(selected: Destination, onSelect: (
     val focusBorder = Border(BorderStroke(2.dp, TubepipeColors.FocusBorder))
     // Without this, Left from the content lands on whichever item is geometrically nearest, not the current one.
     val selectedItemRequester = remember { FocusRequester() }
+    // Moving focus onto an item opens its tab, so Up/Down browses the tabs without Centre. The request is not
+    // dropped when focus leaves the drawer: Down then Right at once still opens the tab that was reached.
+    var focusedDestination by remember { mutableStateOf<Destination?>(null) }
+    LaunchedEffect(focusedDestination) {
+        val destination = focusedDestination ?: return@LaunchedEffect
+        delay(FOCUS_SELECT_DELAY_MILLIS)
+        if (destination != selected) {
+            onSelect(destination)
+        }
+    }
     Column(
         modifier = Modifier
             .fillMaxHeight()
@@ -78,10 +96,15 @@ private fun NavigationDrawerScope.DrawerItems(selected: Destination, onSelect: (
             .selectableGroup(),
     ) {
         for (destination in Destination.entries) {
-            val itemModifier = if (destination == selected) {
+            val selectedModifier = if (destination == selected) {
                 Modifier.focusRequester(selectedItemRequester)
             } else {
                 Modifier
+            }
+            val itemModifier = selectedModifier.onFocusChanged { focusState ->
+                if (focusState.isFocused) {
+                    focusedDestination = destination
+                }
             }
             NavigationDrawerItem(
                 selected = destination == selected,

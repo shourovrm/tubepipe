@@ -38,7 +38,9 @@ import androidx.compose.ui.input.key.type
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -295,12 +297,28 @@ private fun SearchField(
     modifier: Modifier = Modifier,
 ) {
     var isFocused by remember { mutableStateOf(false) }
+    // The text lives here as well as in the view model: the view model's state reaches this composable a frame
+    // late, and a field whose value lags its own edit restarts the input connection, which closes the keyboard
+    // after a letter. The view model still gets each change; it only overwrites the field when it changed the
+    // query itself (a submitted query is trimmed, a saved search is handed over).
+    var fieldValue by remember { mutableStateOf(TextFieldValue(query)) }
+    LaunchedEffect(query) {
+        if (query != fieldValue.text) {
+            fieldValue = TextFieldValue(query, TextRange(query.length))
+        }
+    }
     val keyboardController = LocalSoftwareKeyboardController.current
     val borderColor = if (isFocused) TubepipeColors.FocusBorder else TubepipeColors.BorderVariant
     val borderWidth = if (isFocused) 3.dp else 1.dp
     BasicTextField(
-        value = query,
-        onValueChange = onQueryChange,
+        value = fieldValue,
+        onValueChange = { newValue ->
+            val isTextChange = newValue.text != fieldValue.text
+            fieldValue = newValue
+            if (isTextChange) {
+                onQueryChange(newValue.text)
+            }
+        },
         singleLine = true,
         textStyle = MaterialTheme.typography.titleMedium.copy(color = TubepipeColors.OnSurface),
         cursorBrush = SolidColor(TubepipeColors.Primary),
@@ -338,7 +356,7 @@ private fun SearchField(
                     .border(BorderStroke(borderWidth, borderColor), SearchFieldShape)
                     .padding(horizontal = 20.dp, vertical = 14.dp),
             ) {
-                if (query.isEmpty()) {
+                if (fieldValue.text.isEmpty()) {
                     Text(
                         text = stringResource(R.string.search_field_hint),
                         style = MaterialTheme.typography.titleMedium,

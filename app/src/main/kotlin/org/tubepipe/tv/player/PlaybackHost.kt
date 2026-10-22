@@ -53,13 +53,13 @@ internal fun rememberPlayerViewModel(videoUrl: String, container: AppContainer):
 fun PlaybackHost(container: AppContainer, navigator: AppNavigator) {
     val controller = container.playback
     val screen = navigator.current
-    val isChannelOverPlayer = navigator.isChannelOverPlayer
-    // Leaving the player stops the video, except for the channel page that opens over it. The player screen
-    // itself takes the video back to full screen when it is shown again.
-    LaunchedEffect(screen, isChannelOverPlayer) {
+    val isBarOverPage = navigator.isBarOverPage
+    // Leaving the player stops the video, except for the channel page that opens over it and the playlist page
+    // it was started from. The player screen itself takes the video back to full screen when it is shown again.
+    LaunchedEffect(screen, isBarOverPage) {
         when {
             screen is Screen.Player -> Unit
-            isChannelOverPlayer -> controller.showAsBar()
+            isBarOverPage -> controller.showAsBar()
             controller.state.value != null -> controller.stop()
         }
     }
@@ -130,8 +130,16 @@ private fun PlayerBinding(
     val scope = rememberCoroutineScope()
 
     // Runs after the video ended. Only the full-screen player moves on: a bar on a channel page must not pull
-    // the viewer away from the channel they are browsing.
+    // the viewer away from the channel they are browsing. A playlist bar plays the next entry in the bar.
     fun playAfterEnd() {
+        if (navigator.minimizedQueue != null) {
+            if (navigator.advanceMinimizedQueue()) {
+                val nextUrl = navigator.minimizedQueue?.currentUrl ?: return
+                container.playback.engineFor(nextUrl)
+                container.playback.showAsBar()
+            }
+            return
+        }
         val screen = navigator.current as? Screen.Player ?: return
         val queue = screen.queue
         if (queue != null) {

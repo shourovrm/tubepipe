@@ -43,6 +43,9 @@ import org.tubepipe.tv.common.VideoActionsDialog
 import org.tubepipe.tv.common.toCardModel
 import org.tubepipe.tv.navigation.AppNavigator
 import org.tubepipe.tv.navigation.PlaylistSource
+import org.tubepipe.tv.player.PlayerBar
+import org.tubepipe.tv.player.rememberPlayerBarFocus
+import org.tubepipe.tv.player.sendBackToBar
 
 /** A playlist's header, Play all and Shuffle buttons, and its videos; works for YouTube and Library playlists. */
 @Composable
@@ -70,7 +73,10 @@ fun PlaylistScreen(source: PlaylistSource, container: AppContainer, navigator: A
         }
     }
 
-    Column(modifier = Modifier.fillMaxSize()) {
+    val barFocus = rememberPlayerBarFocus()
+    val isBarShown = navigator.isBarOverPage
+
+    Column(modifier = Modifier.fillMaxSize().sendBackToBar(isBarShown, barFocus)) {
         PlaylistHeader(
             state = state,
             source = source,
@@ -99,6 +105,10 @@ fun PlaylistScreen(source: PlaylistSource, container: AppContainer, navigator: A
                     onLongClick = { actionsVideo = indexed.value },
                 )
             }
+        }
+        // The video left with Back plays on here; Down from the grid reaches the bar, and Back lands on it.
+        if (isBarShown) {
+            PlayerBar(container, navigator, barFocus)
         }
     }
 

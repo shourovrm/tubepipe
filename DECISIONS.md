@@ -4,6 +4,7 @@
 - `docs/decisions/architecture.md` — stack, modules, layering, what is reused from PipePipe and SmartTube.
 - `docs/decisions/service.md` — extractor wrapper, repository API, kiosks, extractor quirks.
 - `docs/decisions/player.md` — Media3 SABR port: spike result, what to restore, player gotchas.
+- `docs/decisions/tv-ui.md` — search field, player overlay, mini bar, sidebar behaviours.
 - `docs/design-system.md` — androidtv skeleton plus the PipePipe-derived direction tokens (two reds, black theme).
 
 ## Next
