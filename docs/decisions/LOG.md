@@ -38,3 +38,4 @@
 2026-10-22 | Up on the player's channel chip hides the control overlay | user request
 2026-10-22 | Playlist video Back keeps playing in the shared PlayerBar; bar has X left of centre, Back focuses centre | user request
 2026-10-22 | Drawer opens a tab when focus lands on it (250 ms delay), no Centre needed | user request
+2026-10-22 | No login for now | mweb retry gives 1080p logged out; revisit only for bot checks, 18+ or own history (phone code sign-in)
