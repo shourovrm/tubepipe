@@ -5,7 +5,6 @@ import androidx.lifecycle.viewModelScope
 import java.io.IOException
 import java.util.logging.Level
 import java.util.logging.Logger
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
@@ -181,25 +180,19 @@ class HomeViewModel(
     private fun List<VideoItem>.asHomeVideos(): List<HomeVideo> = map { HomeVideo(it) }
 
     /**
-     * Returns the cached or freshly fetched videos, or null when the fetch failed.
-     * The extractor's ExtractionException is not on this module's classpath, so any non-cancellation
-     * Exception counts as a failed source; it is logged, never swallowed silently.
+     * Returns the cached or freshly fetched videos, or null when the fetch failed. The repository
+     * reports every YouTube failure as IOException; a failed source is logged and its row left out.
      */
-    @Suppress("TooGenericExceptionCaught")
     private suspend fun fetchSource(cacheKey: String, fetch: suspend () -> List<VideoItem>): List<VideoItem>? {
         sourceCache[cacheKey]?.let { return it }
         return try {
             fetch().also { sourceCache[cacheKey] = it }
-        } catch (cancellation: CancellationException) {
-            throw cancellation
         } catch (failure: IOException) {
-            logFailure(cacheKey, failure)
-        } catch (failure: Exception) {
             logFailure(cacheKey, failure)
         }
     }
 
-    private fun logFailure(cacheKey: String, failure: Exception): List<VideoItem>? {
+    private fun logFailure(cacheKey: String, failure: IOException): List<VideoItem>? {
         logger.log(Level.WARNING, "Home source $cacheKey failed; its row is left out", failure)
         return null
     }

@@ -5,7 +5,6 @@ import androidx.lifecycle.viewModelScope
 import java.io.IOException
 import java.util.logging.Level
 import java.util.logging.Logger
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -77,26 +76,18 @@ class TrendingViewModel(private val content: ContentRepository, settings: Flow<A
         loadJob = viewModelScope.launch { load(kind) }
     }
 
-    /**
-     * The extractor's ExtractionException is not on this module's classpath, so any non-cancellation
-     * Exception is shown as the error state; it is logged, never swallowed silently.
-     */
-    @Suppress("TooGenericExceptionCaught")
+    /** The repository reports every YouTube failure as IOException; it is logged and shown as the error state. */
     private suspend fun load(kind: TrendingKind) {
         try {
             val videos = content.trending(kind)
             videosByTab[kind] = videos
             mutableState.update { it.copy(videos = videos, isLoading = false, hasError = false) }
-        } catch (cancellation: CancellationException) {
-            throw cancellation
         } catch (failure: IOException) {
-            showFailure(kind, failure)
-        } catch (failure: Exception) {
             showFailure(kind, failure)
         }
     }
 
-    private fun showFailure(kind: TrendingKind, failure: Exception) {
+    private fun showFailure(kind: TrendingKind, failure: IOException) {
         logger.log(Level.WARNING, "Trending tab $kind failed to load", failure)
         mutableState.update { it.copy(videos = emptyList(), isLoading = false, hasError = true) }
     }
