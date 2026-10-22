@@ -6,11 +6,9 @@
 - `docs/design-system.md` — androidtv skeleton plus the PipePipe-derived direction tokens (two reds, black theme).
 
 ## Next
-- Skeleton done; next feature slices: `:core:service` (extractor wrapper), Home rows, player from the spike port.
-- User confirms play-on-select; SABR-only playback (skip `YoutubeHttpDataSource`?); BD music fallback.
-- Release keystore: create one and `keystore.properties`; until then release APKs carry the debug key.
-- CI/CD section in AGENTS.md is still `<FILL>`: enable GitHub Actions or decline.
+- Wave 1 (parallel): `:core:service`, `:core:player`, `:core:database`. Wave 2: screens. Then release APK on the box.
 
 ## Gotchas (cross-cutting)
 - `~/repos/pipepipe`, `~/repos/smarttube` and `~/repos/newpipe-extractor` are read-only reference checkouts; never edit them.
+- Release key: `~/.config/tubepipe/tubepipe-release.jks` via gitignored `keystore.properties`; back it up, updates need it.
 - Build on the installed JDK 21; the extractor asks for a JDK 25 toolchain, so override it to 21 and keep toolchain auto-download off.

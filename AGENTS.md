@@ -14,19 +14,12 @@ Stack, modules and commands are decided in the first session and recorded in `do
 - Release, in order: 1 bump `versionCode`/`versionName` in `app/build.gradle.kts`; 2 `./gradlew :app:assembleRelease` with `keystore.properties` (gitignored); 3 `git tag vN`; 4 `gh release create vN app/build/outputs/apk/release/*.apk --generate-notes`; 5 sideload notes in the release body, F-Droid later.
 - Exclusive resources (one session at a time): the TV emulator, the ADB-connected TV device.
 
-## CI/CD — <FILL: enabled | declined YYYY-MM-DD>
-Delete this section if declined. Pushing, opening a PR or tagging needs the user's approval in the current session, every time; committing does not.
-
-Setup (GitHub Actions):
-- `ci.yml` on every PR and push to `main`: `<FILL: toolchain setup, dependency cache>`, format check, lint, unit tests, build. `timeout-minutes: 30`. On failure, upload `**/build/test-results/**` and `**/build/reports/**` with `actions/upload-artifact`.
-- `release.yml` on tags `v*`: `<FILL: build artifact>`, SHA-256 checksums, `gh release create --generate-notes`.
-- Dependency updates: `<FILL: dependabot.yml weekly | none>`.
-- Security: minimal `permissions:` per workflow, actions pinned to commit SHAs, no `pull_request_target`, secrets never reach fork PRs.
-- Branching: `<FILL: GitHub Flow: branch <issue>-<slug>, PR to main, squash merge | trunk>`. Branch protection on `main`: CI required, 0 required reviews while solo.
+## CI/CD — declined 2026-10-22 (user will revisit later)
+No GitHub Actions yet; the local checks below are the gate. Pushing, opening a PR or tagging needs the user's approval in the current session, every time; committing does not.
 
 Rules:
 - Verify before a full push, in order: 1 format check; 2 lint; 3 unit tests; 4 build; 5 install and D-pad walk on the TV emulator or device. A quick push runs 1 and 2 only and is never used for a tag or release.
-- A red `main` is the next task, before any feature work. Read the uploaded report; do not re-run and hope.
+- A failing check on `main` is the next task, before any feature work. Read the report; do not re-run and hope.
 - A flaky test is a bug, usually a test that leaks a coroutine, thread, server or file into the next one. Fix the teardown so it waits for cleanup. No automatic retries, no `@Ignore` without an issue number. The fix is proven by running the test alone and inside the full suite.
 
 ## Memory — MANDATORY

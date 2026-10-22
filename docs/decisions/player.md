@@ -8,10 +8,10 @@ SABR glue and played one 1080p avc1 stream for 60 s on the Mi Box S with 0 rebuf
 - Every other ported file has no player dependency and is copied as is: the `Sabr*` helpers, `youtube/*`
   (PoToken provider, attestation), `SharedWebViewRuntime`, `WebViewJavaScriptDecoder`, `assets/ejs/*`, `assets/sabr_po_token.js`.
 - PoToken runs in the system WebView (138 on the box); QuickJS was not needed for the spike.
-- The extractor emits SABR streams only for the `mweb` client, which the spike sets.
+- Default client is `visionos` (HLS, as PipePipe logged out); `mweb` (SABR) is the fallback and a Settings choice.
 
 ## Open items
-- Port `YoutubeHttpDataSource` (non-SABR URLs) to Media3, or record that Tubepipe plays SABR only.
+- Port `YoutubeHttpDataSource` to Media3 for HLS and URL streams; add `media3-exoplayer-hls`. Untested on Media3 so far.
 - Add instrumented tests for seek back 30 s, forward seek, forced quality switch, and time to first frame (2 s budget).
 - Restore what the spike stubbed: segment disk cache (Media3 `SimpleCache`), audio pick by language (original first,
   DataStore prefs), SABR backoff UI, startup trace, full `DownloaderImpl` (cookies, reCaptcha, restricted mode).

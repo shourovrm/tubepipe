@@ -20,7 +20,7 @@ Gradle modules (five; features are packages inside `:app` until build time says 
 - `:core:ui` — TV theme as the token home (`Theme.kt`, `TubepipeColors.kt`, `Type.kt`, `TubepipeSpacing.kt`, `Focus.kt`), shared
   composables (`VideoCard`, `MediaRow`, `NavDrawer`, `SettingRow`), the design gate test.
 - `:core:service` — wraps the extractor: `Downloader` on OkHttp, `NewPipe.init`, repositories that run the blocking
-  extractor on `Dispatchers.IO`, mapping to UI models. Nothing above this module imports `org.schabi.*`.
+  extractor on `Dispatchers.IO`, mapping to UI models. Only it and `:core:player` (the playback glue needs `StreamInfo`) import `org.schabi.*`.
 - `:core:database` — Room: subscriptions, stream history + resume position, local playlists, search history. Entity
   shapes follow PipePipe so its export JSON imports unchanged.
 - `:core:player` — Media3 player, the PipePipe YouTube data sources ported to Media3, quality resolver, play queue, SponsorBlock skipping, media session for the TV remote.
@@ -61,8 +61,8 @@ Roborazzi for composable screenshots, the Android TV 1080p AVD for instrumented 
 
 ## Open items
 - Drawer: expand to labels on focus (256dp), focus = red border, selected = wine; now the tv-material default pill.
-- Confirm play-on-select (no separate Video screen; info and Related live under the player).
-- Music has no YouTube Charts data for BD (`UnsupportedContentInCountryException`); pick a BD fallback (plain trending?).
+- Content country: a Settings choice, default the device locale's country; Music tab hidden where Charts has no data (BD).
+- Play-on-select confirmed: Centre on a card starts playback; info and Related live under the player.
 
 ## Gotchas
 - The extractor declares a JDK 25 toolchain and `includeBuild` cannot override it, so our build files compile it on 21.
