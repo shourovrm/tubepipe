@@ -11,8 +11,12 @@
 - Device-untested: Speed/Quality/Captions lists, More menu, mini-player replace, media keys, Search keyboard flow.
 - Time to play is ~5 s on the box (budget 2 s): prefetch on card dwell and pre-warm the WebView runtime.
 - Workers: write the whole slice, then compile + own tests once; lint, full suite and TV check run once after merge.
+- Device-untested: mini Previous/Next focus, Now playing drawer entry, SponsorBlock and Home screen settings pages.
 
 ## Gotchas (cross-cutting)
+- The Mi Box is 960x540 dp; mockups are drawn at 1920 px, so 1 mockup px = 0.5 dp. Never copy px values as dp.
+- Compose TV: Centre KeyUp clicks whatever gained focus on KeyDown; the first Back only clears focus.
+- `focusProperties { enter }` applies only to a focus group; add `focusGroup()` after it.
 - `~/repos/pipepipe`, `~/repos/smarttube` and `~/repos/newpipe-extractor` are read-only reference checkouts; never edit them.
 - Release key: `~/.config/tubepipe/tubepipe-release.jks` via gitignored `keystore.properties`; back it up, updates need it.
 - Build on the installed JDK 21; the extractor asks for a JDK 25 toolchain, so override it to 21 and keep toolchain auto-download off.

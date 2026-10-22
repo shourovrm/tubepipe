@@ -23,3 +23,8 @@
 2026-10-22 | PlaybackRuntime starts on first playback, not in Application | WebView setup must not delay cold start to Home
 2026-10-22 | Display name TubePipe (package stays org.tubepipe.tv) | user choice; changing the package would break updates
 2026-10-22 | Workers build once per slice; lint and full suite only after merge | parallel cold builds made workers slow
+2026-10-22 | Settings is a 9-panel hub with one page per panel | the single list was too long; mockups in .design-mockups/round2
+2026-10-22 | Mini player reached by drawer "Now playing" and first Back | Mi Box remote has no menu or media keys
+2026-10-22 | Loop lives on PlaybackController, carries to the next video, off on stop | one state for bar and mini window
+2026-10-22 | Home publishes each section as it loads | one slow Mix lookup held every row back on cold start
+2026-10-22 | AppNavigator lives on AppContainer; MainActivity is singleTask | TV launcher stacked a second activity at Home
