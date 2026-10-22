@@ -34,6 +34,14 @@ abstract class PlaylistDao {
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     protected abstract suspend fun insertItem(item: PlaylistItemEntity)
 
+    /** Creates the playlist and puts [video] in it as one step; returns the new playlist's id. */
+    @Transaction
+    open suspend fun createPlaylistWithVideo(name: String, video: PlaylistVideo, createdAtMillis: Long): Long {
+        val playlistId = createPlaylist(name, createdAtMillis)
+        addItem(playlistId, video)
+        return playlistId
+    }
+
     @Transaction
     open suspend fun addItem(playlistId: Long, video: PlaylistVideo) {
         insertItem(
