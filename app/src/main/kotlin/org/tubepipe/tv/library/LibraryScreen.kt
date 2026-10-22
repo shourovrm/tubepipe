@@ -129,6 +129,7 @@ private fun LibrarySections(
     var creatingPlaylist by rememberSaveable { mutableStateOf(false) }
     var playlistForDeletion by remember { mutableStateOf<PlaylistEntity?>(null) }
     var searchForActions by remember { mutableStateOf<SavedSearchEntity?>(null) }
+    var searchForDeletion by remember { mutableStateOf<SavedSearchEntity?>(null) }
 
     LazyColumn(
         contentPadding = PaddingValues(vertical = TubepipeSpacing.SafeMarginVertical),
@@ -218,9 +219,18 @@ private fun LibrarySections(
             choices = listOf(
                 Choice(stringResource(R.string.library_open_search)) { navigator.openSearch(search.query) },
                 pinChoice,
-                Choice(stringResource(R.string.library_delete_search)) { viewModel.deleteSavedSearch(search.query) },
+                Choice(stringResource(R.string.library_delete_search)) { searchForDeletion = search },
             ),
             onDismiss = { searchForActions = null },
+        )
+    }
+    searchForDeletion?.let { search ->
+        ConfirmDialog(
+            title = stringResource(R.string.library_delete_search_title),
+            message = stringResource(R.string.library_delete_search_message, search.query),
+            confirmLabel = stringResource(R.string.library_confirm_delete),
+            onConfirm = { viewModel.deleteSavedSearch(search.query) },
+            onDismiss = { searchForDeletion = null },
         )
     }
 }

@@ -23,4 +23,8 @@ interface HistoryDao {
 
     @Query("DELETE FROM history")
     suspend fun clear()
+
+    // Keeps the entries so History still lists them; only the resume point is forgotten.
+    @Query("UPDATE history SET positionMillis = 0")
+    suspend fun clearPositions()
 }

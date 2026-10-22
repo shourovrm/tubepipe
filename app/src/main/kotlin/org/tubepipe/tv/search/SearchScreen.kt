@@ -59,6 +59,7 @@ import org.tubepipe.tv.AppContainer
 import org.tubepipe.tv.R
 import org.tubepipe.tv.common.VideoActionsDialog
 import org.tubepipe.tv.common.toCardModel
+import org.tubepipe.tv.library.ConfirmDialog
 import org.tubepipe.tv.navigation.AppNavigator
 
 private val SearchFieldShape = RoundedCornerShape(12.dp)
@@ -66,10 +67,15 @@ private val SearchFieldShape = RoundedCornerShape(12.dp)
 @Composable
 fun SearchScreen(container: AppContainer, navigator: AppNavigator) {
     val viewModel = viewModel {
-        SearchViewModel(container.content, container.database.searchDao())
+        SearchViewModel(
+            content = container.content,
+            searchDao = container.database.searchDao(),
+            settings = container.settings.settings,
+        )
     }
     val state by viewModel.state.collectAsStateWithLifecycle()
     var actionsVideo by remember { mutableStateOf<VideoItem?>(null) }
+    var confirmingSave by remember { mutableStateOf(false) }
     // toCardModel needs composition (plural strings) but VideoGrid asks for models outside it, so build them here.
     val cardModels = state.results.associate { video -> video.url to video.toCardModel() }
 
@@ -117,7 +123,7 @@ fun SearchScreen(container: AppContainer, navigator: AppNavigator) {
                 modifier = Modifier.weight(1f),
             )
             if (state.submittedQuery != null && state.results.isNotEmpty()) {
-                SaveSearchButton(isSaved = state.isCurrentSearchSaved, onClick = viewModel::saveCurrentSearch)
+                SaveSearchButton(isSaved = state.isCurrentSearchSaved, onClick = { confirmingSave = true })
             }
         }
 
@@ -163,6 +169,16 @@ fun SearchScreen(container: AppContainer, navigator: AppNavigator) {
                 )
             }
         }
+    }
+
+    if (confirmingSave) {
+        ConfirmDialog(
+            title = stringResource(R.string.search_save_title),
+            message = stringResource(R.string.search_save_message, state.submittedQuery.orEmpty()),
+            confirmLabel = stringResource(R.string.search_save),
+            onConfirm = viewModel::saveCurrentSearch,
+            onDismiss = { confirmingSave = false },
+        )
     }
 
     actionsVideo?.let { video ->
