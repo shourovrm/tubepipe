@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -38,6 +39,9 @@ import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
@@ -68,6 +72,13 @@ private val PopupMaxHeight = 392.dp
 private val PopupGap = 12.dp
 private val ButtonBackground = Color(0x14FFFFFF)
 private val ButtonBackgroundFocused = Color(0x38FFFFFF)
+private val LoopOnBackground = Color(0x59E53935)
+private val SwitchOffTrack = Color(0xFF6B6B6B)
+private val SwitchTrackWidth = 36.dp
+private val SwitchTrackHeight = 20.dp
+private val SwitchKnobSize = 16.dp
+private val SeparatorWidth = 2.dp
+private val SeparatorHeight = 48.dp
 private val ScrimTop = Color(0x00000000)
 private val ScrimBottom = Color(0xEB000000)
 
@@ -84,6 +95,8 @@ internal class ControlBarActions(
     val onNext: () -> Unit,
     val onOpenList: (ControlList) -> Unit,
     val onToggleLike: () -> Unit,
+    val onToggleLoop: () -> Unit,
+    val onToggleAutoplay: () -> Unit,
     val onOpenChannel: () -> Unit,
 )
 
@@ -98,6 +111,7 @@ internal fun PlayerControlBar(
     snapshot: PlaybackSnapshot,
     engine: TubepipePlayerEngine,
     state: PlayerState,
+    isLooping: Boolean,
     openList: ControlList?,
     listOptions: List<ListOption>,
     listKey: Any,
@@ -141,6 +155,7 @@ internal fun PlayerControlBar(
             snapshot = snapshot,
             engine = engine,
             state = state,
+            isLooping = isLooping,
             openList = openList,
             listOptions = listOptions,
             listKey = listKey,
@@ -253,6 +268,7 @@ private fun ButtonRow(
     snapshot: PlaybackSnapshot,
     engine: TubepipePlayerEngine,
     state: PlayerState,
+    isLooping: Boolean,
     openList: ControlList?,
     listOptions: List<ListOption>,
     listKey: Any,
@@ -300,6 +316,30 @@ private fun ButtonRow(
         }
         RoundControl(stringResource(R.string.player_next), SmallButtonSize, actions.onNext) {
             ButtonIcon(PlayerIcons.SkipNext)
+        }
+        Box(
+            modifier = Modifier
+                .padding(top = (PlayButtonSize - SeparatorHeight) / 2)
+                .width(SeparatorWidth)
+                .height(SeparatorHeight)
+                .background(TubepipeColors.SurfaceVariant),
+        )
+        RoundControl(
+            label = stringResource(if (isLooping) R.string.player_loop_on else R.string.player_loop_off),
+            size = SmallButtonSize,
+            onClick = actions.onToggleLoop,
+            containerColor = if (isLooping) LoopOnBackground else ButtonBackground,
+        ) {
+            LoopIcon(isLooping)
+        }
+        RoundControl(
+            label = stringResource(
+                if (state.autoplayNext) R.string.player_autoplay_on else R.string.player_autoplay_off,
+            ),
+            size = SmallButtonSize,
+            onClick = actions.onToggleAutoplay,
+        ) {
+            AutoplaySwitch(state.autoplayNext)
         }
         Box(modifier = Modifier.weight(1f))
         RoundControl(
@@ -355,6 +395,51 @@ private fun ButtonIcon(icon: ImageVector, size: Dp = SmallButtonSize / 2) {
     Icon(imageVector = icon, contentDescription = null, modifier = Modifier.size(size))
 }
 
+/** The loop glyph, red with a small dot under it while looping, grey otherwise. */
+@Composable
+private fun LoopIcon(isLooping: Boolean) {
+    Box(contentAlignment = Alignment.Center) {
+        Icon(
+            imageVector = PlayerIcons.Loop,
+            contentDescription = null,
+            tint = if (isLooping) TubepipeColors.Primary else TubepipeColors.OnSurfaceVariant,
+            modifier = Modifier.size(SmallButtonSize / 2),
+        )
+        if (isLooping) {
+            Box(
+                modifier = Modifier
+                    .offset(y = SmallButtonSize / 2 - 2.dp)
+                    .size(5.dp)
+                    .background(TubepipeColors.Primary, CircleShape),
+            )
+        }
+    }
+}
+
+/** A small switch: pill track (red when on, grey when off) with a white knob that carries a play glyph. */
+@Composable
+private fun AutoplaySwitch(isOn: Boolean) {
+    Box(
+        contentAlignment = if (isOn) Alignment.CenterEnd else Alignment.CenterStart,
+        modifier = Modifier
+            .size(SwitchTrackWidth, SwitchTrackHeight)
+            .background(if (isOn) TubepipeColors.Primary else SwitchOffTrack, CircleShape)
+            .padding(2.dp),
+    ) {
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier = Modifier.size(SwitchKnobSize).background(Color.White, CircleShape),
+        ) {
+            Icon(
+                imageVector = PlayerIcons.PlayArrow,
+                contentDescription = null,
+                tint = if (isOn) TubepipeColors.Primary else SwitchOffTrack,
+                modifier = Modifier.size(10.dp),
+            )
+        }
+    }
+}
+
 @Composable
 private fun ButtonText(text: String) {
     Text(text = text, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, maxLines = 1)
@@ -372,6 +457,7 @@ private fun RoundControl(
     size: Dp,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    containerColor: Color = ButtonBackground,
     popup: @Composable BoxScope.() -> Unit = {},
     icon: @Composable () -> Unit,
 ) {
@@ -384,7 +470,7 @@ private fun RoundControl(
                 onClick = onClick,
                 shape = ClickableSurfaceDefaults.shape(CircleShape),
                 colors = ClickableSurfaceDefaults.colors(
-                    containerColor = ButtonBackground,
+                    containerColor = containerColor,
                     focusedContainerColor = ButtonBackgroundFocused,
                     contentColor = TubepipeColors.OnSurface,
                     focusedContentColor = TubepipeColors.OnSurface,
@@ -440,7 +526,13 @@ private fun BoxScope.OptionPopup(options: List<ListOption>, listKey: Any, horizo
             .padding(TubepipeSpacing.Grid * 2),
     ) {
         options.forEachIndexed { index, option ->
-            OptionRow(option, Modifier.focusRequester(focusRequesters[index]))
+            // Focus is trapped in the open list: the first Up and the last Down are swallowed.
+            val keepsFocusInside = Modifier.onPreviewKeyEvent { event ->
+                val isDownOnLast = event.key == Key.DirectionDown && index == options.lastIndex
+                val isUpOnFirst = event.key == Key.DirectionUp && index == 0
+                isDownOnLast || isUpOnFirst
+            }
+            OptionRow(option, Modifier.focusRequester(focusRequesters[index]).then(keepsFocusInside))
         }
     }
 }

@@ -120,6 +120,8 @@ private fun PlayerContent(
     navigator: AppNavigator,
 ) {
     val controller = container.playback
+    val isLooping by controller.isLooping.collectAsStateWithLifecycle()
+    val coroutineScope = rememberCoroutineScope()
     val snapshot = engine.snapshot
     val exoPlayer = engine.player?.exoPlayer
     var isBarVisible by remember { mutableStateOf(true) }
@@ -131,6 +133,8 @@ private fun PlayerContent(
     var keyPressCount by remember { mutableIntStateOf(0) }
     var seekFeedbackCount by remember { mutableIntStateOf(0) }
     var isSeekFeedbackVisible by remember { mutableStateOf(false) }
+    // Set when the root consumed a Centre KeyDown; its KeyUp must not reach the button that gets focus meanwhile.
+    var isCentreKeyUpPending by remember { mutableStateOf(false) }
     val rootFocus = remember { FocusRequester() }
     val playPauseFocus = remember { FocusRequester() }
 
@@ -159,8 +163,14 @@ private fun PlayerContent(
         onPlayPause = controller::togglePause,
         onSeekForward = { seekBy(state.seekStepMillis) },
         onNext = { viewModel.nextVideoUrl()?.let(navigator::openVideo) },
-        onOpenList = { list -> openList = list },
+        // Pressing the opener of the list that is already open closes it.
+        onOpenList = { list -> if (openList == list) closeList() else openList = list },
         onToggleLike = viewModel::toggleLike,
+        onToggleLoop = controller::toggleLoop,
+        onToggleAutoplay = {
+            val enabled = !state.autoplayNext
+            coroutineScope.launch { container.settings.setAutoplayNext(enabled) }
+        },
         onOpenChannel = { details.video.channelUrl?.let(navigator::openChannel) },
     )
 
@@ -207,7 +217,21 @@ private fun PlayerContent(
                 if (event.type == KeyEventType.KeyDown) {
                     keyPressCount += 1
                 }
-                false
+                val isCentreKey = event.key == Key.DirectionCenter ||
+                    event.key == Key.Enter ||
+                    event.key == Key.NumPadEnter
+                when {
+                    // The KeyDown already toggled playback; the button focused since then would toggle it again.
+                    isCentreKey && event.type == KeyEventType.KeyUp && isCentreKeyUpPending -> {
+                        isCentreKeyUpPending = false
+                        true
+                    }
+                    !isCentreKey && event.type == KeyEventType.KeyDown -> {
+                        isCentreKeyUpPending = false
+                        false
+                    }
+                    else -> false
+                }
             }
             .onKeyEvent { event ->
                 if (event.type != KeyEventType.KeyDown) {
@@ -236,6 +260,7 @@ private fun PlayerContent(
                 when (event.key) {
                     Key.DirectionCenter, Key.Enter, Key.NumPadEnter -> {
                         controller.togglePause()
+                        isCentreKeyUpPending = true
                         isBarVisible = true
                         true
                     }
@@ -293,6 +318,7 @@ private fun PlayerContent(
                 snapshot = snapshot,
                 engine = engine,
                 state = state,
+                isLooping = isLooping,
                 openList = openList,
                 listOptions = listOptions,
                 listKey = openList to moreStage,

@@ -31,6 +31,10 @@
     <string name="player_audio_track">Audio track</string>
     <string name="player_no_playlists">No playlists yet</string>
     <string name="player_channel_of">Open channel %1$s</string>
+    <string name="player_loop_on">Loop on</string>
+    <string name="player_loop_off">Loop off</string>
+    <string name="player_autoplay_on">Autoplay on</string>
+    <string name="player_autoplay_off">Autoplay off</string>
     <string name="mini_stop">Stop</string>
     <string name="mini_video_description">Playing in the corner. Press Centre for full screen.</string>
 </resources>
