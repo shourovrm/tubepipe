@@ -1,0 +1,15 @@
+- generic [active] [ref=f1e1]:
+  - heading "Logo 1 · Pipe play" [level=1] [ref=f1e2]
+  - paragraph [ref=f1e3]: A pipe bends into a play arrow, with two white couplings where the 'tube' starts. Red on the app's wine colour. Reads as 'play' at small sizes and as a pipe up close.
+  - generic [ref=f1e4]:
+    - generic [ref=f1e5]: Launcher icon (192 px)
+    - generic [ref=f1e13]:
+      - img [ref=f1e14]:
+        - generic [ref=f1e21]: TubePipe
+      - generic [ref=f1e22]: Android TV banner, 320 × 180 dp, shown at 2×
+  - generic [ref=f1e23]:
+    - generic [ref=f1e24]:
+      - generic [ref=f1e25]: TubePipe
+      - generic [ref=f1e32]: Drawer header (40 px)
+    - generic [ref=f1e33]: 64 px
+    - generic [ref=f1e41]: On a light surface

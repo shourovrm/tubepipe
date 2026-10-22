@@ -29,8 +29,9 @@ Where the red goes: focus borders, the filled primary button, the watched-progre
 its thumb, the live badge, the text caret, the on toggle. Nowhere else; body text and icons stay white or `#C9CACB`.
 Where the wine goes: the active drawer item, the logo circle, selected chips. Never as a focus cue.
 
-Brand mark: PipePipe's pixel TV, white on a `#6E0E3D` circle, redrawn as a 12 x 9 pixel grid in SVG; 32dp in the
-drawer, 160dp on the launcher icon, 320 x 180 banner on the same wine.
+Brand mark (chosen 2026-10-22, `.design-mockups/logo/logo-1-pipe-play.html`): a red pipe (#FF5252 to #C62828)
+bent into a play arrow with two white couplings, on a `#6E0E3D` circle; 108dp vector launcher icon, 320 x 180 banner
+PNG with the TubePipe wordmark (Tube white, Pipe #FF5252, Roboto Condensed 700).
 
 Radius: card and list item 8dp; wide button 12dp; text and icon buttons full. Density: 4-up rows (196dp cards),
 drawer collapsed at 56dp and expanded on focus to 256dp, list items 48dp one line and 64dp two lines.
