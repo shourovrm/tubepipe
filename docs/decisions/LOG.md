@@ -22,3 +22,4 @@
 2026-10-22 | minSdk 24 instead of 23 | DataStore 1.3 requires 24; Android 6 TV boxes are rare
 2026-10-22 | PlaybackRuntime starts on first playback, not in Application | WebView setup must not delay cold start to Home
 2026-10-22 | Display name TubePipe (package stays org.tubepipe.tv) | user choice; changing the package would break updates
+2026-10-22 | Workers build once per slice; lint and full suite only after merge | parallel cold builds made workers slow

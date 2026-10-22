@@ -29,7 +29,7 @@ internal fun StreamInfo.toVideoItem(): VideoItem = VideoItem(
     thumbnailUrl = thumbnailUrl,
     durationSeconds = duration.nullIfNegative(),
     viewCount = viewCount.nullIfNegative(),
-    uploadedText = textualUploadDate,
+    uploadedText = UploadDateText.from(textualUploadDate),
     isLive = streamType.isLive(),
 )
 

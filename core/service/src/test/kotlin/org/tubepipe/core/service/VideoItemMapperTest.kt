@@ -1,6 +1,7 @@
 package org.tubepipe.core.service
 
 import java.time.OffsetDateTime
+import java.util.Locale
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -79,5 +80,16 @@ class VideoItemMapperTest {
         item.uploadDate = DateWrapper(OffsetDateTime.now().plusDays(2))
 
         assertTrue(item.toVideoItem().isUpcoming)
+    }
+
+    @Test
+    fun isoUploadTimestampIsShownAsALocalDate() {
+        assertEquals("Oct 16, 2026", UploadDateText.from("2026-10-16T00:05:58+00:00", Locale.US))
+    }
+
+    @Test
+    fun relativeUploadTextIsKeptAsIs() {
+        assertEquals("2 days ago", UploadDateText.from("2 days ago", Locale.US))
+        assertNull(UploadDateText.from(null, Locale.US))
     }
 }

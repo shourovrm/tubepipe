@@ -113,7 +113,11 @@ class PlayerViewModelTest {
 
         viewModel.savePosition(200_000L)
 
-        assertEquals(200_000L, databaseRule.database.historyDao().positionOf(playing.url))
+        // savePosition writes in the background (the player must not wait on disk), so wait for the row.
+        val saved = databaseRule.database.historyDao().observeRecent(10).first { entries ->
+            entries.any { it.url == playing.url && it.positionMillis == 200_000L }
+        }
+        assertEquals(200_000L, saved.single { it.url == playing.url }.positionMillis)
     }
 
     @Test
