@@ -50,4 +50,15 @@ class SearchDaoTest {
         searches.deleteSavedSearch("cats")
         assertEquals(emptyList<String>(), searches.observeSavedSearches().first().map { it.query })
     }
+
+    @Test
+    fun clearSearchHistoryKeepsSavedSearches() = runTest {
+        searches.recordSearch(query = "cats", searchedAtMillis = 1)
+        searches.saveSearch("dogs")
+
+        searches.clearSearchHistory()
+
+        assertEquals(emptyList<String>(), searches.observeRecentSearches(limit = 10).first().map { it.query })
+        assertEquals(listOf("dogs"), searches.observeSavedSearches().first().map { it.query })
+    }
 }

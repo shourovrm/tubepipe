@@ -12,6 +12,8 @@ import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import org.tubepipe.tv.data.HomeSection
 import org.tubepipe.tv.data.SettingsRepository
+import org.tubepipe.tv.data.SponsorBlockCategory
+import org.tubepipe.tv.data.VideoQuality
 import org.tubepipe.tv.testing.MainDispatcherRule
 
 class SettingsViewModelTest {
@@ -97,5 +99,23 @@ class SettingsViewModelTest {
 
         viewModel.toggleSectionHidden(HomeSection.Mix)
         viewModel.state.first { it.settings?.hiddenHomeSections?.isEmpty() == true }
+    }
+
+    @Test
+    fun portedSettingsArePassedThrough() = runTest(timeout = 30.seconds) {
+        val viewModel = SettingsViewModel(repository(backgroundScope), displayLocale = Locale.ENGLISH)
+        viewModel.state.first { it.settings != null }
+
+        viewModel.setDefaultQuality(VideoQuality.P720)
+        viewModel.setSeekStepSeconds(15)
+        viewModel.setHideShorts(true)
+        viewModel.setSponsorBlockCategoryEnabled(SponsorBlockCategory.Filler, enabled = false)
+
+        val settings = viewModel.state.first {
+            it.settings?.seekStepSeconds == 15 &&
+                it.settings.hideShorts &&
+                SponsorBlockCategory.Filler !in it.settings.sponsorBlockCategories
+        }.settings!!
+        assertEquals(VideoQuality.P720, settings.defaultQuality)
     }
 }

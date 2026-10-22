@@ -17,6 +17,7 @@ import org.robolectric.annotation.Config
 import org.tubepipe.tv.testing.FakeContentRepository
 import org.tubepipe.tv.testing.MainDispatcherRule
 import org.tubepipe.tv.testing.TestDatabaseRule
+import org.tubepipe.tv.testing.testSettings
 import org.tubepipe.tv.testing.videos
 
 @RunWith(RobolectricTestRunner::class)
@@ -35,7 +36,14 @@ class SearchViewModelTest {
     }
     private var nowMillis = 1_000L
 
-    private fun viewModel() = SearchViewModel(content, databaseRule.database.searchDao(), clock = { nowMillis })
+    private val settings = testSettings()
+
+    private fun viewModel() = SearchViewModel(
+        content = content,
+        searchDao = databaseRule.database.searchDao(),
+        settings = settings,
+        clock = { nowMillis },
+    )
 
     @Test
     fun blankQueryShowsRecentSearchesNewestFirst() = runTest(timeout = 30.seconds) {
@@ -118,5 +126,35 @@ class SearchViewModelTest {
 
         val saved = databaseRule.database.searchDao().observeSavedSearches().first { it.isNotEmpty() }
         assertEquals(listOf("cats"), saved.map { it.query })
+    }
+
+    @Test
+    fun searchHistoryOffRecordsNothing() = runTest(timeout = 30.seconds) {
+        settings.value = settings.value.copy(searchHistoryEnabled = false)
+        val viewModel = viewModel()
+
+        viewModel.submit("cats")
+        viewModel.state.first { !it.isLoading && it.results.isNotEmpty() }
+
+        assertEquals(
+            emptyList<String>(),
+            databaseRule.database.searchDao().observeRecentSearches(10).first().map {
+                it.query
+            },
+        )
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Test
+    fun suggestionsOffFetchesNone() = runTest(mainDispatcherRule.dispatcher, timeout = 30.seconds) {
+        settings.value = settings.value.copy(searchSuggestionsEnabled = false)
+        val viewModel = viewModel()
+
+        viewModel.onQueryChange("cat")
+        advanceTimeBy(SearchViewModel.SUGGESTION_DELAY_MILLIS + 50)
+        runCurrent()
+
+        assertEquals(emptyList<String>(), content.suggestionRequests)
+        assertEquals(emptyList<String>(), viewModel.state.value.suggestions)
     }
 }

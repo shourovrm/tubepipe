@@ -59,4 +59,14 @@ class HistoryDaoTest {
         history.clear()
         assertTrue(history.observeRecent(limit = 10).first().isEmpty())
     }
+
+    @Test
+    fun clearPositionsKeepsHistoryButForgetsWhereEachVideoStopped() = runTest {
+        history.upsert(entry("a", watchedAtMillis = 1, positionMillis = 42_000L))
+
+        history.clearPositions()
+
+        assertEquals(0L, history.positionOf("a"))
+        assertEquals(listOf("a"), history.observeRecent(limit = 10).first().map { it.url })
+    }
 }
