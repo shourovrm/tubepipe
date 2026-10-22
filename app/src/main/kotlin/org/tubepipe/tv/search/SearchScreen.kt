@@ -17,6 +17,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -49,6 +51,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.tv.material3.Border
 import androidx.tv.material3.Button
 import androidx.tv.material3.ButtonDefaults
+import androidx.tv.material3.Icon
 import androidx.tv.material3.ListItem
 import androidx.tv.material3.ListItemDefaults
 import androidx.tv.material3.MaterialTheme
@@ -95,6 +98,8 @@ fun SearchScreen(container: AppContainer, navigator: AppNavigator) {
     // One requester serves whichever list the body shows (suggestions, recent searches or results),
     // so Down from the field always lands on what is on screen.
     val bodyFocusRequester = remember { FocusRequester() }
+    val fieldFocusRequester = remember { FocusRequester() }
+    val clearButtonFocusRequester = remember { FocusRequester() }
     val keyboardController = LocalSoftwareKeyboardController.current
     val bodyContent = bodyContentFor(state)
     // Saved across Back navigation so returning to results already focused for this submission does not
@@ -136,8 +141,20 @@ fun SearchScreen(container: AppContainer, navigator: AppNavigator) {
                 onQueryChange = viewModel::onQueryChange,
                 onSubmit = { viewModel.submit(state.query) },
                 downFocusTarget = if (bodyContent.hasFocusableItems) bodyFocusRequester else FocusRequester.Default,
+                rightFocusTarget = if (state.query.isNotEmpty()) clearButtonFocusRequester else FocusRequester.Default,
+                fieldFocusRequester = fieldFocusRequester,
                 modifier = Modifier.weight(1f),
             )
+            if (state.query.isNotEmpty()) {
+                ClearQueryButton(
+                    onClick = {
+                        viewModel.onQueryChange("")
+                        // The button leaves composition with the text, so focus goes back to the field first.
+                        fieldFocusRequester.requestFocus()
+                    },
+                    modifier = Modifier.focusRequester(clearButtonFocusRequester),
+                )
+            }
             if (state.submittedQuery != null && state.items.isNotEmpty()) {
                 SaveSearchButton(isSaved = state.isCurrentSearchSaved, onClick = { confirmingSave = true })
             }
@@ -275,6 +292,8 @@ private fun SearchField(
     onQueryChange: (String) -> Unit,
     onSubmit: () -> Unit,
     downFocusTarget: FocusRequester,
+    rightFocusTarget: FocusRequester,
+    fieldFocusRequester: FocusRequester,
     modifier: Modifier = Modifier,
 ) {
     var isFocused by remember { mutableStateOf(false) }
@@ -306,16 +325,30 @@ private fun SearchField(
         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
         keyboardActions = KeyboardActions(onSearch = { onSubmit() }),
         modifier = modifier
+            .focusRequester(fieldFocusRequester)
             .onFocusChanged { focusState -> isFocused = focusState.isFocused }
             // Down goes to the body's first item explicitly; left to itself it picks whichever card is nearest the wide field, often the second. Default is used while the body has nothing focusable.
             .focusProperties { down = downFocusTarget }
             .onPreviewKeyEvent { keyEvent ->
-                val isCentreRelease = keyEvent.key == Key.DirectionCenter && keyEvent.type == KeyEventType.KeyUp
+                val isCentreKey = keyEvent.key == Key.DirectionCenter
                 val isDownPress = keyEvent.key == Key.DirectionDown && keyEvent.type == KeyEventType.KeyDown
+                val isRightPress = keyEvent.key == Key.DirectionRight && keyEvent.type == KeyEventType.KeyDown
+                val isCursorAtEnd = fieldValue.selection.end >= fieldValue.text.length
                 when {
-                    // A remote has no tap, so Centre must open the keyboard itself.
-                    isCentreRelease -> {
+                    // The input connection of a focused field is live even while the keyboard is hidden, so a
+                    // Centre press that reaches it is sent on to the keyboard service, which acts on it as a key
+                    // press (the stray key on the Mi Box). Both halves are consumed here instead.
+                    isCentreKey && keyEvent.type == KeyEventType.KeyDown -> true
+                    // A remote has no tap, so Centre must open the keyboard itself. Waiting for the release
+                    // means the keyboard opens after the press is over and cannot receive its second half.
+                    isCentreKey && keyEvent.type == KeyEventType.KeyUp -> {
                         keyboardController?.show()
+                        true
+                    }
+                    // Right moves the cursor inside the text; only from the end of the text does it leave the
+                    // field for the clear button.
+                    isRightPress && isCursorAtEnd && rightFocusTarget != FocusRequester.Default -> {
+                        rightFocusTarget.requestFocus()
                         true
                     }
                     // The text field keeps Down as a cursor move, so focusProperties alone never fired on the
@@ -348,6 +381,28 @@ private fun SearchField(
             }
         },
     )
+}
+
+@Composable
+private fun ClearQueryButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
+    Button(
+        onClick = onClick,
+        colors = ButtonDefaults.colors(
+            containerColor = TubepipeColors.SurfaceVariant,
+            contentColor = TubepipeColors.OnSurface,
+            focusedContainerColor = TubepipeColors.SurfaceVariant,
+            focusedContentColor = TubepipeColors.OnSurface,
+        ),
+        border = ButtonDefaults.border(
+            focusedBorder = Border(BorderStroke(3.dp, TubepipeColors.FocusBorder)),
+        ),
+        modifier = modifier,
+    ) {
+        Icon(
+            imageVector = Icons.Filled.Close,
+            contentDescription = stringResource(R.string.search_clear),
+        )
+    }
 }
 
 @Composable
