@@ -14,10 +14,11 @@
 2026-10-22 | Compile extractor sources with our build files on JDK 21 | includeBuild keeps its JDK 25 toolchain; settings hooks can't reach it
 2026-10-22 | Release builds fall back to the debug key | user wants release APKs only; no release keystore exists yet
 2026-10-22 | Pin extractor submodule to commit 1a09d20e | upstream publishes no git tags; same commit the spike tested
-2026-10-22 | Default YouTube client visionos (HLS), mweb SABR as fallback | matches PipePipe logged out; no accounts in Tubepipe
+2026-10-22 | Default YouTube client visionos (HLS), mweb SABR as fallback | matches PipePipe logged out; no accounts in TubePipe
 2026-10-22 | Hide the Music tab where YouTube Charts has no data (BD) | user choice over a US chart fallback
 2026-10-22 | Content country is a Settings choice, default device locale | user choice
 2026-10-22 | Own release key outside the repo, no Play Store | sideload and GitHub releases need one stable signing key
 2026-10-22 | CI declined for now | user will revisit later
 2026-10-22 | minSdk 24 instead of 23 | DataStore 1.3 requires 24; Android 6 TV boxes are rare
 2026-10-22 | PlaybackRuntime starts on first playback, not in Application | WebView setup must not delay cold start to Home
+2026-10-22 | Display name TubePipe (package stays org.tubepipe.tv) | user choice; changing the package would break updates

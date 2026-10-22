@@ -1,4 +1,4 @@
-# Tubepipe
+# TubePipe
 
 Android TV client in the style of SmartTube (D-pad only, 10-foot UI, no ads, no account required), based on PipePipe. Licence: GPL-3.0, inherited from NewPipe and PipePipe; every file we ship is GPL-3.0 and the source stays public.
 

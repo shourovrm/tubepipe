@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Tubepipe</string>
+    <string name="app_name">TubePipe</string>
     <string name="destination_home">Home</string>
     <string name="destination_trending">Trending</string>
     <string name="destination_subscriptions">Subscriptions</string>
