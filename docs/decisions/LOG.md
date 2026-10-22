@@ -13,3 +13,4 @@
 2026-10-22 | PoToken via system WebView, not QuickJS | the WebView path worked in the spike on WebView 138
 2026-10-22 | Compile extractor sources with our build files on JDK 21 | includeBuild keeps its JDK 25 toolchain; settings hooks can't reach it
 2026-10-22 | Release builds fall back to the debug key | user wants release APKs only; no release keystore exists yet
+2026-10-22 | Pin extractor submodule to commit 1a09d20e | upstream publishes no git tags; same commit the spike tested

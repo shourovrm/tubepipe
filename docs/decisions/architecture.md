@@ -11,7 +11,7 @@ cookies, ReCaptcha), the YouTube playback glue (`player/datasource/Sabr*`, `Yout
 DASH manifest creators), SponsorBlock, the Room schema and the subscriptions JSON format. SmartTube gives 10-foot UX
 patterns only (sections, long-press menu, remote key map, double-back exit, storyboard seek preview); none of its code.
 
-Extractor delivery: git submodule `extractor/` = PipePipeExtractor pinned to tag v5.5.0, unmodified. Its sources are
+Extractor delivery: git submodule `extractor/` = PipePipeExtractor pinned to commit `1a09d20e` (version v5.5.0; upstream has no tags), unmodified. Its sources are
 compiled by our `extractor-build/{extractor,timeago-parser}` build files on JDK 21 (projects `:extractor`, `:timeago-parser`).
 
 Gradle modules (five; features are packages inside `:app` until build time says otherwise):

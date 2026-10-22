@@ -10,7 +10,7 @@ lifecycle = "2.11.0"
 core-ktx = "1.19.1"
 desugar-jdk-libs = "2.1.5"
 junit4 = "4.13.2"
-# Pinned to the versions PipePipeExtractor v5.5.0 declares (extractor/build.gradle); update together.
+# Pinned to the versions the pinned PipePipeExtractor commit declares (extractor/build.gradle); update together.
 nanojson = "1d9e1aea9049fc9f85e68b43ba39fe7be1c1f751"
 spotbugs = "4.10.2"
 jsoup = "1.22.2"
