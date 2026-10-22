@@ -14,6 +14,10 @@ android {
         sourceCompatibility = JavaVersion.VERSION_21
         targetCompatibility = JavaVersion.VERSION_21
     }
+    testOptions {
+        // Media3 value classes (Format, TrackGroup) call android.text.TextUtils, which the JVM stub jar does not run.
+        unitTests.isReturnDefaultValues = true
+    }
     buildFeatures {
         // BuildConfig.DEBUG gates WebView debugging and console logging (docs/decisions/player.md).
         buildConfig = true
