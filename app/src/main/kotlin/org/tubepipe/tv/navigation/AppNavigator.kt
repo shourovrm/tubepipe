@@ -1,6 +1,7 @@
 package org.tubepipe.tv.navigation
 
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -55,6 +56,13 @@ class AppNavigator(private val clock: () -> Long = System::currentTimeMillis) {
      * null whenever no such bar exists.
      */
     var minimizedQueue: PlaybackQueue? by mutableStateOf(null)
+        private set
+
+    /**
+     * Counts Backs that popped a screen. The page returned to is built fresh, and the one just left took focus
+     * with it, so the shell uses this to hand focus to the page.
+     */
+    var backCount: Int by mutableIntStateOf(0)
         private set
 
     fun openDestination(destination: Destination) {
@@ -152,6 +160,7 @@ class AppNavigator(private val clock: () -> Long = System::currentTimeMillis) {
         }
         if (stack.size > 1) {
             stack.removeAt(stack.lastIndex)
+            backCount += 1
             // A playlist video keeps playing in a bar on the playlist page it was started from.
             val leftQueue = (top as? Screen.Player)?.queue
             val page = current

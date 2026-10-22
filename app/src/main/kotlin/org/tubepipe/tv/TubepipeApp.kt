@@ -40,6 +40,9 @@ import org.tubepipe.tv.navigation.Screen
 /** Pause before a focused drawer item opens, so Down held across several items loads only the last one. */
 private const val FOCUS_SELECT_DELAY_MILLIS = 250L
 
+private const val BACK_FOCUS_ATTEMPTS = 20
+private const val BACK_FOCUS_RETRY_MILLIS = 100L
+
 private val NowPlayingThumbnailWidth = 40.dp
 private val NowPlayingThumbnailHeight = 24.dp
 
@@ -56,6 +59,29 @@ fun TubepipeApp(container: AppContainer, onExit: () -> Unit, content: @Composabl
         }
     }
 
+    // After Back pops a screen, the page returned to is new and nothing on it has focus, so the D-pad does
+    // nothing. Focus goes into the content group, which lands on its first focusable item. Forward navigation
+    // is left alone: a drawer pick keeps focus in the drawer, and pages that want focus ask for it themselves.
+    val contentFocus = remember { FocusRequester() }
+    var contentHasFocus by remember { mutableStateOf(false) }
+    LaunchedEffect(navigator.backCount) {
+        if (navigator.backCount == 0) {
+            return@LaunchedEffect
+        }
+        // A page such as Home fills its list after loading, so the first tries may find nothing to focus.
+        repeat(BACK_FOCUS_ATTEMPTS) {
+            if (contentHasFocus || contentFocus.requestFocus()) {
+                return@LaunchedEffect
+            }
+            delay(BACK_FOCUS_RETRY_MILLIS)
+        }
+    }
+    val contentModifier = Modifier
+        .fillMaxSize()
+        .onFocusChanged { focusState -> contentHasFocus = focusState.hasFocus }
+        .focusRequester(contentFocus)
+        .focusGroup()
+
     val screen = navigator.current
     if (screen is Screen.Top) {
         NavigationDrawer(
@@ -63,10 +89,10 @@ fun TubepipeApp(container: AppContainer, onExit: () -> Unit, content: @Composabl
                 DrawerItems(selected = screen.destination, onSelect = navigator::openDestination)
             },
         ) {
-            content(screen)
+            Box(modifier = contentModifier) { content(screen) }
         }
     } else {
-        content(screen)
+        Box(modifier = contentModifier) { content(screen) }
     }
 }
 
