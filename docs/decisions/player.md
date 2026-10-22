@@ -12,6 +12,8 @@ SABR glue and played one 1080p avc1 stream for 60 s on the Mi Box S with 0 rebuf
 - PoToken runs in the system WebView (138 on the box); QuickJS was not needed for the spike.
 - Default client `visionos`: for normal videos the extractor gives progressive formats plus the HLS master playlist
   (`hlsUrl`), played adaptively; `mweb` (SABR) is the fallback and a Settings choice. Both 1080p, 0 rebuffers on the box.
+- Made-for-kids videos (Masha, Grizzy): YouTube refuses VisionOS and the extractor silently keeps one muxed 360p
+  (itag 18). `LowQualityOffer` spots a 360p-only result and `load` retries mweb, keeping the 360p if mweb fails.
 
 ## Open items
 - Untested paths: multi-language HLS original-audio switch, DASH/OTF/progressive builders; add device tests.
@@ -29,4 +31,5 @@ SABR glue and played one 1080p avc1 stream for 60 s on the Mi Box S with 0 rebuf
 - The `SabrDashMediaSource` constructor does network I/O; build it on `Dispatchers.IO`.
 
 ## Tried / rejected
+- tv_simply, web: also 360p-only for kids videos; tv_samsung, tv_downgraded: bot check. Only mweb gives 1080p.
 - ExoPlayer 2.18.7 fallback: not needed, the Media3 port is three files; 2.18.7 is end of life with no media session future.

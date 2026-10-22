@@ -45,31 +45,46 @@ class TubepipePlayer(
     }
 
     /**
-     * Extracts [videoUrl] with the preferred client, then with the other client if that fails, and plays the first
-     * stream that builds. Extraction and source building run on [Dispatchers.IO]; the player is prepared on the
+     * Extracts [videoUrl] with the preferred client, then with the other client if that fails or offers only 360p,
+     * and plays the first stream that builds. Extraction and source building run on [Dispatchers.IO]; the player is prepared on the
      * calling (main) thread.
      *
      * @throws IOException when every client failed; the failure of each client is attached as a suppressed exception
      */
     suspend fun load(videoUrl: String, startPositionMs: Long = 0L): LoadedStream {
         val failures = mutableListOf<Pair<PlayerClient, Exception>>()
-        for (client in PlayerClient.fallbackOrder(preferredClient)) {
+        // A 360p-only result is kept while the next client is tried, and played only if no client does better.
+        var lowQualityResult: Pair<PlayerClient, ExtractedSource>? = null
+        val clients = PlayerClient.fallbackOrder(preferredClient)
+        for (client in clients) {
             try {
                 val loaded = withContext(Dispatchers.IO) { extractAndBuild(client, videoUrl, startPositionMs) }
-                chooseAudioTrackAfterPrepare(loaded.builtSource.delivery)
-                exoPlayer.setMediaSource(loaded.builtSource.mediaSource, startPositionMs)
-                exoPlayer.prepare()
-                exoPlayer.playWhenReady = true
-                return LoadedStream(client, loaded.builtSource.delivery, loaded.streamInfo.name)
+                val isLastClient = client == clients.last()
+                if (LowQualityOffer.isLowQualityOnly(loaded.streamInfo) && !isLastClient) {
+                    if (lowQualityResult == null) {
+                        lowQualityResult = client to loaded
+                    }
+                    continue
+                }
+                return play(client, loaded, startPositionMs)
             } catch (error: IOException) {
                 failures.add(client to error)
             } catch (error: ExtractionException) {
                 failures.add(client to error)
             }
         }
+        lowQualityResult?.let { (client, loaded) -> return play(client, loaded, startPositionMs) }
         throw IOException(failureMessage(videoUrl, failures)).also { combined ->
             failures.forEach { (_, error) -> combined.addSuppressed(error) }
         }
+    }
+
+    private fun play(client: PlayerClient, loaded: ExtractedSource, startPositionMs: Long): LoadedStream {
+        chooseAudioTrackAfterPrepare(loaded.builtSource.delivery)
+        exoPlayer.setMediaSource(loaded.builtSource.mediaSource, startPositionMs)
+        exoPlayer.prepare()
+        exoPlayer.playWhenReady = true
+        return LoadedStream(client, loaded.builtSource.delivery, loaded.streamInfo.name)
     }
 
     /** Heights the loaded video offers on this device, tallest first; empty until the tracks are known. */

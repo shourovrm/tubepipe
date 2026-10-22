@@ -33,3 +33,4 @@
 2026-10-22 | Search uses the ALL filter (videos, channels, playlists); 0-second durations hide the badge | Shorts shelf items have no duration
 2026-10-22 | Parental: YouTube Restricted Mode cookie (PipePipe's) and an 18+ playback block | user chose these two over a PIN
 2026-10-22 | Settings hub is variant D colour cards, no explanatory text | user choice from four mockups in .design-mockups/round3
+2026-10-22 | Retry mweb when VisionOS offers only 360p | kids videos are refused to VisionOS; NewPipe fails them, PipePipe logged in uses mweb

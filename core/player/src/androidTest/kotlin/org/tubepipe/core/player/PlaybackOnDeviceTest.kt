@@ -37,6 +37,9 @@ class PlaybackOnDeviceTest {
         private const val VIDEO_URL = "https://www.youtube.com/watch?v=G-eNlqqkn1w"
 
         // Has many uploaded caption tracks, English among them.
+        // Made for kids: VisionOS is refused and the extractor falls back to a single 360p stream.
+        private const val MADE_FOR_KIDS_VIDEO_URL = "https://www.youtube.com/watch?v=mWXrM-OKBNQ"
+
         private const val CAPTIONED_VIDEO_URL = "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
 
         @BeforeClass
@@ -132,6 +135,20 @@ class PlaybackOnDeviceTest {
         assertEquals(Delivery.Hls, loaded.delivery)
         assertEquals(0, rebufferCount)
         assertTrue("height ${player.exoPlayer.videoSize.height}", player.exoPlayer.videoSize.height >= 720)
+    }
+
+    @Test
+    fun madeForKidsVideoSwitchesToMwebAbove360p() = runBlocking(Dispatchers.Main) {
+        createPlayer(PlayerClient.VisionOs)
+        val loaded = player.load(MADE_FOR_KIDS_VIDEO_URL)
+        waitUntil(timeoutMs = 20_000) { player.exoPlayer.playbackState == Player.STATE_READY }
+
+        playFor(seconds = 10)
+        printResult("kids", loaded)
+
+        assertEquals(PlayerClient.Mweb, loaded.client)
+        assertEquals(Delivery.Sabr, loaded.delivery)
+        assertTrue("height ${player.exoPlayer.videoSize.height}", player.exoPlayer.videoSize.height > 360)
     }
 
     @Test
