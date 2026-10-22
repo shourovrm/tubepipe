@@ -369,6 +369,11 @@ internal fun AboutPage(versionName: String) {
         SettingsGroupLabel(stringResource(R.string.settings_about_credits))
         SettingsInfoRow(name = stringResource(R.string.settings_about_newpipe))
         SettingsInfoRow(name = stringResource(R.string.settings_about_pipepipe))
+        // GPL-3.0: the About page must say the source is public (AGENTS.md, non-negotiables).
+        SettingsInfoRow(
+            name = stringResource(R.string.settings_about_source_name),
+            value = stringResource(R.string.settings_about_source_value),
+        )
     }
 }
 
