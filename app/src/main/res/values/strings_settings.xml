@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_content_country">Content country</string>
+    <string name="settings_content_country_supporting">Decides which trending videos YouTube shows.</string>
+    <string name="settings_country_current">Current</string>
+    <string name="settings_player">Player</string>
+    <string name="settings_player_visionos">VisionOS (HLS, default)</string>
+    <string name="settings_player_mweb">MWEB (SABR)</string>
+    <string name="settings_selected_marker">Selected</string>
+    <string name="settings_home_sections">Home sections</string>
+    <string name="settings_section_continue_watching">Continue watching</string>
+    <string name="settings_section_because_you_watched">Because you watched</string>
+    <string name="settings_section_mix">Mix</string>
+    <string name="settings_section_new_from_subscriptions">New from subscriptions</string>
+    <string name="settings_section_trending_music">Trending music</string>
+    <string name="settings_section_trending_movies">Trending movies and shows</string>
+    <string name="settings_show">Show</string>
+    <string name="settings_hide">Hide</string>
+    <string name="settings_hidden_marker">Hidden</string>
+    <string name="settings_move_up">Move up</string>
+    <string name="settings_move_down">Move down</string>
+    <string name="settings_sponsorblock">SponsorBlock</string>
+    <string name="settings_sponsorblock_supporting">Skip sponsor, intro and outro segments marked by the community.</string>
+    <string name="settings_on">On</string>
+    <string name="settings_off">Off</string>
+    <string name="settings_about">About</string>
+    <string name="settings_about_version">%1$s, version %2$s</string>
+    <string name="settings_about_license">Free software under GPL-3.0</string>
+    <string name="settings_about_credits">Built on the work of</string>
+    <string name="settings_about_newpipe">NewPipe</string>
+    <string name="settings_about_newpipe_url">https://github.com/TeamNewPipe/NewPipe</string>
+    <string name="settings_about_pipepipe">PipePipe</string>
+    <string name="settings_about_pipepipe_url">https://github.com/InfinityLoop1308/PipePipe</string>
+    <string name="settings_about_source">The source code of every release is public, under the same licence.</string>
+</resources>
