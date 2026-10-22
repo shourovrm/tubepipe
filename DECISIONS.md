@@ -8,10 +8,9 @@
 - `docs/design-system.md` — androidtv skeleton plus the PipePipe-derived direction tokens (two reds, black theme).
 
 ## Next
-- Search (user, 2026-10-22): keyboard closes on first letter when the box already has text; add an X to clear it. See tv-ui.md.
+- Box check owed for five TV UI fixes (search keyboard, clear X, stray key, Back focus, Pause flash). See tv-ui.md.
 - Device-untested: Parental page, 18+ block, More menu, media keys. Box-tested 2026-10-22: playlist/channel bars, search, drawer, kids 1080p.
-- Box bugs: no focus after Back from a playlist page; Up on channel chip flashes Pause before hiding; stray key on keyboard open.
-- Time to play is ~5 s on the box (budget 2 s): prefetch on card dwell and pre-warm the WebView runtime.
+- Time to play ~5 s (budget 2 s). PipePipe waits ~5 s too (SABR server backoff); read `SABR server backoff` in logcat first.
 - Workers: write the whole slice, then compile + own tests once; lint, full suite and TV check run once after merge.
 
 ## Gotchas (cross-cutting)

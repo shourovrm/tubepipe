@@ -39,3 +39,4 @@
 2026-10-22 | Playlist video Back keeps playing in the shared PlayerBar; bar has X left of centre, Back focuses centre | user request
 2026-10-22 | Drawer opens a tab when focus lands on it (250 ms delay), no Centre needed | user request
 2026-10-22 | No login for now | mweb retry gives 1080p logged out; revisit only for bot checks, 18+ or own history (phone code sign-in)
+2026-10-23 | News falls back to the US feed when the country's feed is empty | YouTube returns 200 with no videos where News is not offered

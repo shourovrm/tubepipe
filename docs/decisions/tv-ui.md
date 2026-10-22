@@ -14,12 +14,13 @@
 
 
 ## Open items
-- Search keyboard still closes (box, 2026-10-22): return to Search with text already in the box, type one letter,
-  the keyboard closes. An empty box types fine. Suspects: the restored query resets the field or its selection, or
-  the Down-to-suggestions handler. Reproduce on the box first.
-- Search box needs an X button that clears the current text.
+- Device-untested fixes (box offline 2026-10-23): search keyboard on a new query, clear X, Centre stray key, focus
+  after Back pops a screen, Pause flash on chip Up. Check each on the box; the worker's notes are in the commits.
 
 ## Gotchas
+- Search moves focus to results once per `submissionCount`; keying the effect on "results showing" stole the
+  keyboard whenever a new query fell back to the old results before its suggestions arrived.
+- After Back pops a screen the shell focuses the content group (`backCount`); Back that switches to Home does not.
 - Bar Back handling is a key preview plus a BackHandler: with focus cleared only the BackHandler fires.
 
 ## Tried / rejected
