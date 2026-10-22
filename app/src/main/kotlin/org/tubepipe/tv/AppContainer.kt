@@ -7,6 +7,8 @@ import org.tubepipe.core.service.ContentRepository
 import org.tubepipe.core.service.YoutubeContentRepository
 import org.tubepipe.tv.data.FilteringContentRepository
 import org.tubepipe.tv.data.SettingsRepository
+import org.tubepipe.tv.player.PlaybackController
+import org.tubepipe.tv.player.TubepipePlayerEngine
 
 private val Context.settingsDataStore by preferencesDataStore(name = "settings")
 
@@ -19,4 +21,7 @@ class AppContainer(context: Context) {
 
     // Every screen reads YouTube through the Settings content filters (Shorts, upcoming, members-only).
     val content: ContentRepository = FilteringContentRepository(YoutubeContentRepository(), settings.settings)
+
+    /** The one running player; it outlives screens so the video continues in the corner window. */
+    val playback = PlaybackController(createEngine = { TubepipePlayerEngine(applicationContext) })
 }

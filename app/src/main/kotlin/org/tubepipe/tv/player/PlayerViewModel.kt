@@ -4,6 +4,7 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import java.io.IOException
+import java.util.Locale
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -13,11 +14,16 @@ import kotlinx.coroutines.launch
 import org.tubepipe.core.database.HistoryDao
 import org.tubepipe.core.database.PlaylistDao
 import org.tubepipe.core.database.PlaylistEntity
+import org.tubepipe.core.player.PlaybackPreferences
+import org.tubepipe.core.player.PreferredCodec
 import org.tubepipe.core.service.ContentRepository
 import org.tubepipe.core.service.VideoDetails
 import org.tubepipe.tv.common.toHistoryEntity
 import org.tubepipe.tv.common.toPlaylistVideo
 import org.tubepipe.tv.data.AppSettings
+import org.tubepipe.tv.data.CaptionSize
+import org.tubepipe.tv.data.SponsorBlockCategory
+import org.tubepipe.tv.data.VideoCodec
 
 data class PlayerState(
     val details: VideoDetails? = null,
@@ -27,7 +33,13 @@ data class PlayerState(
     val resumePositionMillis: Long? = null,
     val isLiked: Boolean = false,
     val segments: List<SkipSegment> = emptyList(),
+    val seekStepMillis: Long = AppSettings.DEFAULT_SEEK_STEP_SECONDS * MILLIS_PER_SECOND,
+    val autoplayNext: Boolean = true,
+    val showSkipNotice: Boolean = true,
+    val captionSize: CaptionSize = CaptionSize.Normal,
 )
+
+private const val MILLIS_PER_SECOND = 1_000L
 
 class PlayerViewModel(
     private val videoUrl: String,
@@ -37,13 +49,28 @@ class PlayerViewModel(
     private val settings: Flow<AppSettings>,
     private val sponsorBlock: SponsorBlockSource,
     private val clock: () -> Long = System::currentTimeMillis,
+    private val deviceLanguage: () -> String = { Locale.getDefault().language },
 ) : ViewModel() {
     private val mutableState = MutableStateFlow(PlayerState())
     val state: StateFlow<PlayerState> = mutableState
 
     private var isSponsorBlockEnabled = false
+    private var currentSettings: AppSettings? = null
 
     init {
+        viewModelScope.launch {
+            settings.collect { latest ->
+                currentSettings = latest
+                mutableState.update {
+                    it.copy(
+                        seekStepMillis = latest.seekStepSeconds * MILLIS_PER_SECOND,
+                        autoplayNext = latest.autoplayNext,
+                        showSkipNotice = latest.sponsorBlockShowNotice,
+                        captionSize = latest.captionSize,
+                    )
+                }
+            }
+        }
         viewModelScope.launch {
             playlists.observeContains(PlaylistEntity.LIKED_ID, videoUrl).collect { isLiked ->
                 mutableState.update { it.copy(isLiked = isLiked) }
@@ -59,6 +86,9 @@ class PlayerViewModel(
      * activity's store), so the in-memory resume position is updated too; reopening the video then starts there.
      */
     fun savePosition(positionMillis: Long) {
+        if (currentSettings?.watchHistoryEnabled == false) {
+            return
+        }
         val details = mutableState.value.details ?: return
         mutableState.update {
             it.copy(resumePositionMillis = resumePositionFor(positionMillis, details.video.durationSeconds))
@@ -90,6 +120,34 @@ class PlayerViewModel(
             ?.endMillis
     }
 
+    /** The first related video, or null when there is none. */
+    fun nextVideoUrl(): String? = mutableState.value.details?.related?.firstOrNull()?.url
+
+    /** What to play when this video ends: the next video, or null when Settings turned autoplay off. */
+    fun videoToAutoplayAfterEnd(): String? = if (mutableState.value.autoplayNext) nextVideoUrl() else null
+
+    /** The player's starting quality, codec, speed, audio language and captions, from Settings. */
+    fun playbackPreferences(): PlaybackPreferences {
+        val latest = currentSettings ?: return PlaybackPreferences()
+        return PlaybackPreferences(
+            maxVideoHeight = latest.defaultQuality.maxHeight,
+            preferredCodec = when (latest.preferredCodec) {
+                VideoCodec.H264 -> PreferredCodec.H264
+                VideoCodec.Vp9 -> PreferredCodec.Vp9
+                VideoCodec.Av1 -> PreferredCodec.Av1
+            },
+            preferredAudioLanguage = latest.preferredAudioLanguage.takeUnless {
+                it == AppSettings.ORIGINAL_AUDIO_LANGUAGE
+            },
+            captionLanguage = if (latest.captionsEnabled) {
+                deviceLanguage().ifEmpty { FALLBACK_CAPTION_LANGUAGE }
+            } else {
+                null
+            },
+            speed = latest.defaultSpeed,
+        )
+    }
+
     private fun load() {
         mutableState.update { it.copy(isLoading = true, hasError = false) }
         viewModelScope.launch {
@@ -97,19 +155,24 @@ class PlayerViewModel(
                 val details = content.videoDetails(videoUrl)
                 // Read before the upsert below, which rewrites the row.
                 val previousPosition = history.positionOf(videoUrl)
-                isSponsorBlockEnabled = settings.first().sponsorBlockEnabled
-                history.upsert(details.video.toHistoryEntity(clock(), positionMillis = previousPosition ?: 0L))
+                val latest = settings.first()
+                currentSettings = latest
+                isSponsorBlockEnabled = latest.sponsorBlockEnabled
+                if (latest.watchHistoryEnabled) {
+                    history.upsert(details.video.toHistoryEntity(clock(), positionMillis = previousPosition ?: 0L))
+                }
+                val canResume = latest.resumeEnabled && !latest.alwaysStartFromBeginning
                 mutableState.update {
                     it.copy(
                         details = details,
                         isLoading = false,
-                        resumePositionMillis = previousPosition?.let { position ->
+                        resumePositionMillis = previousPosition?.takeIf { canResume }?.let { position ->
                             resumePositionFor(position, details.video.durationSeconds)
                         },
                     )
                 }
-                if (isSponsorBlockEnabled) {
-                    loadSegments()
+                if (isSponsorBlockEnabled && latest.sponsorBlockCategories.isNotEmpty()) {
+                    loadSegments(latest.sponsorBlockCategories)
                 }
             } catch (failure: IOException) {
                 Log.e(TAG, "Loading video $videoUrl failed", failure)
@@ -118,10 +181,10 @@ class PlayerViewModel(
         }
     }
 
-    private suspend fun loadSegments() {
+    private suspend fun loadSegments(categories: Set<SponsorBlockCategory>) {
         val videoId = YoutubeVideoId.from(videoUrl) ?: return
         try {
-            val segments = sponsorBlock.segments(videoId)
+            val segments = sponsorBlock.segments(videoId, categories)
             mutableState.update { it.copy(segments = segments) }
         } catch (failure: IOException) {
             // Playback must not depend on a community service; the video plays without skipping.
@@ -145,6 +208,6 @@ class PlayerViewModel(
     private companion object {
         const val TAG = "PlayerViewModel"
         const val FINISHED_FRACTION = 0.95
-        const val MILLIS_PER_SECOND = 1_000
+        const val FALLBACK_CAPTION_LANGUAGE = "en"
     }
 }

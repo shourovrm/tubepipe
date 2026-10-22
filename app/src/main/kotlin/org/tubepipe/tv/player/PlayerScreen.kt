@@ -1,6 +1,5 @@
 package org.tubepipe.tv.player
 
-import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.annotation.OptIn
 import androidx.compose.foundation.background
@@ -15,13 +14,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.Stable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -33,267 +31,168 @@ import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onKeyEvent
+import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.media3.common.C
-import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
-import androidx.media3.session.MediaSession
 import androidx.media3.ui.compose.PlayerSurface
 import androidx.media3.ui.compose.SURFACE_TYPE_SURFACE_VIEW
 import androidx.tv.material3.Button
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
-import java.io.IOException
-import java.util.UUID
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.first
-import org.tubepipe.core.player.PlaybackRuntime
-import org.tubepipe.core.player.PlayerClient
-import org.tubepipe.core.player.TubepipePlayer
+import kotlinx.coroutines.launch
+import org.tubepipe.core.database.PlaylistEntity
 import org.tubepipe.core.service.VideoDetails
 import org.tubepipe.core.ui.component.ErrorView
 import org.tubepipe.core.ui.component.LoadingView
 import org.tubepipe.core.ui.component.MediaRow
-import org.tubepipe.core.ui.component.TimeFormatting
 import org.tubepipe.core.ui.theme.TubepipeColors
 import org.tubepipe.core.ui.theme.TubepipeSpacing
 import org.tubepipe.tv.AppContainer
 import org.tubepipe.tv.R
 import org.tubepipe.tv.common.toCardModel
+import org.tubepipe.tv.common.toPlaylistVideo
 import org.tubepipe.tv.common.videoSubtitle
+import org.tubepipe.tv.data.CaptionSize
 import org.tubepipe.tv.navigation.AppNavigator
 
-private const val TAG = "PlayerScreen"
-private const val SEEK_STEP_MILLIS = 10_000L
 private const val OVERLAY_HIDE_DELAY_MILLIS = 4_000L
-private const val POSITION_POLL_MILLIS = 250L
-private const val SAVE_INTERVAL_MILLIS = 5_000L
-private const val SKIPPED_LABEL_MILLIS = 2_500L
+private const val SEEK_FEEDBACK_MILLIS = 1_500L
+private const val RESTART_THRESHOLD_MILLIS = 5_000L
 private val PanelBackground = Color(0xE6000000)
+private val SpeedChoices = listOf(0.5f, 0.75f, 1f, 1.25f, 1.5f, 1.75f, 2f)
+
+/** Which list the More button shows; Root has the entries, the others replace it. */
+private enum class MoreStage { Root, Playlists, AudioTracks }
 
 @Composable
 fun PlayerScreen(videoUrl: String, container: AppContainer, navigator: AppNavigator) {
-    val viewModel = viewModel(key = videoUrl) {
-        val database = container.database
-        PlayerViewModel(
-            videoUrl = videoUrl,
-            content = container.content,
-            history = database.historyDao(),
-            playlists = database.playlistDao(),
-            settings = container.settings.settings,
-            sponsorBlock = SponsorBlockClient(),
-        )
-    }
+    val controller = container.playback
+    val viewModel = rememberPlayerViewModel(videoUrl, container)
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val nowPlaying by controller.state.collectAsStateWithLifecycle()
+    val engine = (controller.engine.collectAsStateWithLifecycle().value) as? TubepipePlayerEngine
     val details = state.details
-    // Content screens below install their own BackHandler; this one covers loading and error.
+    // Content below installs its own BackHandler; this one covers loading and error.
     BackHandler { navigator.back() }
 
+    LaunchedEffect(videoUrl) { controller.engineFor(videoUrl) }
+    DisposableEffect(videoUrl) {
+        onDispose { leavePlayer(controller, videoUrl, viewModel) }
+    }
+
+    val isFullscreenForThisVideo = nowPlaying == NowPlaying(videoUrl, PlayerMode.Fullscreen)
     when {
         state.hasError -> ErrorView(message = stringResource(R.string.error_network), onRetry = viewModel::retry)
-        state.isLoading || details == null -> LoadingView()
-        else -> PlayerContent(videoUrl, details, viewModel, container, navigator)
+        engine?.loadState == LoadState.Failed ->
+            ErrorView(message = stringResource(R.string.player_error), onRetry = { controller.restart(videoUrl) })
+        state.isLoading || details == null || engine == null || !isFullscreenForThisVideo -> LoadingView()
+        else -> PlayerContent(details, state, viewModel, engine, container, navigator)
     }
 }
 
-/** What the screen draws from the player; written by the player listener and the position poll. */
-@Stable
-private class PlaybackSnapshot {
-    var isPlaying by mutableStateOf(false)
-    var playWhenReady by mutableStateOf(false)
-    var positionMillis by mutableLongStateOf(0L)
-    var durationMillis by mutableLongStateOf(0L)
-
-    /** True once the player was ready at least once; only then is its position worth saving. */
-    var hasStarted = false
-}
-
-@Composable
-private fun PlayerContent(
-    videoUrl: String,
-    details: VideoDetails,
-    viewModel: PlayerViewModel,
-    container: AppContainer,
-    navigator: AppNavigator,
-) {
-    val context = LocalContext.current
-    val preferredClient by produceState<PlayerClient?>(initialValue = null) {
-        val clientName = container.settings.settings.first().playerClientName
-        value = PlayerClient.entries.firstOrNull { it.extractorName == clientName } ?: PlayerClient.DEFAULT
-    }
-    val client = preferredClient
-    if (client == null) {
-        LoadingView()
+/**
+ * Leaving the screen (Back, or opening a channel) minimises the player instead of stopping it, unless there is
+ * nothing to keep: the video failed to load. A different video that already took over is left alone.
+ */
+private fun leavePlayer(controller: PlaybackController, videoUrl: String, viewModel: PlayerViewModel) {
+    if (controller.state.value?.videoUrl != videoUrl) {
         return
     }
-
-    var attempt by remember { mutableIntStateOf(0) }
-    var hasPlaybackFailed by remember { mutableStateOf(false) }
-    if (hasPlaybackFailed) {
-        BackHandler { navigator.back() }
-        ErrorView(
-            message = stringResource(R.string.player_error),
-            onRetry = {
-                hasPlaybackFailed = false
-                attempt += 1
-            },
-        )
-        return
-    }
-
-    PlaybackRuntime.initialize(context)
-    val player = remember(videoUrl, attempt) { TubepipePlayer(context, client) }
-    val snapshot = remember(player) { PlaybackSnapshot() }
-    var isStreamLoaded by remember(player) { mutableStateOf(false) }
-    val startPositionMillis = remember(player) { viewModel.state.value.resumePositionMillis ?: 0L }
-
-    PlayerLifecycle(player, snapshot, viewModel, details, navigator)
-
-    LaunchedEffect(player) {
-        try {
-            player.load(videoUrl, startPositionMillis)
-            isStreamLoaded = true
-        } catch (failure: IOException) {
-            Log.e(TAG, "Playing $videoUrl failed", failure)
-            hasPlaybackFailed = true
-        }
-    }
-
-    PlayerControls(player.exoPlayer, snapshot, isStreamLoaded, details, viewModel, navigator)
-}
-
-/** Listener, media session, periodic position save and release; everything tied to one [TubepipePlayer]. */
-@Composable
-private fun PlayerLifecycle(
-    player: TubepipePlayer,
-    snapshot: PlaybackSnapshot,
-    viewModel: PlayerViewModel,
-    details: VideoDetails,
-    navigator: AppNavigator,
-) {
-    val context = LocalContext.current
-    val view = LocalView.current
-
-    DisposableEffect(player) {
-        val exoPlayer = player.exoPlayer
-        val listener = object : Player.Listener {
-            override fun onIsPlayingChanged(isPlaying: Boolean) {
-                snapshot.isPlaying = isPlaying
-                view.keepScreenOn = isPlaying
-            }
-
-            override fun onPlayWhenReadyChanged(playWhenReady: Boolean, reason: Int) {
-                snapshot.playWhenReady = playWhenReady
-            }
-
-            override fun onPlaybackStateChanged(playbackState: Int) {
-                if (playbackState == Player.STATE_READY) {
-                    snapshot.hasStarted = true
-                }
-                if (playbackState == Player.STATE_ENDED) {
-                    viewModel.savePosition(exoPlayer.duration.coerceAtLeast(0L))
-                    details.related.firstOrNull()?.let { next -> navigator.openVideo(next.url) }
-                }
-            }
-        }
-        exoPlayer.addListener(listener)
-        // Unique id: the next video's session is created before this one is released.
-        val mediaSession = MediaSession.Builder(context, exoPlayer).setId(UUID.randomUUID().toString()).build()
-        onDispose {
-            if (snapshot.hasStarted) {
-                viewModel.savePosition(exoPlayer.currentPosition)
-            }
-            view.keepScreenOn = false
-            exoPlayer.removeListener(listener)
-            mediaSession.release()
-            player.release()
-        }
-    }
-
-    LaunchedEffect(player) {
-        while (true) {
-            delay(SAVE_INTERVAL_MILLIS)
-            if (snapshot.hasStarted && snapshot.isPlaying) {
-                viewModel.savePosition(player.exoPlayer.currentPosition)
-            }
-        }
-    }
+    val engine = controller.currentEngine as? TubepipePlayerEngine
+    val hasFailed = viewModel.state.value.hasError || engine?.loadState == LoadState.Failed
+    if (hasFailed) controller.stop() else controller.minimize()
 }
 
 @OptIn(UnstableApi::class)
 @Composable
-private fun PlayerControls(
-    player: Player,
-    snapshot: PlaybackSnapshot,
-    isStreamLoaded: Boolean,
+private fun PlayerContent(
     details: VideoDetails,
+    state: PlayerState,
     viewModel: PlayerViewModel,
+    engine: TubepipePlayerEngine,
+    container: AppContainer,
     navigator: AppNavigator,
 ) {
-    val state by viewModel.state.collectAsStateWithLifecycle()
-    var isOverlayVisible by remember { mutableStateOf(true) }
+    val controller = container.playback
+    val snapshot = engine.snapshot
+    val exoPlayer = engine.player?.exoPlayer
+    var isBarVisible by remember { mutableStateOf(true) }
     var isPanelVisible by remember { mutableStateOf(false) }
     var isRelatedRowFocused by remember { mutableStateOf(false) }
+    var isButtonRowFocused by remember { mutableStateOf(false) }
+    var openList by remember { mutableStateOf<ControlList?>(null) }
+    var moreStage by remember { mutableStateOf(MoreStage.Root) }
     var keyPressCount by remember { mutableIntStateOf(0) }
-    var skippedCategory by remember { mutableStateOf<String?>(null) }
+    var seekFeedbackCount by remember { mutableIntStateOf(0) }
+    var isSeekFeedbackVisible by remember { mutableStateOf(false) }
     val rootFocus = remember { FocusRequester() }
+    val playPauseFocus = remember { FocusRequester() }
 
     fun seekBy(deltaMillis: Long) {
         val upperBound = if (snapshot.durationMillis > 0) snapshot.durationMillis else Long.MAX_VALUE
-        val target = (player.currentPosition + deltaMillis).coerceIn(0L, upperBound)
-        player.seekTo(target)
+        val target = (snapshot.positionMillis + deltaMillis).coerceIn(0L, upperBound)
+        exoPlayer?.seekTo(target)
         snapshot.positionMillis = target
     }
 
-    fun togglePlayPause() {
-        if (player.playWhenReady) player.pause() else player.play()
+    fun closeList() {
+        openList = null
+        moreStage = MoreStage.Root
     }
 
-    // The overlay stays while paused, so the user can read the time; it hides 4 s after the last key when playing.
-    LaunchedEffect(isOverlayVisible, snapshot.isPlaying, keyPressCount) {
-        if (isOverlayVisible && snapshot.isPlaying) {
-            delay(OVERLAY_HIDE_DELAY_MILLIS)
-            isOverlayVisible = false
-        }
-    }
-
-    LaunchedEffect(skippedCategory) {
-        if (skippedCategory != null) {
-            delay(SKIPPED_LABEL_MILLIS)
-            skippedCategory = null
-        }
-    }
-
-    LaunchedEffect(player) {
-        while (true) {
-            val position = player.currentPosition
-            snapshot.positionMillis = position
-            snapshot.durationMillis = player.duration.takeIf { it != C.TIME_UNSET } ?: 0L
-            val skipTarget = if (player.isPlaying) viewModel.skipTargetFor(position) else null
-            if (skipTarget != null) {
-                skippedCategory = viewModel.state.value.segments.firstOrNull { it.endMillis == skipTarget }?.category
-                player.seekTo(skipTarget)
+    val actions = ControlBarActions(
+        onPrevious = {
+            val previousUrl = controller.previousVideoUrl()
+            if (snapshot.positionMillis > RESTART_THRESHOLD_MILLIS || previousUrl == null) {
+                seekBy(-snapshot.positionMillis)
+            } else {
+                navigator.openVideo(previousUrl)
             }
-            delay(POSITION_POLL_MILLIS)
+        },
+        onSeekBack = { seekBy(-state.seekStepMillis) },
+        onPlayPause = controller::togglePause,
+        onSeekForward = { seekBy(state.seekStepMillis) },
+        onNext = { viewModel.nextVideoUrl()?.let(navigator::openVideo) },
+        onOpenList = { list -> openList = list },
+        onToggleLike = viewModel::toggleLike,
+        onOpenChannel = { details.video.channelUrl?.let(navigator::openChannel) },
+    )
+
+    // The bar stays while paused, so the viewer can read it; it hides 4 s after the last key when playing.
+    LaunchedEffect(isBarVisible, snapshot.isPlaying, keyPressCount, openList) {
+        if (isBarVisible && snapshot.isPlaying && openList == null) {
+            delay(OVERLAY_HIDE_DELAY_MILLIS)
+            isBarVisible = false
         }
     }
 
-    LaunchedEffect(isPanelVisible) {
-        if (!isPanelVisible) {
-            rootFocus.requestFocus()
+    LaunchedEffect(seekFeedbackCount) {
+        if (seekFeedbackCount > 0) {
+            isSeekFeedbackVisible = true
+            delay(SEEK_FEEDBACK_MILLIS)
+            isSeekFeedbackVisible = false
+        }
+    }
+
+    LaunchedEffect(isBarVisible, isPanelVisible) {
+        when {
+            isPanelVisible -> Unit
+            isBarVisible -> playPauseFocus.requestFocus()
+            else -> rootFocus.requestFocus()
         }
     }
 
     BackHandler {
         when {
+            openList != null -> closeList()
             isPanelVisible -> isPanelVisible = false
-            isOverlayVisible -> isOverlayVisible = false
+            isBarVisible -> isBarVisible = false
             else -> navigator.back()
         }
     }
@@ -304,11 +203,16 @@ private fun PlayerControls(
             .background(Color.Black)
             .focusRequester(rootFocus)
             .focusable()
+            .onPreviewKeyEvent { event ->
+                if (event.type == KeyEventType.KeyDown) {
+                    keyPressCount += 1
+                }
+                false
+            }
             .onKeyEvent { event ->
                 if (event.type != KeyEventType.KeyDown) {
                     return@onKeyEvent false
                 }
-                keyPressCount += 1
                 if (isPanelVisible) {
                     // Only Up leaves the panel; from the Related row it moves focus up to the buttons instead.
                     if (event.key == Key.DirectionUp && !isRelatedRowFocused) {
@@ -317,47 +221,88 @@ private fun PlayerControls(
                     }
                     return@onKeyEvent false
                 }
+                if (isBarVisible) {
+                    return@onKeyEvent when {
+                        // With a list open, sideways keys must not move focus out of it.
+                        openList != null -> event.key == Key.DirectionLeft || event.key == Key.DirectionRight
+                        event.key == Key.DirectionDown && isButtonRowFocused -> {
+                            isPanelVisible = true
+                            isBarVisible = false
+                            true
+                        }
+                        else -> false
+                    }
+                }
                 when (event.key) {
                     Key.DirectionCenter, Key.Enter, Key.NumPadEnter -> {
-                        togglePlayPause()
-                        isOverlayVisible = true
+                        controller.togglePause()
+                        isBarVisible = true
                         true
                     }
                     Key.DirectionLeft -> {
-                        seekBy(-SEEK_STEP_MILLIS)
-                        isOverlayVisible = true
+                        seekBy(-state.seekStepMillis)
+                        seekFeedbackCount += 1
                         true
                     }
                     Key.DirectionRight -> {
-                        seekBy(SEEK_STEP_MILLIS)
-                        isOverlayVisible = true
+                        seekBy(state.seekStepMillis)
+                        seekFeedbackCount += 1
                         true
                     }
                     Key.DirectionDown -> {
                         isPanelVisible = true
-                        isOverlayVisible = false
                         true
                     }
                     Key.DirectionUp -> {
-                        isOverlayVisible = true
+                        isBarVisible = true
                         true
                     }
                     else -> false
                 }
             },
     ) {
-        PlayerSurface(player = player, surfaceType = SURFACE_TYPE_SURFACE_VIEW, modifier = Modifier.fillMaxSize())
-
-        if (!isStreamLoaded) {
+        if (exoPlayer != null) {
+            PlayerSurface(
+                player = exoPlayer,
+                surfaceType = SURFACE_TYPE_SURFACE_VIEW,
+                modifier = Modifier.fillMaxSize(),
+            )
+        }
+        if (engine.loadState != LoadState.Loaded) {
             LoadingView()
         }
-        if (isOverlayVisible && !isPanelVisible) {
-            PlayerOverlay(
+        CaptionText(
+            text = snapshot.captionText,
+            size = state.captionSize,
+            isBarVisible = isBarVisible && !isPanelVisible,
+            modifier = Modifier.align(Alignment.BottomCenter),
+        )
+        if (isBarVisible && !isPanelVisible) {
+            val listOptions = optionsFor(
+                list = openList,
+                moreStage = moreStage,
+                onMoreStage = { newStage -> moreStage = newStage },
+                onClose = ::closeList,
+                engine = engine,
+                details = details,
+                container = container,
+                navigator = navigator,
+            )
+            PlayerControlBar(
                 details = details,
                 snapshot = snapshot,
-                segments = state.segments,
+                engine = engine,
+                state = state,
+                openList = openList,
+                listOptions = listOptions,
+                listKey = openList to moreStage,
+                playPauseFocus = playPauseFocus,
+                onButtonRowFocusChanged = { isButtonRowFocused = it },
+                actions = actions,
                 modifier = Modifier.align(Alignment.BottomCenter),
             )
+        } else if (isSeekFeedbackVisible && !isPanelVisible) {
+            SeekFeedback(details, snapshot, state.segments, Modifier.align(Alignment.BottomCenter))
         }
         if (isPanelVisible) {
             PlayerPanel(
@@ -370,7 +315,7 @@ private fun PlayerControls(
                 modifier = Modifier.align(Alignment.BottomCenter),
             )
         }
-        skippedCategory?.let { category ->
+        snapshot.skippedCategory?.let { category ->
             Text(
                 text = stringResource(R.string.player_skipped, segmentName(category)),
                 style = MaterialTheme.typography.titleLarge,
@@ -386,6 +331,124 @@ private fun PlayerControls(
 }
 
 @Composable
+private fun optionsFor(
+    list: ControlList?,
+    moreStage: MoreStage,
+    onMoreStage: (MoreStage) -> Unit,
+    onClose: () -> Unit,
+    engine: TubepipePlayerEngine,
+    details: VideoDetails,
+    container: AppContainer,
+    navigator: AppNavigator,
+): List<ListOption> = when (list) {
+    null -> emptyList()
+    ControlList.Speed -> SpeedChoices.map { speed ->
+        ListOption(stringResource(R.string.player_speed_value, speedText(speed)), engine.currentSpeed == speed) {
+            engine.setSpeed(speed)
+            onClose()
+        }
+    }
+    ControlList.Quality -> {
+        val auto = ListOption(stringResource(R.string.player_quality_auto), engine.currentQuality == null) {
+            engine.setQuality(null)
+            onClose()
+        }
+        listOf(auto) + engine.qualityOptions().map { height ->
+            ListOption(stringResource(R.string.player_quality_height, height), engine.currentQuality == height) {
+                engine.setQuality(height)
+                onClose()
+            }
+        }
+    }
+    ControlList.Captions -> {
+        val off = ListOption(stringResource(R.string.player_captions_off), engine.captionLanguage == null) {
+            engine.setCaptions(null)
+            onClose()
+        }
+        listOf(off) + engine.captionOptions().map { option ->
+            ListOption(option.label, engine.captionLanguage == option.language) {
+                engine.setCaptions(option.language)
+                onClose()
+            }
+        }
+    }
+    ControlList.More -> moreOptions(moreStage, onMoreStage, onClose, engine, details, container, navigator)
+}
+
+@Composable
+private fun moreOptions(
+    stage: MoreStage,
+    onStage: (MoreStage) -> Unit,
+    onClose: () -> Unit,
+    engine: TubepipePlayerEngine,
+    details: VideoDetails,
+    container: AppContainer,
+    navigator: AppNavigator,
+): List<ListOption> {
+    val scope = rememberCoroutineScope()
+    val playlistDao = container.database.playlistDao()
+    val playlists by playlistDao.observePlaylists().collectAsState(initial = emptyList())
+    return when (stage) {
+        MoreStage.Root -> buildList {
+            details.video.channelUrl?.let { channelUrl ->
+                add(
+                    ListOption(stringResource(R.string.action_open_channel), false) {
+                        navigator.openChannel(channelUrl)
+                    },
+                )
+            }
+            add(ListOption(stringResource(R.string.player_add_to_playlist), false) { onStage(MoreStage.Playlists) })
+            if (engine.audioOptions().isNotEmpty()) {
+                add(ListOption(stringResource(R.string.player_audio_track), false) { onStage(MoreStage.AudioTracks) })
+            }
+        }
+        MoreStage.Playlists -> {
+            val userPlaylists = playlists.filter { it.id != PlaylistEntity.LIKED_ID }
+            if (userPlaylists.isEmpty()) {
+                listOf(ListOption(stringResource(R.string.player_no_playlists), false) { onClose() })
+            } else {
+                userPlaylists.map { playlist ->
+                    ListOption(playlist.name, false) {
+                        scope.launch { playlistDao.addItem(playlist.id, details.video.toPlaylistVideo()) }
+                        onClose()
+                    }
+                }
+            }
+        }
+        MoreStage.AudioTracks -> engine.audioOptions().map { option ->
+            ListOption(option.label, false) {
+                engine.selectAudio(option)
+                onClose()
+            }
+        }
+    }
+}
+
+/** Plain-text captions in the Settings size; the bar lifts them out of its way. */
+@Composable
+private fun CaptionText(text: String, size: CaptionSize, isBarVisible: Boolean, modifier: Modifier = Modifier) {
+    if (text.isEmpty()) {
+        return
+    }
+    val fontSize = when (size) {
+        CaptionSize.Small -> 22.sp
+        CaptionSize.Normal -> 30.sp
+        CaptionSize.Large -> 40.sp
+    }
+    Text(
+        text = text,
+        fontSize = fontSize,
+        color = TubepipeColors.OnSurface,
+        modifier = modifier
+            .padding(bottom = if (isBarVisible) CaptionLiftedPadding else TubepipeSpacing.SafeMarginVertical * 2)
+            .background(Color(0x99000000))
+            .padding(horizontal = TubepipeSpacing.Gutter, vertical = TubepipeSpacing.Grid),
+    )
+}
+
+private val CaptionLiftedPadding = 300.dp
+
+@Composable
 private fun segmentName(category: String): String = stringResource(
     when (category) {
         "sponsor" -> R.string.player_segment_sponsor
@@ -395,65 +458,6 @@ private fun segmentName(category: String): String = stringResource(
         else -> R.string.player_segment_other
     },
 )
-
-@Composable
-private fun PlayerOverlay(
-    details: VideoDetails,
-    snapshot: PlaybackSnapshot,
-    segments: List<SkipSegment>,
-    modifier: Modifier = Modifier,
-) {
-    val durationMillis = if (snapshot.durationMillis > 0) {
-        snapshot.durationMillis
-    } else {
-        (details.video.durationSeconds ?: 0L) * 1_000L
-    }
-    Column(
-        modifier = modifier
-            .fillMaxWidth()
-            .background(PanelBackground)
-            .padding(
-                horizontal = TubepipeSpacing.SafeMarginHorizontal,
-                vertical = TubepipeSpacing.SafeMarginVertical,
-            ),
-        verticalArrangement = Arrangement.spacedBy(TubepipeSpacing.Grid * 2),
-    ) {
-        Text(
-            text = details.video.title,
-            style = MaterialTheme.typography.headlineMedium,
-            color = TubepipeColors.OnSurface,
-            maxLines = 2,
-            overflow = TextOverflow.Ellipsis,
-        )
-        Text(
-            text = details.video.channelName,
-            style = MaterialTheme.typography.titleMedium,
-            color = TubepipeColors.OnSurfaceVariant,
-        )
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(TubepipeSpacing.Gutter),
-        ) {
-            Text(
-                text = stringResource(if (snapshot.playWhenReady) R.string.player_playing else R.string.player_paused),
-                style = MaterialTheme.typography.titleMedium,
-                color = TubepipeColors.OnSurface,
-            )
-            PlayerSeekBar(
-                positionMillis = snapshot.positionMillis,
-                durationMillis = durationMillis,
-                segments = segments,
-                modifier = Modifier.weight(1f),
-            )
-            Text(
-                text = TimeFormatting.duration(snapshot.positionMillis / 1_000) + " / " +
-                    TimeFormatting.duration(durationMillis / 1_000),
-                style = MaterialTheme.typography.titleMedium,
-                color = TubepipeColors.OnSurface,
-            )
-        }
-    }
-}
 
 @Composable
 private fun PlayerPanel(

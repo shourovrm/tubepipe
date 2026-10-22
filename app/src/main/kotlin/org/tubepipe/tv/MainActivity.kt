@@ -8,7 +8,14 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEvent
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.type
 import androidx.tv.material3.MaterialTheme
 import org.tubepipe.core.ui.theme.TubepipeTheme
 import org.tubepipe.tv.channel.ChannelScreen
@@ -16,6 +23,7 @@ import org.tubepipe.tv.home.HomeScreen
 import org.tubepipe.tv.library.LibraryScreen
 import org.tubepipe.tv.navigation.AppNavigator
 import org.tubepipe.tv.navigation.Screen
+import org.tubepipe.tv.player.PlaybackHost
 import org.tubepipe.tv.player.PlayerScreen
 import org.tubepipe.tv.search.SearchScreen
 import org.tubepipe.tv.settings.SettingsScreen
@@ -29,7 +37,12 @@ class MainActivity : ComponentActivity() {
             val navigator = remember { AppNavigator() }
             val container = (application as TubepipeApplication).container
             TubepipeTheme {
-                Box(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(MaterialTheme.colorScheme.background)
+                        .onPreviewKeyEvent { event -> handleMediaKey(event, container) },
+                ) {
                     TubepipeApp(navigator = navigator, onExit = ::finish) { screen ->
                         when (screen) {
                             is Screen.Top -> TopLevelScreen(screen.destination, container, navigator)
@@ -37,9 +50,33 @@ class MainActivity : ComponentActivity() {
                             is Screen.Player -> PlayerScreen(screen.videoUrl, container, navigator)
                         }
                     }
+                    // Drawn after the screens so the corner window is above whichever one is shown.
+                    PlaybackHost(container, navigator, Modifier.align(Alignment.BottomEnd))
                 }
             }
         }
+    }
+
+    override fun onDestroy() {
+        if (isFinishing) {
+            // Nothing is on screen any more, so a still-playing video would only be heard.
+            (application as TubepipeApplication).container.playback.stop()
+        }
+        super.onDestroy()
+    }
+}
+
+/** The remote's Play/Pause keys work on the playing video from any screen, including behind the corner window. */
+private fun handleMediaKey(event: KeyEvent, container: AppContainer): Boolean {
+    if (event.type != KeyEventType.KeyDown || container.playback.state.value == null) {
+        return false
+    }
+    return when (event.key) {
+        Key.MediaPlayPause, Key.MediaPlay, Key.MediaPause -> {
+            container.playback.togglePause()
+            true
+        }
+        else -> false
     }
 }
 

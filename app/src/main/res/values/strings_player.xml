@@ -13,4 +13,24 @@
     <string name="player_segment_interaction">interaction reminder</string>
     <string name="player_segment_other">segment</string>
     <string name="player_error">This video could not be played. Check the connection and try again.</string>
+    <string name="player_previous">Previous</string>
+    <string name="player_next">Next</string>
+    <string name="player_play">Play</string>
+    <string name="player_pause">Pause</string>
+    <string name="player_seek_back">−%1$d s</string>
+    <string name="player_seek_forward">+%1$d s</string>
+    <string name="player_captions">Captions</string>
+    <string name="player_captions_off">Off</string>
+    <string name="player_speed">Speed</string>
+    <string name="player_speed_value">%1$s×</string>
+    <string name="player_quality">Quality</string>
+    <string name="player_quality_auto">Auto</string>
+    <string name="player_quality_height">%1$dp</string>
+    <string name="player_more">More</string>
+    <string name="player_add_to_playlist">Add to playlist</string>
+    <string name="player_audio_track">Audio track</string>
+    <string name="player_no_playlists">No playlists yet</string>
+    <string name="player_channel_of">Open channel %1$s</string>
+    <string name="mini_stop">Stop</string>
+    <string name="mini_video_description">Playing in the corner. Press Centre for full screen.</string>
 </resources>
