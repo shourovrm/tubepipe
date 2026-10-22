@@ -179,4 +179,6 @@
     <string name="settings_about_pipepipe_help">TubePipe is built on the work of the PipePipe project, which is free software. https://github.com/InfinityLoop1308/PipePipe</string>
     <string name="settings_about_source_name">Source code</string>
     <string name="settings_about_source">The source code of every release is public, under the same licence.</string>
+    <string name="settings_picker_search_hint">Type to search</string>
+    <string name="settings_picker_no_matches">No matches</string>
 </resources>

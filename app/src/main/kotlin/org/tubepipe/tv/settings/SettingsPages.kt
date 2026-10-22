@@ -406,6 +406,7 @@ internal fun RegionAndEnginePage(settings: AppSettings, countries: List<CountryO
             options = countries.map { PickerOption(it.code, it.name) },
             current = settings.contentCountry,
             onChosen = viewModel::setContentCountry,
+            isSearchable = true,
         )
         val engineName = stringResource(R.string.settings_player_engine)
         SettingsSegmentedRow(

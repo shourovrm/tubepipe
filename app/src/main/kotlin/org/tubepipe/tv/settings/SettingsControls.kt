@@ -24,6 +24,9 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Check
@@ -38,20 +41,26 @@ import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onKeyEvent
+import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
@@ -331,6 +340,7 @@ internal fun <T> SettingsDropdownRow(
     current: T,
     onChosen: (T) -> Unit,
     icon: ImageVector? = null,
+    isSearchable: Boolean = false,
 ) {
     var isOpen by remember { mutableStateOf(false) }
     val currentLabel = options.firstOrNull { it.value == current }?.label.orEmpty()
@@ -356,6 +366,7 @@ internal fun <T> SettingsDropdownRow(
             title = name,
             options = options,
             current = current,
+            isSearchable = isSearchable,
             onChosen = { value ->
                 onChosen(value)
                 isOpen = false
@@ -419,12 +430,25 @@ private fun <T> PickerDialog(
     title: String,
     options: List<PickerOption<T>>,
     current: T,
+    isSearchable: Boolean,
     onChosen: (T) -> Unit,
     onDismiss: () -> Unit,
 ) {
     val listState = rememberLazyListState()
     val currentFocus = remember { FocusRequester() }
-    val currentIndex = options.indexOfFirst { it.value == current }.coerceAtLeast(0)
+    val searchFocus = remember { FocusRequester() }
+    val firstResultFocus = remember { FocusRequester() }
+    val keyboardController = LocalSoftwareKeyboardController.current
+    var query by remember { mutableStateOf("") }
+    val shownOptions = if (isSearchable) matchingOptions(options, query) else options
+    val currentIndex = shownOptions.indexOfFirst { it.value == current }
+
+    fun focusFirstResult() {
+        if (shownOptions.isNotEmpty()) {
+            keyboardController?.hide()
+            firstResultFocus.requestFocus()
+        }
+    }
 
     Dialog(onDismissRequest = onDismiss) {
         Column(
@@ -440,9 +464,38 @@ private fun <T> PickerDialog(
                 color = TubepipeColors.OnSurface,
                 modifier = Modifier.padding(bottom = TubepipeSpacing.Grid * 3),
             )
+            if (isSearchable) {
+                PickerSearchField(
+                    query = query,
+                    onQueryChange = { newQuery ->
+                        query = newQuery
+                        listState.requestScrollToItem(0)
+                    },
+                    onDone = ::focusFirstResult,
+                    modifier = Modifier
+                        .focusRequester(searchFocus)
+                        .focusProperties {
+                            down =
+                                if (shownOptions.isEmpty()) FocusRequester.Default else firstResultFocus
+                        }
+                        .padding(bottom = TubepipeSpacing.Grid * 3),
+                )
+                if (shownOptions.isEmpty()) {
+                    Text(
+                        text = stringResource(R.string.settings_picker_no_matches),
+                        fontSize = ChipTextSize,
+                        color = TubepipeColors.OnSurfaceVariant,
+                    )
+                }
+            }
             LazyColumn(state = listState, verticalArrangement = Arrangement.spacedBy(TubepipeSpacing.Grid)) {
-                itemsIndexed(options, key = { index, _ -> index }) { index, option ->
+                itemsIndexed(shownOptions, key = { _, option -> option.label }) { index, option ->
                     val isCurrent = index == currentIndex
+                    val focusModifier = when {
+                        index == 0 && isSearchable -> Modifier.focusRequester(firstResultFocus)
+                        isCurrent -> Modifier.focusRequester(currentFocus)
+                        else -> Modifier
+                    }
                     ListItem(
                         selected = isCurrent,
                         onClick = { onChosen(option.value) },
@@ -458,20 +511,80 @@ private fun <T> PickerDialog(
                         } else {
                             null
                         },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .then(if (isCurrent) Modifier.focusRequester(currentFocus) else Modifier),
+                        modifier = Modifier.fillMaxWidth().then(focusModifier),
                     )
                 }
             }
         }
         LaunchedEffect(Unit) {
-            // Scroll first so the current row is composed, then wait one frame for it to attach before focusing.
-            listState.scrollToItem(currentIndex)
-            withFrameNanos { }
-            currentFocus.requestFocus()
+            if (isSearchable) {
+                // Typing is the fast way through 250 countries, so the field takes focus and the keyboard opens.
+                withFrameNanos { }
+                searchFocus.requestFocus()
+                keyboardController?.show()
+            } else {
+                // Scroll first so the current row is composed, then wait one frame for it to attach before focusing.
+                listState.scrollToItem(currentIndex.coerceAtLeast(0))
+                withFrameNanos { }
+                currentFocus.requestFocus()
+            }
         }
     }
+}
+
+/** The filter box at the top of a searchable picker. A remote has no tap, so Centre opens the keyboard. */
+@Composable
+private fun PickerSearchField(
+    query: String,
+    onQueryChange: (String) -> Unit,
+    onDone: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    var isFocused by remember { mutableStateOf(false) }
+    val keyboardController = LocalSoftwareKeyboardController.current
+    val shape = RoundedCornerShape(10.dp)
+    BasicTextField(
+        value = query,
+        onValueChange = onQueryChange,
+        singleLine = true,
+        textStyle = TextStyle(fontSize = ChipTextSize, color = TubepipeColors.OnSurface),
+        cursorBrush = SolidColor(TubepipeColors.Primary),
+        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+        keyboardActions = KeyboardActions(onDone = { onDone() }),
+        modifier = modifier
+            .fillMaxWidth()
+            .onFocusChanged { focusState -> isFocused = focusState.isFocused }
+            .onPreviewKeyEvent { keyEvent ->
+                val isCentreRelease = keyEvent.key == Key.DirectionCenter && keyEvent.type == KeyEventType.KeyUp
+                if (isCentreRelease) {
+                    keyboardController?.show()
+                }
+                isCentreRelease
+            },
+        decorationBox = { innerTextField ->
+            Box(
+                contentAlignment = Alignment.CenterStart,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(TubepipeColors.Background, shape)
+                    .border(
+                        width = if (isFocused) 3.dp else 1.dp,
+                        color = if (isFocused) TubepipeColors.FocusBorder else TubepipeColors.BorderVariant,
+                        shape = shape,
+                    )
+                    .padding(horizontal = 20.dp, vertical = 14.dp),
+            ) {
+                if (query.isEmpty()) {
+                    Text(
+                        text = stringResource(R.string.settings_picker_search_hint),
+                        fontSize = ChipTextSize,
+                        color = TubepipeColors.OnSurfaceVariant,
+                    )
+                }
+                innerTextField()
+            }
+        },
+    )
 }
 
 /** A chip that flips on Centre: a dot in [dotColor], the name, and a red check while on. */
