@@ -8,10 +8,11 @@ SABR glue and played one 1080p avc1 stream for 60 s on the Mi Box S with 0 rebuf
 - Every other ported file has no player dependency and is copied as is: the `Sabr*` helpers, `youtube/*`
   (PoToken provider, attestation), `SharedWebViewRuntime`, `WebViewJavaScriptDecoder`, `assets/ejs/*`, `assets/sabr_po_token.js`.
 - PoToken runs in the system WebView (138 on the box); QuickJS was not needed for the spike.
-- Default client is `visionos` (HLS, as PipePipe logged out); `mweb` (SABR) is the fallback and a Settings choice.
+- Default client `visionos`: for normal videos the extractor gives progressive formats plus the HLS master playlist
+  (`hlsUrl`), played adaptively; `mweb` (SABR) is the fallback and a Settings choice. Both 1080p, 0 rebuffers on the box.
 
 ## Open items
-- Port `YoutubeHttpDataSource` to Media3 for HLS and URL streams; add `media3-exoplayer-hls`. Untested on Media3 so far.
+- Untested paths: multi-language HLS original-audio switch, DASH/OTF/progressive builders; add device tests.
 - Add instrumented tests for seek back 30 s, forward seek, forced quality switch, and time to first frame (2 s budget).
 - Restore what the spike stubbed: segment disk cache (Media3 `SimpleCache`), audio pick by language (original first,
   DataStore prefs), SABR backoff UI, startup trace, full `DownloaderImpl` (cookies, reCaptcha, restricted mode).
@@ -22,7 +23,7 @@ SABR glue and played one 1080p avc1 stream for 60 s on the Mi Box S with 0 rebuf
 - Default back buffer is 0 and the spike has no cache, so a backward seek re-requests SABR sequences from the server.
 - The SABR period wrapper must forward `setUsesStreamPrerollFlags()` and `setEndPositionUs(long)` to its child.
 - The glue uses `@UnstableApi` types; opt in for the module or Android Lint fails with `UnsafeOptInUsageError`.
-- Gate WebView debugging and console logs on `BuildConfig.DEBUG`; the spike hard-codes it on.
+- Set the track selector viewport to 1920x1080 explicitly: sized from the box display, HLS stayed at 480p.
 - The `SabrDashMediaSource` constructor does network I/O; build it on `Dispatchers.IO`.
 
 ## Tried / rejected
