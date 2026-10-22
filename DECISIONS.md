@@ -9,7 +9,8 @@
 
 ## Next
 - v0.3.0: no mini player (channel bar only), playlists that play through, mixed search, colour-card settings, parental.
-- Device-untested: playlist page and play-through, Library playlists, Parental page, 18+ block, More menu, media keys.
+- Device-untested: Parental page, 18+ block, More menu, media keys. Box-tested 2026-10-22: playlist/channel bars, search, drawer, kids 1080p.
+- Box bugs: no focus after Back from a playlist page; Up on channel chip flashes Pause before hiding; stray key on keyboard open.
 - Time to play is ~5 s on the box (budget 2 s): prefetch on card dwell and pre-warm the WebView runtime.
 - Workers: write the whole slice, then compile + own tests once; lint, full suite and TV check run once after merge.
 
