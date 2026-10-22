@@ -135,6 +135,7 @@ private fun PlayerContent(
     var isSeekFeedbackVisible by remember { mutableStateOf(false) }
     // Set when the root consumed a Centre KeyDown; its KeyUp must not reach the button that gets focus meanwhile.
     var isCentreKeyUpPending by remember { mutableStateOf(false) }
+    var isBackKeyUpPending by remember { mutableStateOf(false) }
     val rootFocus = remember { FocusRequester() }
     val playPauseFocus = remember { FocusRequester() }
 
@@ -220,7 +221,19 @@ private fun PlayerContent(
                 val isCentreKey = event.key == Key.DirectionCenter ||
                     event.key == Key.Enter ||
                     event.key == Key.NumPadEnter
+                val isBackKey = event.key == Key.Back
                 when {
+                    // Left to the system, the first Back only clears focus inside the list; a second one closed it.
+                    isBackKey && event.type == KeyEventType.KeyDown && openList != null -> {
+                        closeList()
+                        isBackKeyUpPending = true
+                        true
+                    }
+                    // Its KeyUp would reach the BackHandler and hide the bar as well.
+                    isBackKey && event.type == KeyEventType.KeyUp && isBackKeyUpPending -> {
+                        isBackKeyUpPending = false
+                        true
+                    }
                     // The KeyDown already toggled playback; the button focused since then would toggle it again.
                     isCentreKey && event.type == KeyEventType.KeyUp && isCentreKeyUpPending -> {
                         isCentreKeyUpPending = false
