@@ -228,4 +228,16 @@ class AppNavigatorTest {
         assertEquals(Screen.Top(Destination.Search), navigator.current)
         assertEquals("cats", navigator.pendingSearchQuery)
     }
+
+    // The shell gives focus to the page under a popped screen; Back that only switches to Home must not trigger it.
+    @Test
+    fun backCountGrowsOnlyWhenBackPopsAScreen() {
+        navigator.openPlaylist(PlaylistSource.Remote("https://www.youtube.com/playlist?list=P"))
+        assertTrue(navigator.back())
+        assertEquals(1, navigator.backCount)
+
+        navigator.openDestination(Destination.Trending)
+        assertTrue(navigator.back())
+        assertEquals(1, navigator.backCount)
+    }
 }
