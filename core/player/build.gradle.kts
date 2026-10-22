@@ -34,6 +34,7 @@ dependencies {
     implementation(libs.jsr305)
     implementation(libs.coroutines.android)
     testImplementation(libs.junit4)
+    androidTestImplementation(libs.androidx.test.core)
     androidTestImplementation(libs.androidx.test.runner)
     androidTestImplementation(libs.androidx.test.ext.junit)
     androidTestImplementation(libs.coroutines.test)
