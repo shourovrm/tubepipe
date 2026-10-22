@@ -12,8 +12,12 @@
   page with a bar, the first Back moves focus to the bar centre (`sendBackToBar`), the next one leaves the page.
   Centre on the picture reopens the queue video full screen. A video that ends in the playlist bar starts the next.
 
-- Search keyboard fix is device-untested: if the keyboard still closes after one letter, the next suspect is Down in
-  `SearchField`, which hides the keyboard and jumps to the suggestions once they exist.
+
+## Open items
+- Search keyboard still closes (box, 2026-10-22): return to Search with text already in the box, type one letter,
+  the keyboard closes. An empty box types fine. Suspects: the restored query resets the field or its selection, or
+  the Down-to-suggestions handler. Reproduce on the box first.
+- Search box needs an X button that clears the current text.
 
 ## Gotchas
 - Bar Back handling is a key preview plus a BackHandler: with focus cleared only the BackHandler fires.
