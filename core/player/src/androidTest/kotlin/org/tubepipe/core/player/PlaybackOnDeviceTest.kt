@@ -3,6 +3,7 @@ package org.tubepipe.core.player
 import android.content.Context
 import android.graphics.SurfaceTexture
 import android.view.Surface
+import androidx.media3.common.C
 import androidx.media3.common.Player
 import androidx.media3.exoplayer.analytics.AnalyticsListener
 import androidx.test.core.app.ApplicationProvider
@@ -35,6 +36,9 @@ class PlaybackOnDeviceTest {
     companion object {
         private const val VIDEO_URL = "https://www.youtube.com/watch?v=G-eNlqqkn1w"
 
+        // Has many uploaded caption tracks, English among them.
+        private const val CAPTIONED_VIDEO_URL = "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+
         @BeforeClass
         @JvmStatic
         fun startExtractorAndRuntime() {
@@ -60,8 +64,8 @@ class PlaybackOnDeviceTest {
         surfaceTexture.release()
     }
 
-    private suspend fun createPlayer(client: PlayerClient) {
-        player = TubepipePlayer(context, preferredClient = client)
+    private suspend fun createPlayer(client: PlayerClient, preferences: PlaybackPreferences = PlaybackPreferences()) {
+        player = TubepipePlayer(context, preferredClient = client, preferences = preferences)
         player.exoPlayer.setVideoSurface(Surface(surfaceTexture))
         var hasBeenReady = false
         player.exoPlayer.addAnalyticsListener(
@@ -168,5 +172,58 @@ class PlaybackOnDeviceTest {
 
         val position = withContext(Dispatchers.Main) { player.exoPlayer.currentPosition }
         assertTrue("started at $position ms", position in 85_000L..100_000L)
+    }
+
+    @Test
+    fun startingPreferencesCapTheQuality() = runBlocking(Dispatchers.Main) {
+        createPlayer(PlayerClient.DEFAULT, PlaybackPreferences(maxVideoHeight = 480))
+        val loaded = player.load(VIDEO_URL)
+        waitUntil(timeoutMs = 15_000) { player.exoPlayer.playbackState == Player.STATE_READY }
+        playFor(seconds = 10)
+        printResult("cap480", loaded)
+
+        assertTrue("height ${player.exoPlayer.videoSize.height}", player.exoPlayer.videoSize.height in 1..480)
+    }
+
+    @Test
+    fun qualityMenuListsHeightsAndChoosingOneApplies() = runBlocking(Dispatchers.Main) {
+        createPlayer(PlayerClient.DEFAULT)
+        val loaded = player.load(VIDEO_URL)
+        waitUntil(timeoutMs = 15_000) { player.exoPlayer.playbackState == Player.STATE_READY }
+
+        val qualities = player.qualityOptions()
+        assertTrue("qualities $qualities", 1080 in qualities && 720 in qualities)
+
+        player.setMaxQuality(720)
+        playFor(seconds = 20)
+        printResult("quality720", loaded, "options=$qualities")
+        assertTrue("height ${player.exoPlayer.videoSize.height}", player.exoPlayer.videoSize.height in 1..720)
+    }
+
+    @Test
+    fun speedChangesThePlaybackRate() = runBlocking(Dispatchers.Main) {
+        createPlayer(PlayerClient.DEFAULT, PlaybackPreferences(speed = 1.25f))
+        player.load(VIDEO_URL)
+        waitUntil(timeoutMs = 15_000) { player.exoPlayer.playbackState == Player.STATE_READY }
+        assertEquals(1.25f, player.exoPlayer.playbackParameters.speed, 0.001f)
+
+        player.setSpeed(1.5f)
+        assertEquals(1.5f, player.exoPlayer.playbackParameters.speed, 0.001f)
+    }
+
+    @Test
+    fun captionsOfACaptionedVideoCanBeTurnedOn() = runBlocking(Dispatchers.Main) {
+        createPlayer(PlayerClient.DEFAULT)
+        player.load(CAPTIONED_VIDEO_URL)
+        waitUntil(timeoutMs = 15_000) { player.exoPlayer.playbackState == Player.STATE_READY }
+
+        val captions = player.captionOptions()
+        assertTrue("captions $captions", captions.any { it.language.startsWith("en") })
+
+        player.setCaptions(captions.first { it.language.startsWith("en") }.language)
+        waitUntil(timeoutMs = 10_000) {
+            player.exoPlayer.currentTracks.groups.any { it.type == C.TRACK_TYPE_TEXT && it.isSelected }
+        }
+        println("PLAYBACK_RESULT test=captions options=${captions.size}")
     }
 }
