@@ -14,17 +14,14 @@
 
 
 ## Open items
-- Country picker (Settings > Region): Down from its search box does not reach the results; only Tab does. Same cause
-  as the old Search bug: the text field keeps Down as a cursor move. Give it the Search field's Down handler.
-- Back from a single video lands on Home with nothing focused; the first Down opens the drawer. That Back path is
-  `openDestination(Home)`, which does not bump `backCount`.
-- Box-checked 2026-10-23 on v0.2.1: search keyboard on a new query, clear X, Pause flash, Back focus from a playlist
-  page, New playlist from the player all pass. Stray key: none with a 120 ms press; adb's 6 ms press still types one.
+- Stray key on keyboard open: none with a 120 ms press; adb's 6 ms press still types one. Confirm on the real remote.
 
 ## Gotchas
 - Search moves focus to results once per `submissionCount`; keying the effect on "results showing" stole the
   keyboard whenever a new query fell back to the old results before its suggestions arrived.
-- After Back pops a screen the shell focuses the content group (`backCount`); Back that switches to Home does not.
+- After Back pops a screen, or leaves a single video for Home, the shell focuses the content group (`backCount`);
+  Back from a top-level page to Home does not, because focus is then in the drawer.
+- Text fields keep Down as a cursor move: a `focusProperties` down rule never fires, handle Down in the key preview.
 - Bar Back handling is a key preview plus a BackHandler: with focus cleared only the BackHandler fires.
 
 ## Tried / rejected

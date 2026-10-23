@@ -44,3 +44,4 @@
 2026-10-23 | Release key tubepipe-release.jks (gitignored), first used for v0.2.1 | a debug-signed public build would force a reinstall when the key changes
 2026-10-23 | Public repo github.com/shourovrm/tubepipe; v0.2.1 is a pre-release | box offline, device check skipped by user choice
 2026-10-23 | Box tests use adb keyevents; sendevent on aml_keypad (IR) is not the BT remote and misses list clicks | found while checking the stray key
+2026-10-23 | Removed video prefetch (dwell and next-video) | user: waiting a few seconds is fine; it added requests and was slower when Centre hit mid-fetch
