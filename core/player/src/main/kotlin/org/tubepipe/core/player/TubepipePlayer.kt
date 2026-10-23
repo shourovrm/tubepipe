@@ -37,6 +37,9 @@ class TubepipePlayer(
 
     val exoPlayer: ExoPlayer = createExoPlayer(context.applicationContext)
 
+    /** What [load] is playing; a SABR stream is rebuilt from it when the viewer picks another quality. */
+    private var playing: ExtractedSource? = null
+
     private val originalAudioTrackSelector =
         OriginalAudioTrackSelector(exoPlayer, preferences.preferredAudioLanguage)
 
@@ -84,21 +87,47 @@ class TubepipePlayer(
         exoPlayer.setMediaSource(loaded.builtSource.mediaSource, startPositionMs)
         exoPlayer.prepare()
         exoPlayer.playWhenReady = true
+        playing = loaded
         return LoadedStream(client, loaded.builtSource.delivery, loaded.streamInfo.name)
     }
 
-    /** Heights the loaded video offers on this device, tallest first; empty until the tracks are known. */
-    fun qualityOptions(): List<Int> = TrackMenus.qualities(exoPlayer.currentTracks)
+    /**
+     * Heights the loaded video offers on this device, tallest first; empty until the tracks are known. A SABR
+     * stream is built from one format, so its player has one video track; its heights come from the formats
+     * YouTube listed instead (made-for-kids videos play this way).
+     */
+    fun qualityOptions(): List<Int> {
+        val current = playing
+        if (current != null && current.builtSource.delivery == Delivery.Sabr) {
+            return sourceFactory.sabrHeights(current.streamInfo)
+        }
+        return TrackMenus.qualities(exoPlayer.currentTracks)
+    }
 
     /**
-     * Caps the picture height of adaptive streams (HLS, DASH); null is automatic, up to 1080. A SABR or single
-     * progressive stream is fixed when [load] builds it, so this does not change it until the next [load].
+     * Caps the picture height; null is automatic, up to 1080. Adaptive streams (HLS, DASH) switch in place. A
+     * SABR stream is rebuilt at the cap from the current position, which needs network I/O. A single
+     * progressive stream is fixed when [load] builds it, so the cap applies from the next [load].
+     *
+     * @throws IOException when the SABR stream cannot be rebuilt; the old stream keeps playing
      */
-    fun setMaxQuality(height: Int?) {
+    suspend fun setMaxQuality(height: Int?) {
+        val maxHeight = height ?: AUTO_MAX_VIDEO_HEIGHT
         exoPlayer.trackSelectionParameters = withVideoLimits(
             exoPlayer.trackSelectionParameters.buildUpon(),
-            height ?: AUTO_MAX_VIDEO_HEIGHT,
+            maxHeight,
         ).build()
+        val current = playing
+        if (current == null || current.builtSource.delivery != Delivery.Sabr) {
+            return
+        }
+        val positionMs = exoPlayer.currentPosition
+        val rebuilt = withContext(Dispatchers.IO) {
+            sourceFactory.build(current.streamInfo, positionMs, maxHeight)
+        }
+        exoPlayer.setMediaSource(rebuilt.mediaSource, positionMs)
+        exoPlayer.prepare()
+        playing = ExtractedSource(current.streamInfo, rebuilt)
     }
 
     /** Caption languages of the loaded video; empty until the tracks are known. */

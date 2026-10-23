@@ -13,6 +13,9 @@ import androidx.media3.common.Player
 import androidx.media3.common.TrackGroup
 import androidx.media3.common.TrackSelectionOverride
 import java.io.IOException
+import kotlinx.coroutines.MainScope
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
 import org.tubepipe.core.player.CaptionOption
 import org.tubepipe.core.player.PlaybackPreferences
 import org.tubepipe.core.player.PlayerClient
@@ -65,6 +68,9 @@ class TubepipePlayerEngine(private val context: Context) : PlayerEngine {
 
     private var isReleased = false
 
+    // Quality switches outlive the menu that started them, but not the engine.
+    private val qualityScope = MainScope()
+
     // Kept here because the loop choice can arrive before load() has built the player.
     private var isLooping = false
 
@@ -86,6 +92,7 @@ class TubepipePlayerEngine(private val context: Context) : PlayerEngine {
 
     override fun release() {
         isReleased = true
+        qualityScope.cancel()
         player?.release()
     }
 
@@ -125,8 +132,16 @@ class TubepipePlayerEngine(private val context: Context) : PlayerEngine {
     }
 
     fun setQuality(height: Int?) {
-        player?.setMaxQuality(height)
         currentQuality = height
+        val currentPlayer = player ?: return
+        // Rebuilding a SABR stream does network I/O, so it runs off the menu click.
+        qualityScope.launch {
+            try {
+                currentPlayer.setMaxQuality(height)
+            } catch (failure: IOException) {
+                Log.e(TAG, "Switching to quality $height failed; the current stream keeps playing", failure)
+            }
+        }
     }
 
     fun setCaptions(language: String?) {

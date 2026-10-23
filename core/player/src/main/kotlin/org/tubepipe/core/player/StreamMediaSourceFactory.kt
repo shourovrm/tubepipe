@@ -44,10 +44,17 @@ class StreamMediaSourceFactory(
     private val preferredCodecPrefix: String = PREFERRED_CODEC_PREFIX,
     private val preferredAudioLanguage: String? = null,
 ) {
-    /** Builds the video source and side-loads the video's subtitles into it. */
+    /**
+     * Builds the video source and side-loads the video's subtitles into it. [maxVideoHeight] overrides the
+     * factory's cap, for rebuilding a SABR stream after the viewer picks a quality.
+     */
     @Throws(IOException::class)
-    fun build(streamInfo: StreamInfo, startPositionMs: Long): BuiltMediaSource {
-        val withoutSubtitles = buildWithoutSubtitles(streamInfo, startPositionMs)
+    fun build(
+        streamInfo: StreamInfo,
+        startPositionMs: Long,
+        maxVideoHeight: Int = this.maxVideoHeight,
+    ): BuiltMediaSource {
+        val withoutSubtitles = buildWithoutSubtitles(streamInfo, startPositionMs, maxVideoHeight)
         // No range or rn parameters: those belong to media segments, not to a plain timed-text download.
         val subtitleDataSourceFactory = youtubeDataSourceFactory(rangeParameter = false, rnParameter = false)
         val withSubtitles = SubtitleSources.attach(
@@ -58,7 +65,17 @@ class StreamMediaSourceFactory(
         return BuiltMediaSource(withSubtitles, withoutSubtitles.delivery)
     }
 
-    private fun buildWithoutSubtitles(streamInfo: StreamInfo, startPositionMs: Long): BuiltMediaSource {
+    /** The heights a SABR video can be rebuilt at, tallest first; empty when the video has no SABR streams. */
+    fun sabrHeights(streamInfo: StreamInfo): List<Int> {
+        val sabrVideos = streamInfo.videoOnlyStreams.filter { stream -> isSabrStream(stream) }
+        return VideoStreamChoice.heights(sabrVideos.map(::candidateOf), MAX_VIDEO_HEIGHT)
+    }
+
+    private fun buildWithoutSubtitles(
+        streamInfo: StreamInfo,
+        startPositionMs: Long,
+        maxVideoHeight: Int,
+    ): BuiltMediaSource {
         val hlsVariants = streamInfo.videoStreams.filter { stream -> stream.deliveryMethod == DeliveryMethod.HLS }
         val sabrVideos = streamInfo.videoOnlyStreams.filter { stream -> isSabrStream(stream) }
         val adaptiveVideos = (streamInfo.videoOnlyStreams + streamInfo.videoStreams).filter { stream ->
@@ -67,7 +84,7 @@ class StreamMediaSourceFactory(
         // SABR comes first because the extractor offers it only for mweb, and it is the sole way to get mweb's
         // 1080p; the VisionOS client has no SABR streams and carries a master playlist instead.
         return when {
-            sabrVideos.isNotEmpty() -> buildSabr(streamInfo, sabrVideos, startPositionMs)
+            sabrVideos.isNotEmpty() -> buildSabr(streamInfo, sabrVideos, startPositionMs, maxVideoHeight)
             hlsVariants.isNotEmpty() -> buildHlsVariant(hlsVariants)
             // A master playlist: the track selector switches between its variants up to the height limit.
             streamInfo.hlsUrl.isNotEmpty() -> buildHls(streamInfo.hlsUrl)
@@ -96,8 +113,10 @@ class StreamMediaSourceFactory(
         streamInfo: StreamInfo,
         sabrVideos: List<VideoStream>,
         startPositionMs: Long,
+        maxVideoHeight: Int,
     ): BuiltMediaSource {
-        val video = pickVideoStream(sabrVideos) ?: throw IOException("No SABR video stream could be chosen")
+        val video = pickVideoStream(sabrVideos, maxVideoHeight)
+            ?: throw IOException("No SABR video stream could be chosen")
         val sabrInfo = video.deliveryMethodInfo as YoutubeSabrInfo
         val sourceSpec = try {
             SabrSessionHelper.createSourceSpec(context, streamInfo.id, video.itag, streamInfo.audioStreams, sabrInfo)
@@ -196,14 +215,15 @@ class StreamMediaSourceFactory(
         return variants.filter { variant -> variant.audioTrackId == chosenTrackId }
     }
 
-    private fun pickVideoStream(streams: List<VideoStream>): VideoStream? {
-        val candidates = streams.map { stream ->
-            VideoCandidate(heightOf(stream), stream.codec.orEmpty(), stream.bitrate)
-        }
+    private fun pickVideoStream(streams: List<VideoStream>, maxVideoHeight: Int = this.maxVideoHeight): VideoStream? {
+        val candidates = streams.map(::candidateOf)
         val chosen = VideoStreamChoice.pick(candidates, maxVideoHeight, preferredCodecPrefix) ?: return null
         // Candidates are fresh instances, so reference equality finds the stream even when two look alike.
         return streams[candidates.indexOfFirst { candidate -> candidate === chosen }]
     }
+
+    private fun candidateOf(stream: VideoStream) =
+        VideoCandidate(heightOf(stream), stream.codec.orEmpty(), stream.bitrate)
 
     /** HLS variants carry only a resolution string such as "1080p60", not a numeric height. */
     private fun heightOf(stream: VideoStream): Int {

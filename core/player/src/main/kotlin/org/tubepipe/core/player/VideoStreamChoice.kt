@@ -18,4 +18,11 @@ object VideoStreamChoice {
         val pool = inPreferredCodec.ifEmpty { withinLimit }
         return pool.maxWithOrNull(compareBy({ it.height }, { it.bitrate }))
     }
+
+    /** The distinct heights at or below [maxHeight], tallest first: what a quality menu can offer. */
+    fun heights(candidates: List<VideoCandidate>, maxHeight: Int): List<Int> = candidates
+        .map { candidate -> candidate.height }
+        .filter { height -> height in 1..maxHeight }
+        .distinct()
+        .sortedDescending()
 }

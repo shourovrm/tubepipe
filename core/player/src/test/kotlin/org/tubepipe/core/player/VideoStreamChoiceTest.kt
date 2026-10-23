@@ -35,4 +35,16 @@ class VideoStreamChoiceTest {
     fun emptyListHasNoChoice() {
         assertEquals(null, VideoStreamChoice.pick(emptyList(), maxHeight = 1080, preferredCodecPrefix = "avc1"))
     }
+
+    // A SABR stream is built from one format, so the quality menu lists the heights YouTube offers instead of
+    // the player's tracks; 2160 is above the box's 1080 limit and two 1080 formats are one choice.
+    @Test
+    fun heightsAreDistinctAndWithinTheLimitTallestFirst() {
+        assertEquals(listOf(1080, 720, 360), VideoStreamChoice.heights(candidates, maxHeight = 1080))
+    }
+
+    @Test
+    fun noStreamsMeanNoHeights() {
+        assertEquals(emptyList<Int>(), VideoStreamChoice.heights(emptyList(), maxHeight = 1080))
+    }
 }

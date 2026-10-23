@@ -137,6 +137,24 @@ class PlaybackOnDeviceTest {
         assertTrue("height ${player.exoPlayer.videoSize.height}", player.exoPlayer.videoSize.height >= 720)
     }
 
+    // A SABR stream has one video track, so the menu used to offer only the height it was built at.
+    @Test
+    fun madeForKidsVideoOffersLowerQualitiesAndSwitchesTo720p() = runBlocking(Dispatchers.Main) {
+        createPlayer(PlayerClient.VisionOs)
+        val loaded = player.load(MADE_FOR_KIDS_VIDEO_URL)
+        waitUntil(timeoutMs = 20_000) { player.exoPlayer.playbackState == Player.STATE_READY }
+
+        val qualities = player.qualityOptions()
+        assertEquals(Delivery.Sabr, loaded.delivery)
+        assertTrue("qualities $qualities", 1080 in qualities && 720 in qualities && 360 in qualities)
+
+        player.setMaxQuality(720)
+        waitUntil(timeoutMs = 20_000) { player.exoPlayer.playbackState == Player.STATE_READY }
+        playFor(seconds = 10)
+        printResult("kids720", loaded, "options=$qualities")
+        assertTrue("height ${player.exoPlayer.videoSize.height}", player.exoPlayer.videoSize.height in 1..720)
+    }
+
     @Test
     fun madeForKidsVideoSwitchesToMwebAbove360p() = runBlocking(Dispatchers.Main) {
         createPlayer(PlayerClient.VisionOs)
