@@ -261,4 +261,31 @@ class PlaybackOnDeviceTest {
         }
         println("PLAYBACK_RESULT test=captions options=${captions.size}")
     }
+
+    // The user saw a video hang after picking a caption; each switch must leave the video advancing.
+    @Test
+    fun captionSwitchesKeepSabrPlaying() = runBlocking(Dispatchers.Main) {
+        captionSwitchesKeepPlaying(PlayerClient.Mweb, expectedDelivery = Delivery.Sabr)
+    }
+
+    @Test
+    fun captionSwitchesKeepHlsPlaying() = runBlocking(Dispatchers.Main) {
+        captionSwitchesKeepPlaying(PlayerClient.DEFAULT, expectedDelivery = Delivery.Hls)
+    }
+
+    private suspend fun captionSwitchesKeepPlaying(client: PlayerClient, expectedDelivery: Delivery) {
+        createPlayer(client)
+        val loaded = player.load(CAPTIONED_VIDEO_URL)
+        waitUntil(timeoutMs = 20_000) { player.exoPlayer.playbackState == Player.STATE_READY }
+        assertEquals(expectedDelivery, loaded.delivery)
+        val captions = player.captionOptions()
+        val english = captions.first { it.language.startsWith("en") }
+        val other = captions.first { !it.language.startsWith("en") }
+
+        player.setCaptions(english.language)
+        playFor(seconds = 15)
+        player.setCaptions(other.language)
+        playFor(seconds = 10)
+        printResult("captions-${loaded.delivery}", loaded, "options=${captions.map { it.language }}")
+    }
 }

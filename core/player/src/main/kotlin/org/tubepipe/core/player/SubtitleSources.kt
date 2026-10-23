@@ -1,15 +1,18 @@
 package org.tubepipe.core.player
 
-import android.net.Uri
 import androidx.annotation.OptIn
-import androidx.media3.common.C
+import androidx.media3.common.Format
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MimeTypes
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.datasource.DataSource
 import androidx.media3.exoplayer.source.MediaSource
 import androidx.media3.exoplayer.source.MergingMediaSource
-import androidx.media3.exoplayer.source.SingleSampleMediaSource
+import androidx.media3.exoplayer.source.ProgressiveMediaSource
+import androidx.media3.extractor.Extractor
+import androidx.media3.extractor.ExtractorsFactory
+import androidx.media3.extractor.text.DefaultSubtitleParserFactory
+import androidx.media3.extractor.text.SubtitleExtractor
 import org.schabi.newpipe.extractor.MediaFormat
 import org.schabi.newpipe.extractor.stream.SubtitlesStream
 
@@ -17,6 +20,7 @@ import org.schabi.newpipe.extractor.stream.SubtitlesStream
 @OptIn(UnstableApi::class)
 object SubtitleSources {
     private const val AUTO_GENERATED_SUFFIX = " (auto-generated)"
+    private val subtitleParserFactory = DefaultSubtitleParserFactory()
 
     /** Returns [mediaSource] unchanged when the video has no usable subtitles. */
     fun attach(
@@ -28,16 +32,29 @@ object SubtitleSources {
         if (chosen.isEmpty()) {
             return mediaSource
         }
-        val subtitleSources = chosen.map { subtitle ->
-            val configuration = MediaItem.SubtitleConfiguration.Builder(Uri.parse(subtitle.content))
-                .setMimeType(mimeTypeOf(subtitle))
-                .setLanguage(subtitle.languageTag)
-                .setLabel(labelOf(subtitle))
-                .build()
-            SingleSampleMediaSource.Factory(dataSourceFactory)
-                .createMediaSource(configuration, C.TIME_UNSET)
-        }
+        val subtitleSources = chosen.map { subtitle -> parsedSubtitleSource(subtitle, dataSourceFactory) }
         return MergingMediaSource(mediaSource, *subtitleSources.toTypedArray())
+    }
+
+    /**
+     * A source that parses the subtitle file into cues while reading it, the way Media3's DefaultMediaSourceFactory
+     * side-loads subtitles. Media3's text renderer only accepts parsed cues: a raw TTML or VTT sample made it throw
+     * "Legacy decoding is disabled", which stopped SABR playback as soon as a caption was picked.
+     */
+    private fun parsedSubtitleSource(subtitle: SubtitlesStream, dataSourceFactory: DataSource.Factory): MediaSource {
+        val plainFormat = Format.Builder()
+            .setSampleMimeType(mimeTypeOf(subtitle))
+            .setLanguage(subtitle.languageTag)
+            .setLabel(labelOf(subtitle))
+            .build()
+        val format = plainFormat.buildUpon()
+            .setCueReplacementBehavior(subtitleParserFactory.getCueReplacementBehavior(plainFormat))
+            .build()
+        val extractorsFactory = ExtractorsFactory {
+            arrayOf<Extractor>(SubtitleExtractor(subtitleParserFactory.create(format), format))
+        }
+        return ProgressiveMediaSource.Factory(dataSourceFactory, extractorsFactory)
+            .createMediaSource(MediaItem.fromUri(subtitle.content))
     }
 
     /**
