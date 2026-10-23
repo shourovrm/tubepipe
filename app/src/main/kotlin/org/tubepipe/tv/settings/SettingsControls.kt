@@ -40,7 +40,6 @@ import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
@@ -420,11 +419,14 @@ private fun <T> PickerDialog(
     val shownOptions = if (isSearchable) matchingOptions(options, query) else options
     val currentIndex = shownOptions.indexOfFirst { it.value == current }
 
-    fun focusFirstResult() {
-        if (shownOptions.isNotEmpty()) {
-            keyboardController?.hide()
-            firstResultFocus.requestFocus()
+    /** Moves focus from the search field to the first result; false when there is no result to move to. */
+    fun focusFirstResult(): Boolean {
+        if (shownOptions.isEmpty()) {
+            return false
         }
+        keyboardController?.hide()
+        firstResultFocus.requestFocus()
+        return true
     }
 
     Dialog(onDismissRequest = onDismiss) {
@@ -448,13 +450,10 @@ private fun <T> PickerDialog(
                         query = newQuery
                         listState.requestScrollToItem(0)
                     },
-                    onDone = ::focusFirstResult,
+                    onDone = { focusFirstResult() },
+                    onDownPress = ::focusFirstResult,
                     modifier = Modifier
                         .focusRequester(searchFocus)
-                        .focusProperties {
-                            down =
-                                if (shownOptions.isEmpty()) FocusRequester.Default else firstResultFocus
-                        }
                         .padding(bottom = TubepipeSpacing.Grid * 3),
                 )
                 if (shownOptions.isEmpty()) {
@@ -515,6 +514,7 @@ private fun PickerSearchField(
     query: String,
     onQueryChange: (String) -> Unit,
     onDone: () -> Unit,
+    onDownPress: () -> Boolean,
     modifier: Modifier = Modifier,
 ) {
     var isFocused by remember { mutableStateOf(false) }
@@ -533,10 +533,17 @@ private fun PickerSearchField(
             .onFocusChanged { focusState -> isFocused = focusState.isFocused }
             .onPreviewKeyEvent { keyEvent ->
                 val isCentreRelease = keyEvent.key == Key.DirectionCenter && keyEvent.type == KeyEventType.KeyUp
-                if (isCentreRelease) {
-                    keyboardController?.show()
+                val isDownPress = keyEvent.key == Key.DirectionDown && keyEvent.type == KeyEventType.KeyDown
+                when {
+                    isCentreRelease -> {
+                        keyboardController?.show()
+                        true
+                    }
+                    // The text field keeps Down as a cursor move, so a focusProperties rule never fires on the
+                    // Mi Box; the move to the results is made here, as in the Search screen's field.
+                    isDownPress -> onDownPress()
+                    else -> false
                 }
-                isCentreRelease
             },
         decorationBox = { innerTextField ->
             Box(
