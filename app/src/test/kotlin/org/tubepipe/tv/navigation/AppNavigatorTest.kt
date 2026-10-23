@@ -240,4 +240,15 @@ class AppNavigatorTest {
         assertTrue(navigator.back())
         assertEquals(1, navigator.backCount)
     }
+
+    // Back from a single video rebuilds Home, so Home needs focus handed to it like any popped page.
+    @Test
+    fun backFromASingleVideoCountsForFocusRestore() {
+        navigator.openVideo("https://www.youtube.com/watch?v=x")
+
+        assertTrue(navigator.back())
+
+        assertEquals(Screen.Top(Destination.Home), navigator.current)
+        assertEquals(1, navigator.backCount)
+    }
 }

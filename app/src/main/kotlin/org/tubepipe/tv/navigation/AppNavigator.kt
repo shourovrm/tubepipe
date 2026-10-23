@@ -156,6 +156,8 @@ class AppNavigator(private val clock: () -> Long = System::currentTimeMillis) {
         // A single video ends at Home; only a playlist video goes back to its playlist, still playing.
         if (top is Screen.Player && top.queue == null) {
             openDestination(Destination.Home)
+            // Home is rebuilt with nothing focused, the same as a page under a popped screen.
+            backCount += 1
             return true
         }
         if (stack.size > 1) {
