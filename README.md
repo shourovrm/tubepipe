@@ -14,8 +14,8 @@ recorded in `docs/decisions/architecture.md`.
 
 ## Download
 
-The latest build is [TubePipe 0.2.1 (pre-release)](https://github.com/shourovrm/tubepipe/releases/tag/v0.2.1).
-Download `tubepipe-0.2.1.apk` from that page and install it on the TV with `adb install tubepipe-0.2.1.apk`, or
+The latest build is [TubePipe 0.2.2](https://github.com/shourovrm/tubepipe/releases/tag/v0.2.2).
+Download `tubepipe-0.2.2.apk` from that page and install it on the TV with `adb install tubepipe-0.2.2.apk`, or
 open it with a file manager on the TV that can install apps. All releases are on the
 [releases page](https://github.com/shourovrm/tubepipe/releases).
 

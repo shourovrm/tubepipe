@@ -8,8 +8,8 @@
 - `docs/design-system.md` — androidtv skeleton plus the PipePipe-derived direction tokens (two reds, black theme).
 
 ## Next
-- v0.2.1 pre-release still ships prefetch; main has it removed and both box focus bugs fixed (box-checked). Next release: 0.2.2.
-- Device-untested: Parental page, 18+ block, More menu, media keys. Box-tested 2026-10-22: playlist/channel bars, search, drawer, kids 1080p.
+- Open: duplicate "English" in one video's caption list; Home "Mix for" rows sometimes fail ("Could not get playlistData").
+- Device-untested: 18+ block, media keys. Box-tested 2026-10-23: search, focus after Back, captions, kids quality, More menu.
 - Time to play on box is ~4 s with no prefetch; the user accepts a few seconds (2026-10-23), so prefetch was removed.
 - Workers: write the whole slice, then compile + own tests once; lint, full suite and TV check run once after merge.
 
