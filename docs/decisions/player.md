@@ -15,7 +15,9 @@ SABR glue and played one 1080p avc1 stream for 60 s on the Mi Box S with 0 rebuf
 - Made-for-kids videos (Masha, Grizzy): YouTube refuses VisionOS and the extractor silently keeps one muxed 360p
   (itag 18). `LowQualityOffer` spots a 360p-only result and `load` retries mweb, keeping the 360p if mweb fails.
 - SABR quality menu: the player has one video track, so `qualityOptions` lists the SABR format heights and
-  `setMaxQuality` rebuilds the SABR source at that cap from the current position (device test owed).
+  `setMaxQuality` rebuilds the SABR source at that cap from the current position (box: kids video offers 1080-144).
+- Side-loaded captions are parsed during extraction (`SubtitleExtractor` in a `ProgressiveMediaSource`); Media3 1.11's
+  text renderer rejects raw TTML/VTT samples, which crashed SABR playback when a caption was picked.
 
 ## Open items
 - Untested paths: multi-language HLS original-audio switch, DASH/OTF/progressive builders; add device tests.
