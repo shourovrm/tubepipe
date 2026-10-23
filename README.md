@@ -12,9 +12,16 @@ service access. Thanks to both teams.
 Pre-alpha: the app starts and shows the navigation drawer; screens are placeholders. The stack and module layout are
 recorded in `docs/decisions/architecture.md`.
 
+## Download
+
+The latest build is [TubePipe 0.2.1 (pre-release)](https://github.com/shourovrm/tubepipe/releases/tag/v0.2.1).
+Download `tubepipe-0.2.1.apk` from that page and install it on the TV with `adb install tubepipe-0.2.1.apk`, or
+open it with a file manager on the TV that can install apps. All releases are on the
+[releases page](https://github.com/shourovrm/tubepipe/releases).
+
 ## Install
 
-Needs JDK 21 and the Android SDK (compileSdk 37).
+Building from source needs JDK 21 and the Android SDK (compileSdk 37).
 
 ```sh
 git clone --recurse-submodules <repo-url>
