@@ -7,8 +7,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEvent
@@ -17,8 +15,6 @@ import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.tv.material3.MaterialTheme
-import org.tubepipe.core.ui.component.LocalVideoCardFocusListener
-import org.tubepipe.core.ui.component.VideoCardFocusListener
 import org.tubepipe.core.ui.theme.TubepipeTheme
 import org.tubepipe.tv.channel.ChannelScreen
 import org.tubepipe.tv.home.HomeScreen
@@ -39,30 +35,22 @@ class MainActivity : ComponentActivity() {
         setContent {
             val container = (application as TubepipeApplication).container
             val navigator = container.navigator
-            val cardFocusListener = remember(container) {
-                VideoCardFocusListener(
-                    onCardFocused = container.prefetchScheduler::onCardFocused,
-                    onCardUnfocused = container.prefetchScheduler::cancelPending,
-                )
-            }
-            CompositionLocalProvider(LocalVideoCardFocusListener provides cardFocusListener) {
-                TubepipeTheme {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .background(MaterialTheme.colorScheme.background)
-                            .onPreviewKeyEvent { event -> handleMediaKey(event, container) },
-                    ) {
-                        TubepipeApp(container = container, onExit = ::finish) { screen ->
-                            when (screen) {
-                                is Screen.Top -> TopLevelScreen(screen.destination, container, navigator)
-                                is Screen.Channel -> ChannelScreen(screen.channelUrl, container, navigator)
-                                is Screen.Player -> PlayerScreen(screen.videoUrl, screen.queue, container, navigator)
-                                is Screen.Playlist -> PlaylistScreen(screen.source, container, navigator)
-                            }
+            TubepipeTheme {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(MaterialTheme.colorScheme.background)
+                        .onPreviewKeyEvent { event -> handleMediaKey(event, container) },
+                ) {
+                    TubepipeApp(container = container, onExit = ::finish) { screen ->
+                        when (screen) {
+                            is Screen.Top -> TopLevelScreen(screen.destination, container, navigator)
+                            is Screen.Channel -> ChannelScreen(screen.channelUrl, container, navigator)
+                            is Screen.Player -> PlayerScreen(screen.videoUrl, screen.queue, container, navigator)
+                            is Screen.Playlist -> PlaylistScreen(screen.source, container, navigator)
                         }
-                        PlaybackHost(container, navigator)
                     }
+                    PlaybackHost(container, navigator)
                 }
             }
         }

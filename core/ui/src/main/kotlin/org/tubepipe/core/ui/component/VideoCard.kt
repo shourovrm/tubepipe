@@ -11,10 +11,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
@@ -37,15 +35,7 @@ data class VideoCardModel(
     val durationSeconds: Long?,
     val isLive: Boolean,
     val watchedFraction: Float = 0f,
-    /** The video's address, handed to [LocalVideoCardFocusListener]; null for a card nobody prefetches. */
-    val videoUrl: String? = null,
 )
-
-/** Told which video a card gained focus for, and when focus left the cards; the app uses it to prefetch. */
-class VideoCardFocusListener(val onCardFocused: (videoUrl: String) -> Unit, val onCardUnfocused: () -> Unit)
-
-/** Provided once by the app, so the screens that show cards need no extra parameter. Null means no listener. */
-val LocalVideoCardFocusListener = staticCompositionLocalOf<VideoCardFocusListener?> { null }
 
 /**
  * A 16:9 thumbnail card. Focus scales it to 1.1 and draws the 3dp red border
@@ -59,24 +49,9 @@ fun VideoCard(
     onLongClick: (() -> Unit)? = null,
 ) {
     val cardShape = RoundedCornerShape(TubepipeSpacing.CardRadius)
-    val focusListener = LocalVideoCardFocusListener.current
-    val videoUrl = model.videoUrl
-    // Reports only; it changes no state, so a focus change causes no recomposition and no relayout.
-    val focusReportModifier = if (focusListener != null && videoUrl != null) {
-        Modifier.onFocusChanged { focusState ->
-            if (focusState.hasFocus) {
-                focusListener.onCardFocused(videoUrl)
-            } else {
-                focusListener.onCardUnfocused()
-            }
-        }
-    } else {
-        Modifier
-    }
     Column(modifier = modifier.width(TubepipeSpacing.CardWidth)) {
         Card(
             onClick = onClick,
-            modifier = focusReportModifier,
             onLongClick = onLongClick,
             shape = CardDefaults.shape(shape = cardShape),
             scale = CardDefaults.scale(focusedScale = 1.1f),

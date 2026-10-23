@@ -13,9 +13,9 @@ import androidx.media3.exoplayer.trackselection.DefaultTrackSelector
 import java.io.IOException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import org.schabi.newpipe.extractor.NewPipe
 import org.schabi.newpipe.extractor.exceptions.ExtractionException
 import org.schabi.newpipe.extractor.stream.StreamInfo
-import org.tubepipe.core.service.StreamInfoCache
 
 /**
  * Loads a YouTube URL into an [ExoPlayer] and starts playback. Create it and call [load] on the main thread;
@@ -69,10 +69,8 @@ class TubepipePlayer(
                 return play(client, loaded, startPositionMs)
             } catch (error: IOException) {
                 failures.add(client to error)
-                StreamInfoCache.invalidate(videoUrl, client.extractorName)
             } catch (error: ExtractionException) {
                 failures.add(client to error)
-                StreamInfoCache.invalidate(videoUrl, client.extractorName)
             }
         }
         lowQualityResult?.let { (client, loaded) -> return play(client, loaded, startPositionMs) }
@@ -152,13 +150,10 @@ class TubepipePlayer(
 
     private class ExtractedSource(val streamInfo: StreamInfo, val builtSource: BuiltMediaSource)
 
-    private suspend fun extractAndBuild(
-        client: PlayerClient,
-        videoUrl: String,
-        startPositionMs: Long,
-    ): ExtractedSource {
-        // Reuses the info a prefetch already fetched with this client; the cache sets the client for a real request.
-        val streamInfo = StreamInfoCache.get(videoUrl, client.extractorName)
+    private fun extractAndBuild(client: PlayerClient, videoUrl: String, startPositionMs: Long): ExtractedSource {
+        // The extractor reads the client from a process-wide setting, so it is set right before each attempt.
+        NewPipe.setYoutubePlayerClient(client.extractorName)
+        val streamInfo = StreamInfo.getInfo(videoUrl)
         return ExtractedSource(streamInfo, sourceFactory.build(streamInfo, startPositionMs))
     }
 

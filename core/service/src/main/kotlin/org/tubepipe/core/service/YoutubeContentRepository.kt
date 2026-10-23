@@ -22,6 +22,7 @@ import org.schabi.newpipe.extractor.linkhandler.SearchQueryHandler
 import org.schabi.newpipe.extractor.playlist.PlaylistInfo
 import org.schabi.newpipe.extractor.search.SearchInfo
 import org.schabi.newpipe.extractor.services.youtube.search.filter.YoutubeFilters
+import org.schabi.newpipe.extractor.stream.StreamInfo
 import org.schabi.newpipe.extractor.stream.StreamInfoItem
 import org.tubepipe.core.service.kiosk.YoutubeTrendingGamingVideosExtractor
 import org.tubepipe.core.service.kiosk.YoutubeTrendingGamingVideosLinkHandlerFactory
@@ -64,7 +65,7 @@ class YoutubeContentRepository(private val ioDispatcher: CoroutineDispatcher = D
     }
 
     override suspend fun videoDetails(url: String): VideoDetails = extracting("videoDetails", url) {
-        val streamInfo = StreamInfoCache.get(url, playerClientName = null)
+        val streamInfo = StreamInfo.getInfo(youtube, url)
         VideoDetails(
             video = streamInfo.toVideoItem(),
             description = streamInfo.description?.content.orEmpty(),
@@ -204,12 +205,11 @@ class YoutubeContentRepository(private val ioDispatcher: CoroutineDispatcher = D
      * Runs one extractor call on [ioDispatcher]. ExtractionException is invisible outside this
      * module, so it is rethrown as IOException naming the call and its subject.
      */
-    private suspend fun <T> extracting(operation: String, subject: Any, block: suspend () -> T): T =
-        withContext(ioDispatcher) {
-            try {
-                block()
-            } catch (error: ExtractionException) {
-                throw IOException("YouTube $operation failed for $subject: ${error.message}", error)
-            }
+    private suspend fun <T> extracting(operation: String, subject: Any, block: () -> T): T = withContext(ioDispatcher) {
+        try {
+            block()
+        } catch (error: ExtractionException) {
+            throw IOException("YouTube $operation failed for $subject: ${error.message}", error)
         }
+    }
 }
