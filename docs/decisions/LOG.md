@@ -43,3 +43,4 @@
 2026-10-23 | Prefetch dwell 1.15 s, cap 6 a minute, one at a time | user asked for 1.15 s; limits keep traffic near YouTube's own hover previews
 2026-10-23 | Release key tubepipe-release.jks (gitignored), first used for v0.2.1 | a debug-signed public build would force a reinstall when the key changes
 2026-10-23 | Public repo github.com/shourovrm/tubepipe; v0.2.1 is a pre-release | box offline, device check skipped by user choice
+2026-10-23 | Box tests use adb keyevents; sendevent on aml_keypad (IR) is not the BT remote and misses list clicks | found while checking the stray key

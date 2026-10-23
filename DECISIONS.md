@@ -8,9 +8,9 @@
 - `docs/design-system.md` — androidtv skeleton plus the PipePipe-derived direction tokens (two reds, black theme).
 
 ## Next
-- v0.2.1 is a pre-release, box-untested: five TV UI fixes (tv-ui.md), prefetch, player New playlist. Box check, then promote.
+- v0.2.1 pre-release passed the box check 2026-10-23 except two new focus bugs (tv-ui.md); promote when the user agrees.
 - Device-untested: Parental page, 18+ block, More menu, media keys. Box-tested 2026-10-22: playlist/channel bars, search, drawer, kids 1080p.
-- Time to play ~5 s (budget 2 s). Prefetch shipped (1.15 s dwell, 6/min cap); measure on box with `SABR server backoff` in logcat.
+- Time to play on box: 2.0-2.2 s prefetched, 4.2 s not; prefetch needs >3 s (two serial requests). Centre during it: 6.5 s once.
 - Workers: write the whole slice, then compile + own tests once; lint, full suite and TV check run once after merge.
 
 ## Gotchas (cross-cutting)

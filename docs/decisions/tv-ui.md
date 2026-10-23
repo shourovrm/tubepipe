@@ -14,8 +14,12 @@
 
 
 ## Open items
-- Device-untested fixes (box offline 2026-10-23): search keyboard on a new query, clear X, Centre stray key, focus
-  after Back pops a screen, Pause flash on chip Up. Check each on the box; the worker's notes are in the commits.
+- Country picker (Settings > Region): Down from its search box does not reach the results; only Tab does. Same cause
+  as the old Search bug: the text field keeps Down as a cursor move. Give it the Search field's Down handler.
+- Back from a single video lands on Home with nothing focused; the first Down opens the drawer. That Back path is
+  `openDestination(Home)`, which does not bump `backCount`.
+- Box-checked 2026-10-23 on v0.2.1: search keyboard on a new query, clear X, Pause flash, Back focus from a playlist
+  page, New playlist from the player all pass. Stray key: none with a 120 ms press; adb's 6 ms press still types one.
 
 ## Gotchas
 - Search moves focus to results once per `submissionCount`; keying the effect on "results showing" stole the
