@@ -33,4 +33,22 @@ class SettingsControlsTest {
     fun seekStepsUseTheSameRule() {
         assertEquals(15, steppedChoice(listOf(5, 10, 15, 20, 25, 30), current = 10, step = 1))
     }
+
+    // The default-speed slider moves in 0.05 steps from 0.5x to 2x.
+    @Test
+    fun defaultSpeedChoicesStepByFiveHundredths() {
+        assertEquals(31, DefaultSpeedChoices.size)
+        assertEquals(0.5f, DefaultSpeedChoices.first())
+        assertEquals(2f, DefaultSpeedChoices.last())
+        assertEquals(1.05f, steppedChoice(DefaultSpeedChoices, current = 1f, step = 1))
+        assertEquals(0.95f, steppedChoice(DefaultSpeedChoices, current = 1f, step = -1))
+    }
+
+    // A speed saved by the old 0.25-step slider is still in the list, so the slider starts where the user left it.
+    @Test
+    fun oldQuarterStepSpeedsAreStillChoices() {
+        for (oldSpeed in listOf(0.5f, 0.75f, 1f, 1.25f, 1.5f, 1.75f, 2f)) {
+            assertEquals(oldSpeed, steppedChoice(DefaultSpeedChoices, current = oldSpeed, step = 0))
+        }
+    }
 }

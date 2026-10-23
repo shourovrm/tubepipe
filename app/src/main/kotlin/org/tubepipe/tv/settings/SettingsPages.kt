@@ -41,7 +41,8 @@ import org.tubepipe.tv.data.SponsorBlockCategory
 import org.tubepipe.tv.data.VideoCodec
 import org.tubepipe.tv.data.VideoQuality
 
-private val SpeedChoices = listOf(0.5f, 0.75f, 1f, 1.25f, 1.5f, 1.75f, 2f)
+/** 0.5x to 2x in 0.05 steps; built from hundredths so each value is the nearest float to its decimal. */
+internal val DefaultSpeedChoices: List<Float> = (50..200 step 5).map { hundredths -> hundredths / 100f }
 private val SeekStepChoicesSeconds = listOf(5, 10, 15, 20, 25, 30)
 private const val SPONSOR_BLOCK_GRID_COLUMNS = 4
 private val ControlsColumnWidth = 560.dp
@@ -118,7 +119,7 @@ internal fun PlaybackPage(settings: AppSettings, viewModel: SettingsViewModel) {
         val speedName = stringResource(R.string.settings_default_speed)
         SettingsSliderRow(
             name = speedName,
-            choices = SpeedChoices,
+            choices = DefaultSpeedChoices,
             current = settings.defaultSpeed,
             valueLabel = speedLabel(settings.defaultSpeed),
             onChosen = viewModel::setDefaultSpeed,
