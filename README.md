@@ -1,6 +1,8 @@
 # TubePipe
 
-Android TV client for PipePipe, in the style of SmartTube: D-pad only, 10-foot UI, no ads, no account required.
+YouTube for Android TV, without ads or an account.
+
+![TubePipe home screen](docs/screenshots/home.jpg)
 
 TubePipe is free software under the GPL-3.0 (see `LICENSE`). It builds on
 [NewPipe](https://github.com/TeamNewPipe/NewPipe) and
@@ -9,8 +11,10 @@ service access. Thanks to both teams.
 
 ## Status
 
-Pre-alpha: the app starts and shows the navigation drawer; screens are placeholders. The stack and module layout are
-recorded in `docs/decisions/architecture.md`.
+Early release: Home, Trending, Subscriptions, Library, Search and the player work with the TV remote alone. The stack
+and module layout are recorded in `docs/decisions/architecture.md`.
+
+![Search results](docs/screenshots/search.jpg)
 
 ## Download
 
