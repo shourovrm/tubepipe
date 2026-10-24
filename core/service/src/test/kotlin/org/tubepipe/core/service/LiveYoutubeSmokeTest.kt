@@ -30,6 +30,15 @@ class LiveYoutubeSmokeTest {
         assertTrue("second page returned ${nextPage.items.size} videos", nextPage.items.isNotEmpty())
     }
 
+    // Cards show the length for regular videos and a "Shorts" badge for Shorts, whose length search does not give.
+    @Test
+    fun searchVideosCarryALengthOrAreMarkedAsShorts() = runTest(timeout = 60.seconds) {
+        ExtractorInitializer.setContentCountry("BD")
+        val videos = repository.search("ramayana trailer").items.videoItems().filter { !it.isLive }
+        val videosWithNeither = videos.filter { (it.durationSeconds ?: 0) <= 0 && !it.isShort }
+        assertTrue("no length and not a Short: ${videosWithNeither.map { it.url }}", videosWithNeither.isEmpty())
+    }
+
     @Test
     fun searchSuggestionsAreReturned() = runTest(timeout = 60.seconds) {
         assertTrue(repository.searchSuggestions("never gonna").isNotEmpty())

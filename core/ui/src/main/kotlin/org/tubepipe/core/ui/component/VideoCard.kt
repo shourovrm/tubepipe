@@ -35,6 +35,7 @@ data class VideoCardModel(
     val durationSeconds: Long?,
     val isLive: Boolean,
     val watchedFraction: Float = 0f,
+    val isShort: Boolean = false,
 )
 
 /**
@@ -110,9 +111,15 @@ private fun CardBadge(model: VideoCardModel, modifier: Modifier) {
                 .background(TubepipeColors.Primary, badgeShape)
                 .padding(horizontal = 6.dp, vertical = 2.dp),
         )
-    } else if (model.durationSeconds != null) {
+    } else if (model.durationSeconds != null || model.isShort) {
+        // YouTube search gives no length for Shorts, so they get a "Shorts" badge in the same place instead.
+        val badgeText = if (model.durationSeconds != null) {
+            TimeFormatting.duration(model.durationSeconds)
+        } else {
+            stringResource(R.string.badge_shorts)
+        }
         Text(
-            text = TimeFormatting.duration(model.durationSeconds),
+            text = badgeText,
             style = MaterialTheme.typography.labelLarge,
             color = TubepipeColors.OnSurface,
             modifier = badgeModifier

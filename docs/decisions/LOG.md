@@ -47,3 +47,4 @@
 2026-10-23 | Removed video prefetch (dwell and next-video) | user: waiting a few seconds is fine; it added requests and was slower when Centre hit mid-fetch
 2026-10-23 | Default speed slider in 0.05 steps (0.5-2x); the in-player speed menu keeps 0.25 steps | user asked for finer control in Settings
 2026-10-24 | Player Back hides panel/controls on KeyDown in the key preview | BackHandler alone needed a second press
+2026-10-24 | Shorts cards show a "Shorts" badge where the length goes | search sends no length for Shorts, so the badge was empty

@@ -18,6 +18,7 @@ Live smoke tests: `./gradlew :core:service:testDebugUnitTest -Ptubepipe.live=tru
 - Pass `null`, not an empty list, as the sort filter: an empty list throws `UnsupportedEncodingException: UTF_8`.
 - Music trending uses YouTube Charts; its launched-country set excludes BD, so `TrendingCatalog` hides the tab there.
 - A Mix is `watch?v=<id>&list=RD<id>` opened through `PlaylistInfo`.
+- Search gives Shorts a length of 0 (YouTube sends none); the card shows a "Shorts" badge for them instead.
 
 ## Tried / rejected
 - Trending podcasts kiosk: empty page for logged-out clients (see architecture.md).
