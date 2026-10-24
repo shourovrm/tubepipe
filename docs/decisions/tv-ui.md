@@ -11,6 +11,8 @@
 - Back from a playlist video pops to the playlist page and the video keeps playing there (`minimizedQueue`). On a
   page with a bar, the first Back moves focus to the bar centre (`sendBackToBar`), the next one leaves the page.
   Centre on the picture reopens the queue video full screen. A video that ends in the playlist bar starts the next.
+- Player Back closes one layer per press (list, panel, controls, then the page), handled on KeyDown in the key
+  preview; the BackHandler alone needed two presses because the first Back only clears focus.
 
 
 ## Open items

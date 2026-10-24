@@ -246,7 +246,18 @@ private fun PlayerContent(
                         isBackKeyUpPending = true
                         true
                     }
-                    // Its KeyUp would reach the BackHandler and hide the bar as well.
+                    // Same for the controls: left to the system, the first Back only cleared focus and a second one hid them.
+                    isBackKey && event.type == KeyEventType.KeyDown && isPanelVisible -> {
+                        isPanelVisible = false
+                        isBackKeyUpPending = true
+                        true
+                    }
+                    isBackKey && event.type == KeyEventType.KeyDown && isBarVisible -> {
+                        isBarVisible = false
+                        isBackKeyUpPending = true
+                        true
+                    }
+                    // Its KeyUp would reach the BackHandler and close the next layer as well.
                     isBackKey && event.type == KeyEventType.KeyUp && isBackKeyUpPending -> {
                         isBackKeyUpPending = false
                         true
