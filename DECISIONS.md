@@ -8,6 +8,7 @@
 - `docs/design-system.md` — androidtv skeleton plus the PipePipe-derived direction tokens (two reds, black theme).
 
 ## Next
+- Player open items 2026-10-31: no mid-playback error recovery; slow speed (<1x) stutters. See player.md.
 - Open: duplicate "English" in one video's caption list; Home "Mix for" rows sometimes fail ("Could not get playlistData").
 - Device-untested: 18+ block, media keys. Box-tested 2026-10-23: search, focus after Back, captions, kids quality, More menu.
 - Time to play on box is ~4 s with no prefetch; the user accepts a few seconds (2026-10-23), so prefetch was removed.

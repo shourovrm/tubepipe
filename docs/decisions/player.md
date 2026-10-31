@@ -24,6 +24,8 @@ SABR glue and played one 1080p avc1 stream for 60 s on the Mi Box S with 0 rebuf
 - Add instrumented tests for seek back 30 s, forward seek, forced quality switch, and time to first frame (2 s budget).
 - Restore what the spike stubbed: segment disk cache (Media3 `SimpleCache`), audio pick by language (original first,
   DataStore prefs), SABR backoff UI, startup trace, full `DownloaderImpl` (cookies, reCaptcha, restricted mode).
+- No mid-playback recovery: PlaybackHost has no error listener, so an error after start (403/410 expired URL, network drop, decoder) ends playback. Add one re-resolve on HTTP 401/403/410 or transport failure, else the other client; one lower-rendition retry on decoder errors (fyi-player's PlayerErrorPolicy is the model).
+- Slow speed stutters: setting playback speed below 1x makes video stutter instead of playing smoothly slower (user report 2026-10-31, cause unknown; check audio-sink speed handling and SABR/segment buffering at low speed).
 
 ## Gotchas
 - Media3's `DefaultLoadControl` starts at 1,000 ms buffer and resumes at 2,000 ms (ExoPlayer 2.18.7: 2,500 / 5,000);
