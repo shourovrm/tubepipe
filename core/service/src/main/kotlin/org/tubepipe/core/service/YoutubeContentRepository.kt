@@ -80,7 +80,32 @@ class YoutubeContentRepository(private val ioDispatcher: CoroutineDispatcher = D
         // A YouTube Mix is the playlist "RD" + video id, opened on the seed video.
         val videoId = youtube.streamLHFactory.getId(videoUrl)
         val mixUrl = "https://www.youtube.com/watch?v=$videoId&list=RD$videoId"
+        mixVideosOrEmpty(videoUrl, mixUrl)
+    }
+
+    /**
+     * YouTube sometimes answers a Mix without its playlist object, and a second request usually gets it. A Mix that
+     * fails twice is logged and left out, so its Home row disappears instead of failing the whole Home screen.
+     */
+    private fun mixVideosOrEmpty(videoUrl: String, mixUrl: String): List<VideoItem> {
+        val firstAttempt = fetchMixVideos(mixUrl)
+        if (firstAttempt != null) {
+            return firstAttempt
+        }
+        val secondAttempt = fetchMixVideos(mixUrl)
+        if (secondAttempt != null) {
+            return secondAttempt
+        }
+        logger.log(Level.WARNING, "Leaving the Mix for $videoUrl off Home after two failed attempts")
+        return emptyList()
+    }
+
+    /** Null when the extractor fails; the failure is logged with the Mix URL it came from. */
+    private fun fetchMixVideos(mixUrl: String): List<VideoItem>? = try {
         PlaylistInfo.getInfo(youtube, mixUrl).relatedItems.toVideoItems()
+    } catch (failure: ExtractionException) {
+        logger.log(Level.WARNING, "Mix attempt failed for $mixUrl", failure)
+        null
     }
 
     override suspend fun channel(url: String): ChannelPage = extracting("channel", url) {
