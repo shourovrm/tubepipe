@@ -3,6 +3,7 @@ package org.tubepipe.core.player
 import android.content.Context
 import androidx.annotation.OptIn
 import androidx.media3.common.C
+import androidx.media3.common.PlaybackException
 import androidx.media3.common.TrackGroup
 import androidx.media3.common.TrackSelectionOverride
 import androidx.media3.common.TrackSelectionParameters
@@ -16,6 +17,20 @@ import kotlinx.coroutines.withContext
 import org.schabi.newpipe.extractor.NewPipe
 import org.schabi.newpipe.extractor.exceptions.ExtractionException
 import org.schabi.newpipe.extractor.stream.StreamInfo
+
+/** Renderer errors that a lower rendition can avoid; a network or expired-URL error is not one of them. */
+private val DECODER_ERROR_CODES = setOf(
+    PlaybackException.ERROR_CODE_DECODER_INIT_FAILED,
+    PlaybackException.ERROR_CODE_DECODER_QUERY_FAILED,
+    PlaybackException.ERROR_CODE_DECODING_FAILED,
+    PlaybackException.ERROR_CODE_DECODING_FORMAT_EXCEEDS_CAPABILITIES,
+    PlaybackException.ERROR_CODE_DECODING_FORMAT_UNSUPPORTED,
+)
+
+internal fun isDecoderError(errorCode: Int): Boolean = errorCode in DECODER_ERROR_CODES
+
+/** The tallest of [heights] that is below [height], or null when none is. */
+internal fun lowerRendition(heights: List<Int>, height: Int): Int? = heights.filter { it < height }.maxOrNull()
 
 /**
  * Loads a YouTube URL into an [ExoPlayer] and starts playback. Create it and call [load] on the main thread;
@@ -54,14 +69,50 @@ class TubepipePlayer(
      *
      * @throws IOException when every client failed; the failure of each client is attached as a suppressed exception
      */
-    suspend fun load(videoUrl: String, startPositionMs: Long = 0L): LoadedStream {
+    suspend fun load(videoUrl: String, startPositionMs: Long = 0L): LoadedStream =
+        extractAndPlay(videoUrl, startPositionMs, preferences.maxVideoHeight ?: AUTO_MAX_VIDEO_HEIGHT)
+
+    /**
+     * Plays [videoUrl] again from [startPositionMs] after a stream error, with the stream capped at [maxHeight].
+     * Extracting again replaces the stream URLs that YouTube has expired.
+     *
+     * @throws IOException when every client failed
+     */
+    suspend fun reload(videoUrl: String, startPositionMs: Long, maxHeight: Int): LoadedStream {
+        exoPlayer.trackSelectionParameters = withVideoLimits(
+            exoPlayer.trackSelectionParameters.buildUpon(),
+            maxHeight,
+        ).build()
+        return extractAndPlay(videoUrl, startPositionMs, maxHeight)
+    }
+
+    /**
+     * The height to rebuild the stream at after [errorCode]: one rendition below the picture being shown after a
+     * decoder error, else the cap in use.
+     */
+    fun recoveryMaxHeight(errorCode: Int): Int {
+        val cap = exoPlayer.trackSelectionParameters.maxVideoHeight
+        if (!isDecoderError(errorCode)) {
+            return cap
+        }
+        val shownHeight = exoPlayer.videoSize.height.takeIf { it > 0 } ?: cap
+        return lowerRendition(qualityOptions(), shownHeight) ?: cap
+    }
+
+    private suspend fun extractAndPlay(
+        videoUrl: String,
+        startPositionMs: Long,
+        maxHeight: Int,
+    ): LoadedStream {
         val failures = mutableListOf<Pair<PlayerClient, Exception>>()
         // A 360p-only result is kept while the next client is tried, and played only if no client does better.
         var lowQualityResult: Pair<PlayerClient, ExtractedSource>? = null
         val clients = PlayerClient.fallbackOrder(preferredClient)
         for (client in clients) {
             try {
-                val loaded = withContext(Dispatchers.IO) { extractAndBuild(client, videoUrl, startPositionMs) }
+                val loaded = withContext(Dispatchers.IO) {
+                    extractAndBuild(client, videoUrl, startPositionMs, maxHeight)
+                }
                 val isLastClient = client == clients.last()
                 if (LowQualityOffer.isLowQualityOnly(loaded.streamInfo) && !isLastClient) {
                     if (lowQualityResult == null) {
@@ -179,11 +230,16 @@ class TubepipePlayer(
 
     private class ExtractedSource(val streamInfo: StreamInfo, val builtSource: BuiltMediaSource)
 
-    private fun extractAndBuild(client: PlayerClient, videoUrl: String, startPositionMs: Long): ExtractedSource {
+    private fun extractAndBuild(
+        client: PlayerClient,
+        videoUrl: String,
+        startPositionMs: Long,
+        maxHeight: Int,
+    ): ExtractedSource {
         // The extractor reads the client from a process-wide setting, so it is set right before each attempt.
         NewPipe.setYoutubePlayerClient(client.extractorName)
         val streamInfo = StreamInfo.getInfo(videoUrl)
-        return ExtractedSource(streamInfo, sourceFactory.build(streamInfo, startPositionMs))
+        return ExtractedSource(streamInfo, sourceFactory.build(streamInfo, startPositionMs, maxHeight))
     }
 
     private fun failureMessage(videoUrl: String, failures: List<Pair<PlayerClient, Exception>>): String {

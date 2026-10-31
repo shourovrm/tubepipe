@@ -9,6 +9,7 @@ import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.media3.common.C
+import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.common.TrackGroup
 import androidx.media3.common.TrackSelectionOverride
@@ -71,8 +72,28 @@ class TubepipePlayerEngine(private val context: Context) : PlayerEngine {
     // Quality switches outlive the menu that started them, but not the engine.
     private val qualityScope = MainScope()
 
+    private val recoveryScope = MainScope()
+
     // Kept here because the loop choice can arrive before load() has built the player.
     private var isLooping = false
+
+    private var videoUrl = ""
+
+    // Set from the start of a recovery until the player is ready again; an error inside that window is final.
+    private var isRecovering = false
+
+    private val recoveryListener = object : Player.Listener {
+        override fun onPlayerError(error: PlaybackException) {
+            recoverFrom(error)
+        }
+
+        override fun onPlaybackStateChanged(playbackState: Int) {
+            if (playbackState == Player.STATE_READY && isRecovering) {
+                isRecovering = false
+                loadState = LoadState.Loaded
+            }
+        }
+    }
 
     // Controls act on playWhenReady: while the player buffers, isPlaying is false but the viewer pressed play.
     override val isPlaying: Boolean get() = player?.exoPlayer?.playWhenReady ?: false
@@ -93,6 +114,7 @@ class TubepipePlayerEngine(private val context: Context) : PlayerEngine {
     override fun release() {
         isReleased = true
         qualityScope.cancel()
+        recoveryScope.cancel()
         player?.release()
     }
 
@@ -110,8 +132,10 @@ class TubepipePlayerEngine(private val context: Context) : PlayerEngine {
         currentSpeed = preferences.speed
         currentQuality = preferences.maxVideoHeight
         captionLanguage = preferences.captionLanguage
+        this.videoUrl = videoUrl
         val newPlayer = TubepipePlayer(context, client, preferences)
         newPlayer.exoPlayer.repeatMode = repeatModeFor(isLooping)
+        newPlayer.exoPlayer.addListener(recoveryListener)
         player = newPlayer
         try {
             newPlayer.load(videoUrl, startPositionMillis)
@@ -119,6 +143,33 @@ class TubepipePlayerEngine(private val context: Context) : PlayerEngine {
         } catch (failure: IOException) {
             Log.e(TAG, "Playing $videoUrl failed", failure)
             loadState = LoadState.Failed
+        }
+    }
+
+    /**
+     * Plays the video again from the position of the error, after a stream error (expired URL, dropped network,
+     * decoder). The first error gets one reload, one rendition lower after a decoder error; if that fails too,
+     * [loadState] becomes Failed and the screen shows its error.
+     */
+    private fun recoverFrom(error: PlaybackException) {
+        val failedPlayer = player ?: return
+        if (isRecovering) {
+            Log.e(TAG, "Playing $videoUrl failed again after a reload", error)
+            loadState = LoadState.Failed
+            return
+        }
+        isRecovering = true
+        loadState = LoadState.Loading
+        val positionMillis = failedPlayer.exoPlayer.currentPosition
+        val maxHeight = failedPlayer.recoveryMaxHeight(error.errorCode)
+        Log.w(TAG, "Playing $videoUrl failed at $positionMillis ms; reloading it", error)
+        recoveryScope.launch {
+            try {
+                failedPlayer.reload(videoUrl, positionMillis, maxHeight)
+            } catch (failure: IOException) {
+                Log.e(TAG, "Reloading $videoUrl failed", failure)
+                loadState = LoadState.Failed
+            }
         }
     }
 
