@@ -14,8 +14,9 @@ SABR glue and played one 1080p avc1 stream for 60 s on the Mi Box S with 0 rebuf
   (`hlsUrl`), played adaptively; `mweb` (SABR) is the fallback and a Settings choice. Both 1080p, 0 rebuffers on the box.
 - Made-for-kids videos (Masha, Grizzy, Booba): YouTube refuses VisionOS; the vendored extractor (patch 0004) then asks
   the embedded player (`WEB_EMBEDDED_PLAYER`, as yt-dlp's `web_embedded`) in the same pass and gets 1080p HTTPS
-  formats, played as DASH/progressive, no SABR, no PO token. Its last resort is still the Android reel's muxed 360p,
-  and `LowQualityOffer` then retries mweb as before.
+  formats, played as DASH/progressive, no SABR, no PO token. Videos whose owner disabled embedding (the Grizzy &
+  the Lemmings compilations) still fall to the Android reel's muxed 360p, and `LowQualityOffer` retries mweb/SABR as
+  before (8-10 s). Booba, Masha and most kids channels allow embedding.
 - Start path: `PlaybackRuntime.initialize` + decoder prewarm run 1 s after the Activity is up; `StreamInfoCache`
   (core/service) shares one extraction per video between detail page, Home seeds and player, so the player extracts
   nothing when the detail page already did. Box, 2026-11-06: press-to-playing 6.4 s cold (fresh extraction), ~3 s on a
