@@ -1,7 +1,7 @@
 From fb4db572f4b5278a5a862e77cdd938a847458b95 Mon Sep 17 00:00:00 2001
 From: Riad Mashrub Shourov <shourovrm@gmail.com>
 Date: Fri, 6 Nov 2026 11:14:11 +0600
-Subject: [PATCH 1/5] patch: search collects reelShelfRenderer shorts + JDK 21
+Subject: [PATCH 1/4] patch: search collects reelShelfRenderer shorts + JDK 21
  toolchain
 
 ---

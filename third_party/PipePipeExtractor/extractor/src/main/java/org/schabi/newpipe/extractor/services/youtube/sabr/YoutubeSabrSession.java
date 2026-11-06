@@ -136,14 +136,7 @@ public final class YoutubeSabrSession {
             throw new SabrProtocolException("SABR backoff exceeds limit: "
                     + result.getBackoffTimeMs() + "ms");
         }
-        if (isContextHandshake(result)) {
-            // The server answered with a context to echo and no media: the next request is a
-            // different request, not a retry, so its backoff hint is not a wait.
-            addDiagnosticEvent("context_handshake n=" + requestNumber
-                    + " skippedBackoffMs=" + result.getBackoffTimeMs());
-        } else {
-            updateBackoff(result.getBackoffTimeMs());
-        }
+        updateBackoff(result.getBackoffTimeMs());
         diagnostics.recordResponse(result, requestNumber);
         updateBandwidthEstimate(result.getResponseBytes(), result.getRequestElapsedMs());
         requestNumber++;
@@ -424,13 +417,6 @@ public final class YoutubeSabrSession {
         if (freshPoToken != null && freshPoToken.length > 0) {
             poToken = freshPoToken;
         }
-    }
-
-    /** A response that carries a new SABR context, no media and a backoff: the first exchange of a session. */
-    private static boolean isContextHandshake(@Nonnull final YoutubeSabrResponse response) {
-        return response.getBackoffTimeMs() > 0
-                && response.getSegmentCount() == 0
-                && !response.getSabrContextUpdates().isEmpty();
     }
 
     private void ingestControl(@Nonnull final YoutubeSabrResponse response) {

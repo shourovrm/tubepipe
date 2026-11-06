@@ -1,7 +1,7 @@
 From 9b7414a1f0acad411e817909fdf6107ed3b19e3a Mon Sep 17 00:00:00 2001
 From: Riad Mashrub Shourov <shourovrm@gmail.com>
 Date: Fri, 6 Nov 2026 11:14:11 +0600
-Subject: [PATCH 2/5] patch: related items include the shorts shelf
+Subject: [PATCH 2/4] patch: related items include the shorts shelf
 
 ---
  .../extractors/YoutubeStreamExtractor.java    | 30 +++++++++++++++++++

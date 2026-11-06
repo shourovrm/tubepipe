@@ -8,8 +8,8 @@ with `DownloaderImpl` (OkHttp, trimmed from PipePipeClient) and restores the TLS
 Trending kiosks (music, movies and shows, gaming) are ported from NewPipeExtractor into `kiosk/`; podcasts skipped.
 News is `YoutubeNewsFeed`: a desktop `browse` of the News topic channel `UCYfdidRxbB8Qhf0Nx7ioOYw` (US 188, BD 143 items). Where it has no videos (CN, KP, IR, AF, NP, MM) the feed is read again for US.
 Live smoke tests: `./gradlew :core:service:testDebugUnitTest -Ptubepipe.live=true` (all 8 passed 2026-10-22).
-Extractor: vendored in `third_party/PipePipeExtractor` = upstream `1a09d20e` + `third_party/patches/` 0001-0005 (same
-base and 0001-0003 as the phone app; 0004 SABR handshake, 0005 embedded player for kids videos), see `third_party/README.md`.
+Extractor: vendored in `third_party/PipePipeExtractor` = upstream `1a09d20e` + `third_party/patches/` 0001-0004 (the phone
+app vendors the identical tree; 0004 = embedded player for kids videos), see `third_party/README.md`.
 `StreamInfoCache`: one `StreamInfo` per video URL and client for 30 min, fetched on its own scope and shared by
 concurrent callers, so a Home reload (every saved playback position re-emits history) cannot cancel and repeat it.
 

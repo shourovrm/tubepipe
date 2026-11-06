@@ -12,7 +12,7 @@ SABR glue and played one 1080p avc1 stream for 60 s on the Mi Box S with 0 rebuf
 - PoToken runs in the system WebView (138 on the box); QuickJS was not needed for the spike.
 - Default client `visionos`: for normal videos the extractor gives progressive formats plus the HLS master playlist
   (`hlsUrl`), played adaptively; `mweb` (SABR) is the fallback and a Settings choice. Both 1080p, 0 rebuffers on the box.
-- Made-for-kids videos (Masha, Grizzy, Booba): YouTube refuses VisionOS; the vendored extractor (patch 0005) then asks
+- Made-for-kids videos (Masha, Grizzy, Booba): YouTube refuses VisionOS; the vendored extractor (patch 0004) then asks
   the embedded player (`WEB_EMBEDDED_PLAYER`, as yt-dlp's `web_embedded`) in the same pass and gets 1080p HTTPS
   formats, played as DASH/progressive, no SABR, no PO token. Its last resort is still the Android reel's muxed 360p,
   and `LowQualityOffer` then retries mweb as before.
@@ -45,11 +45,12 @@ SABR glue and played one 1080p avc1 stream for 60 s on the Mi Box S with 0 rebuf
 - The glue uses `@UnstableApi` types; opt in for the module or Android Lint fails with `UnsafeOptInUsageError`.
 - Set the track selector viewport to 1920x1080 explicitly: sized from the box display, HLS stayed at 480p.
 - The `SabrDashMediaSource` constructor does network I/O; build it on `Dispatchers.IO`.
-- SABR's first response is a context handshake (part 57 + a 4800 ms backoff, no media); patch 0004 skips that wait.
-  Upstream PipePipe honours it and so paid 4.8 s on every SABR start.
+- SABR's first response carries no media, only a context update and a 4800 ms backoff; the server re-issues the
+  remaining wait if asked earlier, so every SABR start pays 4.8 s. Kids videos avoid SABR now; nothing else uses it.
 - `screencap` shows black over the video (sideband overlay) and SurfaceFlinger has no frame times for it; measure
   start with `dumpsys media_session` state changes and the extractor's `YT_PERF` log lines.
 
 ## Tried / rejected
 - tv_simply, web: also 360p-only for kids videos; tv_samsung, tv_downgraded: bot check. Only mweb gives 1080p.
 - ExoPlayer 2.18.7 fallback: not needed, the Media3 port is three files; 2.18.7 is end of life with no media session future.
+- Skipping the SABR first-response backoff (2026-11-06): the immediate resend only gets the remaining wait back.

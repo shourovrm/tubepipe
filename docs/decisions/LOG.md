@@ -53,3 +53,4 @@
 2026-11-06 | Kids videos: embedded player fallback inside the extractor instead of a second mweb/SABR pass | 1080p HTTPS in one pass, no PO token, no SABR
 2026-11-06 | StreamInfoCache shares one extraction per video; Home seeds fetched two at a time | Home reload per saved position repeated 5 extractions every 5 s
 2026-11-06 | Speed <1x judder is 25 fps content on the 50 Hz box output, not a player bug | 22.5 fps cannot map to whole refreshes; documented, not fixed
+2026-11-06 | Dropped the SABR handshake-skip patch | the server re-issues the remaining 4.8 s on an early resend; kids videos no longer use SABR anyway

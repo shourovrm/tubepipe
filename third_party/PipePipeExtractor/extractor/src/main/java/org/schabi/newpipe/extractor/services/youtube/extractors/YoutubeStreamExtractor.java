@@ -969,9 +969,12 @@ public class YoutubeStreamExtractor extends StreamExtractor {
         final Localization localization = getExtractorLocalization();
         final ContentCountry contentCountry = getExtractorContentCountry();
 
+        // The consent cookie keeps both requests logged out (a signed-in embed page carries no host
+        // flags) and stops an app downloader from adding the account's session cookie instead.
         final Map<String, List<String>> pageHeaders = new HashMap<>();
         pageHeaders.put("User-Agent", singletonList(WEB_EMBEDDED_USER_AGENT));
         pageHeaders.put("Referer", singletonList(WEB_EMBEDDED_EMBED_URL));
+        pageHeaders.put("Cookie", singletonList(generateConsentCookie()));
         final String embedPage = getDownloader()
                 .get("https://www.youtube.com/embed/" + videoId + "?html5=1", pageHeaders,
                         localization)
@@ -1015,6 +1018,7 @@ public class YoutubeStreamExtractor extends StreamExtractor {
         headers.put("X-YouTube-Client-Name", singletonList(WEB_EMBEDDED_CLIENT_ID));
         headers.put("X-YouTube-Client-Version", singletonList(clientVersion));
         headers.put("User-Agent", singletonList(WEB_EMBEDDED_USER_AGENT));
+        headers.put("Cookie", singletonList(generateConsentCookie()));
         final JsonObject response = JsonUtils.toJsonObject(getValidJsonResponseBody(
                 getDownloader().post(YOUTUBEI_V1_URL + "player?" + DISABLE_PRETTY_PRINT_PARAMETER,
                         headers, body, localization)));

@@ -1,14 +1,14 @@
-From 79feb553d8ea0c146415bae4c8e615c3b14e5532 Mon Sep 17 00:00:00 2001
+From 9f6e4b1c42ee242cb17d6507d0de057bc7be39f9 Mon Sep 17 00:00:00 2001
 From: Riad Mashrub Shourov <shourovrm@gmail.com>
 Date: Fri, 6 Nov 2026 11:16:30 +0600
-Subject: [PATCH 5/5] patch: embedded player serves refused (kids) videos
+Subject: [PATCH 4/4] patch: embedded player serves refused (kids) videos
 
 ---
- .../extractors/YoutubeStreamExtractor.java    | 121 +++++++++++++++++-
- 1 file changed, 116 insertions(+), 5 deletions(-)
+ .../extractors/YoutubeStreamExtractor.java    | 125 +++++++++++++++++-
+ 1 file changed, 120 insertions(+), 5 deletions(-)
 
 diff --git a/extractor/src/main/java/org/schabi/newpipe/extractor/services/youtube/extractors/YoutubeStreamExtractor.java b/extractor/src/main/java/org/schabi/newpipe/extractor/services/youtube/extractors/YoutubeStreamExtractor.java
-index e2e24e56..30abb1f8 100644
+index e2e24e56..f8faafec 100644
 --- a/extractor/src/main/java/org/schabi/newpipe/extractor/services/youtube/extractors/YoutubeStreamExtractor.java
 +++ b/extractor/src/main/java/org/schabi/newpipe/extractor/services/youtube/extractors/YoutubeStreamExtractor.java
 @@ -54,6 +54,8 @@ import java.time.LocalDate;
@@ -51,7 +51,7 @@ index e2e24e56..30abb1f8 100644
              throws ContentNotAvailableException {
          if (primaryPlayerError == null) {
              return;
-@@ -923,16 +940,110 @@ public class YoutubeStreamExtractor extends StreamExtractor {
+@@ -923,16 +940,114 @@ public class YoutubeStreamExtractor extends StreamExtractor {
          cachedVideoStreams = new ArrayList<>();
          cachedVideoOnlyStreams = new ArrayList<>();
          try {
@@ -87,9 +87,12 @@ index e2e24e56..30abb1f8 100644
 +        final Localization localization = getExtractorLocalization();
 +        final ContentCountry contentCountry = getExtractorContentCountry();
 +
++        // The consent cookie keeps both requests logged out (a signed-in embed page carries no host
++        // flags) and stops an app downloader from adding the account's session cookie instead.
 +        final Map<String, List<String>> pageHeaders = new HashMap<>();
 +        pageHeaders.put("User-Agent", singletonList(WEB_EMBEDDED_USER_AGENT));
 +        pageHeaders.put("Referer", singletonList(WEB_EMBEDDED_EMBED_URL));
++        pageHeaders.put("Cookie", singletonList(generateConsentCookie()));
 +        final String embedPage = getDownloader()
 +                .get("https://www.youtube.com/embed/" + videoId + "?html5=1", pageHeaders,
 +                        localization)
@@ -133,6 +136,7 @@ index e2e24e56..30abb1f8 100644
 +        headers.put("X-YouTube-Client-Name", singletonList(WEB_EMBEDDED_CLIENT_ID));
 +        headers.put("X-YouTube-Client-Version", singletonList(clientVersion));
 +        headers.put("User-Agent", singletonList(WEB_EMBEDDED_USER_AGENT));
++        headers.put("Cookie", singletonList(generateConsentCookie()));
 +        final JsonObject response = JsonUtils.toJsonObject(getValidJsonResponseBody(
 +                getDownloader().post(YOUTUBEI_V1_URL + "player?" + DISABLE_PRETTY_PRINT_PARAMETER,
 +                        headers, body, localization)));
@@ -165,7 +169,7 @@ index e2e24e56..30abb1f8 100644
      /**
       * Build session-based SABR streams from a SABR-only response.
       *
-@@ -2347,7 +2458,7 @@ public class YoutubeStreamExtractor extends StreamExtractor {
+@@ -2347,7 +2462,7 @@ public class YoutubeStreamExtractor extends StreamExtractor {
              checkPlayabilityStatus(playerResponse.getObject("playabilityStatus"), videoId);
          }
          setStreamType();
