@@ -8,10 +8,11 @@
 - `docs/design-system.md` — androidtv skeleton plus the PipePipe-derived direction tokens (two reds, black theme).
 
 ## Next
-- Player open items 2026-10-31: no mid-playback error recovery; slow speed (<1x) stutters. See player.md.
+- 2026-11-06: kids videos play 1080p via the embedded player (extractor patch 0005), SABR handshake wait gone (0004),
+  extraction shared through `StreamInfoCache`, runtime prewarm at launch; box start 6.4 s cold / ~3 s cached. See player.md.
+- Extractor is now vendored (`third_party/`), same base and patches as the phone app; a shared fork repo is the next step.
 - Open: duplicate "English" in one video's caption list; Home "Mix for" rows sometimes fail ("Could not get playlistData").
 - Device-untested: 18+ block, media keys. Box-tested 2026-10-23: search, focus after Back, captions, kids quality, More menu.
-- Time to play on box is ~4 s with no prefetch; the user accepts a few seconds (2026-10-23), so prefetch was removed.
 - Workers: write the whole slice, then compile + own tests once; lint, full suite and TV check run once after merge.
 
 ## Gotchas (cross-cutting)
@@ -23,4 +24,4 @@
 - `adb input keyevent` is keyboard-sourced; use `input dpad keyevent` for D-pad tests. `input text` with %s broke box input.
 - `~/repos/pipepipe`, `~/repos/smarttube` and `~/repos/newpipe-extractor` are read-only reference checkouts; never edit them.
 - Release key: `~/.config/tubepipe/tubepipe-release.jks` via gitignored `keystore.properties`; back it up, updates need it.
-- Build on the installed JDK 21; the extractor asks for a JDK 25 toolchain, so override it to 21 and keep toolchain auto-download off.
+- Build on the installed JDK 21; the vendored extractor asks for a JDK 25 toolchain, so override it to 21 and keep toolchain auto-download off.

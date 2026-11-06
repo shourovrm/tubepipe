@@ -48,3 +48,8 @@
 2026-10-23 | Default speed slider in 0.05 steps (0.5-2x); the in-player speed menu keeps 0.25 steps | user asked for finer control in Settings
 2026-10-24 | Player Back hides panel/controls on KeyDown in the key preview | BackHandler alone needed a second press
 2026-10-24 | Shorts cards show a "Shorts" badge where the length goes | search sends no length for Shorts, so the badge was empty
+2026-11-06 | Vendor the extractor in third_party/ with patch files, drop the submodule | patches must ship with the repo; same layout as the phone app
+2026-11-06 | SABR first-response backoff skipped when it only carries a context update | it is a handshake, not rate limiting; cost 4.8 s per start on both apps
+2026-11-06 | Kids videos: embedded player fallback inside the extractor instead of a second mweb/SABR pass | 1080p HTTPS in one pass, no PO token, no SABR
+2026-11-06 | StreamInfoCache shares one extraction per video; Home seeds fetched two at a time | Home reload per saved position repeated 5 extractions every 5 s
+2026-11-06 | Speed <1x judder is 25 fps content on the 50 Hz box output, not a player bug | 22.5 fps cannot map to whole refreshes; documented, not fixed

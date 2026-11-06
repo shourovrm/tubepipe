@@ -8,6 +8,10 @@ with `DownloaderImpl` (OkHttp, trimmed from PipePipeClient) and restores the TLS
 Trending kiosks (music, movies and shows, gaming) are ported from NewPipeExtractor into `kiosk/`; podcasts skipped.
 News is `YoutubeNewsFeed`: a desktop `browse` of the News topic channel `UCYfdidRxbB8Qhf0Nx7ioOYw` (US 188, BD 143 items). Where it has no videos (CN, KP, IR, AF, NP, MM) the feed is read again for US.
 Live smoke tests: `./gradlew :core:service:testDebugUnitTest -Ptubepipe.live=true` (all 8 passed 2026-10-22).
+Extractor: vendored in `third_party/PipePipeExtractor` = upstream `1a09d20e` + `third_party/patches/` 0001-0005 (same
+base and 0001-0003 as the phone app; 0004 SABR handshake, 0005 embedded player for kids videos), see `third_party/README.md`.
+`StreamInfoCache`: one `StreamInfo` per video URL and client for 30 min, fetched on its own scope and shared by
+concurrent callers, so a Home reload (every saved playback position re-emits history) cannot cancel and repeat it.
 
 ## Open items
 - Channel tabs other than Videos (Shorts, Live, Playlists, Podcasts, Courses) are not exposed yet.
@@ -19,6 +23,9 @@ Live smoke tests: `./gradlew :core:service:testDebugUnitTest -Ptubepipe.live=tru
 - Music trending uses YouTube Charts; its launched-country set excludes BD, so `TrendingCatalog` hides the tab there.
 - A Mix is `watch?v=<id>&list=RD<id>` opened through `PlaylistInfo`.
 - Search gives Shorts a length of 0 (YouTube sends none); the card shows a "Shorts" badge for them instead.
+- Five concurrent full extractions starve the box ("YouTube requests timed out"); Home fetches seeds two at a time.
+- The embedded player answers only when `thirdParty.embedUrl` names the page the embed HTML was fetched with as
+  Referer and `encryptedHostFlags` from that page is echoed; the flags are bound to that visitor, not to the video.
 
 ## Tried / rejected
 - Trending podcasts kiosk: empty page for logged-out clients (see architecture.md).
