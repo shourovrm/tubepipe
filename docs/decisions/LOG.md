@@ -56,3 +56,4 @@
 2026-11-06 | Dropped the SABR handshake-skip patch | the server re-issues the remaining 4.8 s on an early resend; kids videos no longer use SABR anyway
 2026-11-06 | Embed-blocked kids videos (owner setting) keep the mweb/SABR path | the embedded player answers "playback on other websites disabled"; no other client found
 2026-11-06 | Extractor comes from the shared fork repo pipe-extractor-patched as a submodule, patch files dropped | one source of truth for both apps
+2026-11-06 | One ExoPlayer per process, start gate 2.5 s -> 1.5 s, view model reads in parallel | per-video player build and serial reads cost ~2 s on the box

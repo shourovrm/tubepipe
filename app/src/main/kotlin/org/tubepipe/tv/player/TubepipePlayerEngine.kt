@@ -1,6 +1,7 @@
 package org.tubepipe.tv.player
 
 import android.content.Context
+import android.os.SystemClock
 import android.util.Log
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
@@ -115,6 +116,7 @@ class TubepipePlayerEngine(private val context: Context) : PlayerEngine {
         isReleased = true
         qualityScope.cancel()
         recoveryScope.cancel()
+        player?.exoPlayer?.removeListener(recoveryListener)
         player?.release()
     }
 
@@ -133,6 +135,7 @@ class TubepipePlayerEngine(private val context: Context) : PlayerEngine {
         currentQuality = preferences.maxVideoHeight
         captionLanguage = preferences.captionLanguage
         this.videoUrl = videoUrl
+        val loadStartedAt = SystemClock.elapsedRealtime()
         val newPlayer = TubepipePlayer(context, client, preferences)
         newPlayer.exoPlayer.repeatMode = repeatModeFor(isLooping)
         newPlayer.exoPlayer.addListener(recoveryListener)
@@ -140,6 +143,7 @@ class TubepipePlayerEngine(private val context: Context) : PlayerEngine {
         try {
             newPlayer.load(videoUrl, startPositionMillis)
             loadState = LoadState.Loaded
+            Log.d(TAG, "prepared after ${SystemClock.elapsedRealtime() - loadStartedAt} ms")
         } catch (failure: IOException) {
             Log.e(TAG, "Playing $videoUrl failed", failure)
             loadState = LoadState.Failed

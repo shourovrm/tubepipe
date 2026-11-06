@@ -8,9 +8,7 @@ import androidx.media3.common.TrackGroup
 import androidx.media3.common.TrackSelectionOverride
 import androidx.media3.common.TrackSelectionParameters
 import androidx.media3.common.util.UnstableApi
-import androidx.media3.exoplayer.DefaultLoadControl
 import androidx.media3.exoplayer.ExoPlayer
-import androidx.media3.exoplayer.trackselection.DefaultTrackSelector
 import java.io.IOException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -51,7 +49,7 @@ class TubepipePlayer(
         preferredAudioLanguage = preferences.preferredAudioLanguage,
     )
 
-    val exoPlayer: ExoPlayer = createExoPlayer(context.applicationContext)
+    val exoPlayer: ExoPlayer = SharedExoPlayer.get(context)
 
     /** What [load] is playing; a SABR stream is rebuilt from it when the viewer picks another quality. */
     private var playing: ExtractedSource? = null
@@ -60,6 +58,13 @@ class TubepipePlayer(
         OriginalAudioTrackSelector(exoPlayer, preferences.preferredAudioLanguage)
 
     init {
+        // The shared player still carries the last video's track choices; start this one from Settings.
+        val parameters = exoPlayer.trackSelectionParameters.buildUpon().clearOverrides()
+        withVideoLimits(parameters, preferences.maxVideoHeight ?: AUTO_MAX_VIDEO_HEIGHT)
+            // avc1 has hardware decoding on the box; the default keeps adaptive HLS off the VP9 variants.
+            .setPreferredVideoMimeType(preferences.preferredCodec.mimeType)
+        applyStartingCaptions(parameters)
+        exoPlayer.trackSelectionParameters = parameters.build()
         exoPlayer.setPlaybackSpeed(preferences.speed)
     }
 
@@ -222,8 +227,12 @@ class TubepipePlayer(
         }
     }
 
+    /** Stops this video and hands the shared player back empty; the player itself lives on for the next one. */
     fun release() {
-        exoPlayer.release()
+        exoPlayer.removeListener(originalAudioTrackSelector)
+        exoPlayer.stop()
+        exoPlayer.clearMediaItems()
+        playing = null
     }
 
     private class ExtractedSource(val streamInfo: StreamInfo, val builtSource: BuiltMediaSource)
@@ -256,29 +265,6 @@ class TubepipePlayer(
         // Without an explicit viewport Media3 sized it from the context's display and kept only variants
         // up to 480p on the box, although the panel is 1080p.
         .setViewportSize(StreamMediaSourceFactory.MAX_VIDEO_WIDTH, maxHeight, true)
-
-    private fun createExoPlayer(applicationContext: Context): ExoPlayer {
-        val loadControl = DefaultLoadControl.Builder()
-            .setBufferDurationsMs(
-                BufferSettings.MIN_BUFFER_MS,
-                BufferSettings.MAX_BUFFER_MS,
-                BufferSettings.BUFFER_FOR_PLAYBACK_MS,
-                BufferSettings.BUFFER_FOR_PLAYBACK_AFTER_REBUFFER_MS,
-            )
-            .setBackBuffer(BufferSettings.BACK_BUFFER_MS, true)
-            .build()
-        val trackSelector = DefaultTrackSelector(applicationContext)
-        val parameters = trackSelector.buildUponParameters()
-        withVideoLimits(parameters, preferences.maxVideoHeight ?: AUTO_MAX_VIDEO_HEIGHT)
-            // avc1 has hardware decoding on the box; the default keeps adaptive HLS off the VP9 variants.
-            .setPreferredVideoMimeType(preferences.preferredCodec.mimeType)
-        applyStartingCaptions(parameters)
-        trackSelector.setParameters(parameters)
-        return ExoPlayer.Builder(applicationContext)
-            .setLoadControl(loadControl)
-            .setTrackSelector(trackSelector)
-            .build()
-    }
 
     private fun applyStartingCaptions(parameters: TrackSelectionParameters.Builder) {
         val captionLanguage = preferences.captionLanguage

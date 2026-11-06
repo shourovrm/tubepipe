@@ -19,9 +19,11 @@ SABR glue and played one 1080p avc1 stream for 60 s on the Mi Box S with 0 rebuf
   before (8-10 s). Booba, Masha and most kids channels allow embedding.
 - Start path: `PlaybackRuntime.initialize` + decoder prewarm run 1 s after the Activity is up; `StreamInfoCache`
   (core/service) shares one extraction per video between detail page, Home seeds and player, so the player extracts
-  nothing when the detail page already did. Box, 2026-11-06: press-to-playing 6.4 s cold (fresh extraction), ~3 s on a
-  cache hit, was 13.6 s warm / 17 s+ cold. Remaining cost is the extraction itself (0.9 s network + 1.7 s "related"
-  parse on the box CPU) and the 2.5 s start buffer.
+  nothing when the detail page already did. One ExoPlayer per process (`SharedExoPlayer`): a `TubepipePlayer` only
+  sets its track parameters and media source on it and `release()` stops and clears it; the media session is created
+  once per player, not per video. The view model reads details, saved position and settings concurrently. Start gate
+  is 1.5 s of media. Box, 2026-11-06: press-to-playing 3.0 s on a cache hit (engine prepared in ~0.1 s), fresh
+  extraction adds its own 2.5-3.5 s; was 13.6 s warm / 17 s+ cold at the start of the day.
 - Playback speed below 1x "stutters" by design of the display: the box outputs 50 Hz and YouTube cartoons are 25 fps,
   so 1x is exactly 2 refreshes per frame while 0.9x (22.5 fps) cannot divide evenly and holds every ~4th frame one
   refresh longer. Only 0.5x and 1x are even on 50 Hz for 25 fps content; the box offers no 45 Hz mode. Not a player bug.
@@ -42,7 +44,8 @@ SABR glue and played one 1080p avc1 stream for 60 s on the Mi Box S with 0 rebuf
 
 ## Gotchas
 - Media3's `DefaultLoadControl` starts at 1,000 ms buffer and resumes at 2,000 ms (ExoPlayer 2.18.7: 2,500 / 5,000);
-  set the durations explicitly.
+  set the durations explicitly (`BufferSettings`: 1,500 start, 5,000 after a rebuffer).
+- The shared ExoPlayer keeps listeners across videos: every `addListener` needs its `removeListener` in release.
 - Default back buffer is 0 and the spike has no cache, so a backward seek re-requests SABR sequences from the server.
 - The SABR period wrapper must forward `setUsesStreamPrerollFlags()` and `setEndPositionUs(long)` to its child.
 - The glue uses `@UnstableApi` types; opt in for the module or Android Lint fails with `UnsafeOptInUsageError`.

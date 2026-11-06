@@ -8,8 +8,9 @@
 - `docs/design-system.md` — androidtv skeleton plus the PipePipe-derived direction tokens (two reds, black theme).
 
 ## Next
-- 2026-11-06: kids videos play 1080p via the embedded player (extractor patch 0004, no SABR), extraction shared through
-  `StreamInfoCache`, runtime prewarm at launch; box start 6.4 s cold / ~3 s cached. See player.md.
+- 2026-11-06: kids videos play 1080p via the embedded player (extractor patch, no SABR), extraction shared through
+  `StreamInfoCache`, runtime prewarm at launch, one ExoPlayer per process, 1.5 s start gate; box press-to-playing
+  3.0 s cached. See player.md.
 - Extractor is now vendored (`third_party/`), same base and patches as the phone app; a shared fork repo is the next step.
 - Open: duplicate "English" in one video's caption list; Home "Mix for" rows sometimes fail ("Could not get playlistData").
 - Device-untested: 18+ block, media keys. Box-tested 2026-10-23: search, focus after Back, captions, kids quality, More menu.

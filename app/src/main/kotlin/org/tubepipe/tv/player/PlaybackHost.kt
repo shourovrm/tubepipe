@@ -178,8 +178,6 @@ private fun PlayerBinding(
             }
         }
         exoPlayer.addListener(listener)
-        // Unique id: the next video's session is created before this one is released.
-        val mediaSession = MediaSession.Builder(context, exoPlayer).setId(UUID.randomUUID().toString()).build()
         onDispose {
             // The engine may already be released, so the last polled position is saved, not the player's own.
             if (snapshot.hasStarted) {
@@ -187,8 +185,13 @@ private fun PlayerBinding(
             }
             view.keepScreenOn = false
             exoPlayer.removeListener(listener)
-            mediaSession.release()
         }
+    }
+
+    // One session per player: the ExoPlayer is shared by every video, so the session outlives this binding.
+    DisposableEffect(player.exoPlayer) {
+        val mediaSession = MediaSession.Builder(context, player.exoPlayer).setId(UUID.randomUUID().toString()).build()
+        onDispose { mediaSession.release() }
     }
 
     LaunchedEffect(player) {

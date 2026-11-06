@@ -3,11 +3,11 @@ package org.tubepipe.core.player
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-/** Media3 starts at 1 s of buffer; ExoPlayer 2.18.7 waited for 2.5 s (docs/decisions/player.md Gotchas). */
+/** Starts above Media3's 1 s default but under ExoPlayer 2's 2.5 s; rebuffers wait for ExoPlayer 2's 5 s (player.md). */
 class BufferSettingsTest {
     @Test
-    fun startAndRebufferThresholdsMatchExoPlayer2Defaults() {
-        assertTrue(BufferSettings.BUFFER_FOR_PLAYBACK_MS >= 2_500)
+    fun startGateIsBetweenMedia3AndExoPlayer2Defaults() {
+        assertTrue(BufferSettings.BUFFER_FOR_PLAYBACK_MS in 1_001..2_499)
         assertTrue(BufferSettings.BUFFER_FOR_PLAYBACK_AFTER_REBUFFER_MS >= 5_000)
     }
 

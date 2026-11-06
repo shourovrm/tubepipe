@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 import org.tubepipe.core.database.HistoryDao
 import org.tubepipe.core.database.PlaylistDao
@@ -157,10 +158,13 @@ class PlayerViewModel(
         mutableState.update { it.copy(isLoading = true, hasError = false) }
         viewModelScope.launch {
             try {
-                val details = content.videoDetails(videoUrl)
+                // The three reads are independent; the extraction is the long one.
+                val detailsDeferred = async { content.videoDetails(videoUrl) }
                 // Read before the upsert below, which rewrites the row.
-                val previousPosition = history.positionOf(videoUrl)
+                val previousPositionDeferred = async { history.positionOf(videoUrl) }
                 val latest = settings.first()
+                val details = detailsDeferred.await()
+                val previousPosition = previousPositionDeferred.await()
                 currentSettings = latest
                 isSponsorBlockEnabled = latest.sponsorBlockEnabled
                 if (latest.watchHistoryEnabled) {
