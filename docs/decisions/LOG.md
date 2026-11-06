@@ -55,3 +55,4 @@
 2026-11-06 | Speed <1x judder is 25 fps content on the 50 Hz box output, not a player bug | 22.5 fps cannot map to whole refreshes; documented, not fixed
 2026-11-06 | Dropped the SABR handshake-skip patch | the server re-issues the remaining 4.8 s on an early resend; kids videos no longer use SABR anyway
 2026-11-06 | Embed-blocked kids videos (owner setting) keep the mweb/SABR path | the embedded player answers "playback on other websites disabled"; no other client found
+2026-11-06 | Extractor comes from the shared fork repo pipe-extractor-patched as a submodule, patch files dropped | one source of truth for both apps

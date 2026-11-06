@@ -6,7 +6,7 @@ Reference checkout, read-only: `~/repos/pipepipe`. Read it with grep and ranges;
 
 ## Commands
 Stack, modules and commands are decided in the first session and recorded in `docs/decisions/architecture.md`; fill these lines then.
-- Setup: `./gradlew help` (JDK 21; the vendored extractor's JDK 25 toolchain request is overridden to 21, never downloaded)
+- Setup: `git submodule update --init` then `./gradlew help` (JDK 21; the extractor's JDK 25 toolchain request is overridden to 21, never downloaded)
 - Build: `./gradlew :app:assembleRelease` (R8; signed with `keystore.properties`, else the debug key)
 - Test: `./gradlew test`; instrumented: `./gradlew :app:connectedDebugAndroidTest` (needs the TV emulator or the TV box)
 - Verify (slice, cheap, for workers): `./gradlew :<module>:compileDebugKotlin :<module>:testDebugUnitTest --tests '<TestClass>'` for the one module the slice owns, e.g. `./gradlew :core:player:compileDebugKotlin :core:player:testDebugUnitTest --tests 'org.tubepipe.player.*'`. No lint, no other modules, no connected tests, no release build.

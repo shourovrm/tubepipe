@@ -11,8 +11,8 @@ cookies, ReCaptcha), the YouTube playback glue (`player/datasource/Sabr*`, `Yout
 DASH manifest creators), SponsorBlock, the Room schema and the subscriptions JSON format. SmartTube gives 10-foot UX
 patterns only (sections, long-press menu, remote key map, double-back exit, storyboard seek preview); none of its code.
 
-Extractor delivery: vendored in `third_party/PipePipeExtractor` = upstream commit `1a09d20e` (version v5.5.0; upstream has no tags) plus
-`third_party/patches/` (same base and patches 0001-0003 as the phone app, see `third_party/README.md`). Its sources are
+Extractor delivery: git submodule `third_party/PipePipeExtractor` = our fork `shourovrm/pipe-extractor-patched`, branch `patched`
+(upstream `1a09d20e` = v5.5.0 + our patch commits; the phone app pins the same commit, see `third_party/README.md`). Its sources are
 compiled by our `extractor-build/{extractor,timeago-parser}` build files on JDK 21 (projects `:extractor`, `:timeago-parser`).
 
 Gradle modules (five; features are packages inside `:app` until build time says otherwise):
