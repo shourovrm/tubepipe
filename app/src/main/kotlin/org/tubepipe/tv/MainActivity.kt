@@ -14,7 +14,11 @@ import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
+import androidx.lifecycle.lifecycleScope
 import androidx.tv.material3.MaterialTheme
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import org.tubepipe.core.player.PlaybackRuntime
 import org.tubepipe.core.ui.theme.TubepipeTheme
 import org.tubepipe.tv.channel.ChannelScreen
 import org.tubepipe.tv.home.HomeScreen
@@ -28,6 +32,8 @@ import org.tubepipe.tv.search.SearchScreen
 import org.tubepipe.tv.settings.SettingsScreen
 import org.tubepipe.tv.subscriptions.SubscriptionsScreen
 import org.tubepipe.tv.trending.TrendingScreen
+
+private const val PREWARM_DELAY_MS = 1_000L
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -54,6 +60,12 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+        // The WebView, signature decoder and PO token are warmed once Home is up, so the first
+        // play does not wait for them (the first kids video otherwise took about 10 s more on the box).
+        window.decorView.postDelayed({
+            PlaybackRuntime.initialize(this)
+            lifecycleScope.launch(Dispatchers.IO) { PlaybackRuntime.prewarm() }
+        }, PREWARM_DELAY_MS)
     }
 
     override fun onDestroy() {
