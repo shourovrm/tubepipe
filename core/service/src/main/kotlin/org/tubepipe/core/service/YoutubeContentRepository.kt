@@ -13,6 +13,7 @@ import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
 import kotlinx.coroutines.withContext
 import org.schabi.newpipe.extractor.InfoItem
+import org.schabi.newpipe.extractor.NewPipe
 import org.schabi.newpipe.extractor.Page
 import org.schabi.newpipe.extractor.ServiceList
 import org.schabi.newpipe.extractor.channel.ChannelInfo
@@ -65,7 +66,9 @@ class YoutubeContentRepository(private val ioDispatcher: CoroutineDispatcher = D
     }
 
     override suspend fun videoDetails(url: String): VideoDetails = extracting("videoDetails", url) {
-        val streamInfo = StreamInfo.getInfo(youtube, url)
+        val streamInfo = StreamInfoCache.getOrFetch(url, NewPipe.getYoutubePlayerClient()) {
+            StreamInfo.getInfo(youtube, url)
+        }
         VideoDetails(
             video = streamInfo.toVideoItem(),
             description = streamInfo.description?.content.orEmpty(),
@@ -230,11 +233,12 @@ class YoutubeContentRepository(private val ioDispatcher: CoroutineDispatcher = D
      * Runs one extractor call on [ioDispatcher]. ExtractionException is invisible outside this
      * module, so it is rethrown as IOException naming the call and its subject.
      */
-    private suspend fun <T> extracting(operation: String, subject: Any, block: () -> T): T = withContext(ioDispatcher) {
-        try {
-            block()
-        } catch (error: ExtractionException) {
-            throw IOException("YouTube $operation failed for $subject: ${error.message}", error)
+    private suspend fun <T> extracting(operation: String, subject: Any, block: suspend () -> T): T =
+        withContext(ioDispatcher) {
+            try {
+                block()
+            } catch (error: ExtractionException) {
+                throw IOException("YouTube $operation failed for $subject: ${error.message}", error)
+            }
         }
-    }
 }

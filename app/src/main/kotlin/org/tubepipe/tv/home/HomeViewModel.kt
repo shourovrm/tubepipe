@@ -19,6 +19,8 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.sync.withPermit
 import org.tubepipe.core.database.HistoryDao
 import org.tubepipe.core.database.HistoryEntity
 import org.tubepipe.core.database.SubscriptionDao
@@ -183,8 +185,12 @@ class HomeViewModel(
 
     private suspend fun recommendedRows(recentHistory: List<HistoryEntity>): SectionOutcome = coroutineScope {
         val seeds = recommendationSeeds(recentHistory)
+        // Each seed is a full extraction; five at once starve the box and time out in the extractor.
+        val seedFetches = Semaphore(MAX_CONCURRENT_SEED_FETCHES)
         val relatedPerSeed = seeds.map { seed ->
-            async { fetchSource("related:${seed.url}") { content.videoDetails(seed.url).related } }
+            async {
+                seedFetches.withPermit { fetchSource("related:${seed.url}") { content.videoDetails(seed.url).related } }
+            }
         }.awaitAll()
         val alreadyWatchedUrls = recentHistory.map { entry -> entry.url }.toSet()
         val recommended = relatedPerSeed
@@ -280,6 +286,7 @@ class HomeViewModel(
         const val RECOMMENDED_WINDOW_MILLIS = 3 * 24 * 60 * 60 * 1_000L
         const val RECOMMENDED_FALLBACK_SEED_COUNT = 3
         const val RECOMMENDED_SEED_LIMIT = 5
+        const val MAX_CONCURRENT_SEED_FETCHES = 2
         const val RECOMMENDED_LIMIT = 30
         const val FINISHED_FRACTION = 0.95f
         val logger: Logger = Logger.getLogger(HomeViewModel::class.java.name)

@@ -17,6 +17,7 @@ import kotlinx.coroutines.withContext
 import org.schabi.newpipe.extractor.NewPipe
 import org.schabi.newpipe.extractor.exceptions.ExtractionException
 import org.schabi.newpipe.extractor.stream.StreamInfo
+import org.tubepipe.core.service.StreamInfoCache
 
 /** Renderer errors that a lower rendition can avoid; a network or expired-URL error is not one of them. */
 private val DECODER_ERROR_CODES = setOf(
@@ -79,6 +80,7 @@ class TubepipePlayer(
      * @throws IOException when every client failed
      */
     suspend fun reload(videoUrl: String, startPositionMs: Long, maxHeight: Int): LoadedStream {
+        StreamInfoCache.remove(videoUrl)
         exoPlayer.trackSelectionParameters = withVideoLimits(
             exoPlayer.trackSelectionParameters.buildUpon(),
             maxHeight,
@@ -99,11 +101,7 @@ class TubepipePlayer(
         return lowerRendition(qualityOptions(), shownHeight) ?: cap
     }
 
-    private suspend fun extractAndPlay(
-        videoUrl: String,
-        startPositionMs: Long,
-        maxHeight: Int,
-    ): LoadedStream {
+    private suspend fun extractAndPlay(videoUrl: String, startPositionMs: Long, maxHeight: Int): LoadedStream {
         val failures = mutableListOf<Pair<PlayerClient, Exception>>()
         // A 360p-only result is kept while the next client is tried, and played only if no client does better.
         var lowQualityResult: Pair<PlayerClient, ExtractedSource>? = null
@@ -230,7 +228,7 @@ class TubepipePlayer(
 
     private class ExtractedSource(val streamInfo: StreamInfo, val builtSource: BuiltMediaSource)
 
-    private fun extractAndBuild(
+    private suspend fun extractAndBuild(
         client: PlayerClient,
         videoUrl: String,
         startPositionMs: Long,
@@ -238,7 +236,7 @@ class TubepipePlayer(
     ): ExtractedSource {
         // The extractor reads the client from a process-wide setting, so it is set right before each attempt.
         NewPipe.setYoutubePlayerClient(client.extractorName)
-        val streamInfo = StreamInfo.getInfo(videoUrl)
+        val streamInfo = StreamInfoCache.getOrFetch(videoUrl, client.extractorName) { StreamInfo.getInfo(videoUrl) }
         return ExtractedSource(streamInfo, sourceFactory.build(streamInfo, startPositionMs, maxHeight))
     }
 
