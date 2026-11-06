@@ -1,11 +1,14 @@
 package org.tubepipe.tv.search
 
+import androidx.lifecycle.viewModelScope
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
+import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -38,12 +41,21 @@ class SearchViewModelTest {
 
     private val settings = testSettings()
 
+    private val createdViewModels = mutableListOf<SearchViewModel>()
+
     private fun viewModel() = SearchViewModel(
         content = content,
         searchDao = databaseRule.database.searchDao(),
         settings = settings,
         clock = { nowMillis },
-    )
+    ).also { createdViewModels += it }
+
+    // The view model collects search history flows for as long as it lives; left running, it resumes on the
+    // main dispatcher while the rule resets it and fails whichever test runs next. @After runs before the rules.
+    @After
+    fun stopViewModels() {
+        createdViewModels.forEach { it.viewModelScope.cancel() }
+    }
 
     @Test
     fun blankQueryShowsRecentSearchesNewestFirst() = runTest(timeout = 30.seconds) {
