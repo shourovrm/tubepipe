@@ -2,6 +2,8 @@ package org.tubepipe.core.player
 
 import android.content.Context
 import androidx.annotation.MainThread
+import androidx.annotation.OptIn
+import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.DefaultLoadControl
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.trackselection.DefaultTrackSelector
@@ -15,6 +17,7 @@ object SharedExoPlayer {
     private var instance: ExoPlayer? = null
 
     @MainThread
+    @OptIn(UnstableApi::class)
     fun get(context: Context): ExoPlayer {
         instance?.let { return it }
         val applicationContext = context.applicationContext
