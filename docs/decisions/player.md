@@ -34,6 +34,10 @@ SABR glue and played one 1080p avc1 stream for 60 s on the Mi Box S with 0 rebuf
 
 ## Open items
 - Untested paths: multi-language HLS original-audio switch, DASH/OTF/progressive builders; add device tests.
+- Live streams (patched extractor 55375817): a live stream offers only its HLS manifest on every client; upstream
+  kept the live chunk URLs as direct formats for non-TV clients and the phone app played one as a file and stalled.
+  An embed-served live stream uses the embedded answer's manifest. Phone-verified on two Booba live streams; the
+  box plays `hlsUrl` for live and is not re-tested yet.
 - Add instrumented tests for seek back 30 s, forward seek, forced quality switch, and time to first frame (2 s budget).
 - Restore what the spike stubbed: segment disk cache (Media3 `SimpleCache`), audio pick by language (original first,
   DataStore prefs), SABR backoff UI, startup trace, full `DownloaderImpl` (cookies, reCaptcha, restricted mode).
