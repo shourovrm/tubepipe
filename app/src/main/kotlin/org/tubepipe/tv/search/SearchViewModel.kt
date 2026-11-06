@@ -130,7 +130,10 @@ class SearchViewModel(
                 val page = content.searchMore(query, cursor)
                 nextPageCursor = page.next
                 mutableState.update {
-                    it.copy(items = it.items + page.items, canLoadMore = page.next != null)
+                    it.copy(
+                        items = (it.items + page.items).distinctBy(::searchResultKey),
+                        canLoadMore = page.next != null,
+                    )
                 }
             } catch (failure: IOException) {
                 // Keep the results already shown and the cursor, so a later scroll can try again.
@@ -149,7 +152,11 @@ class SearchViewModel(
             val page = content.search(query)
             nextPageCursor = page.next
             mutableState.update {
-                it.copy(items = page.items, isLoading = false, canLoadMore = page.next != null)
+                it.copy(
+                    items = page.items.distinctBy(::searchResultKey),
+                    isLoading = false,
+                    canLoadMore = page.next != null,
+                )
             }
         } catch (failure: IOException) {
             Log.e(TAG, "Search for \"$query\" failed", failure)
@@ -170,4 +177,14 @@ class SearchViewModel(
         private const val RECENT_SEARCH_LIMIT = 10
         private const val TAG = "SearchViewModel"
     }
+}
+
+/**
+ * The lazy grid key of a result. YouTube repeats a channel across result pages, and a repeated key crashes the
+ * grid, so the view model keeps the first occurrence only.
+ */
+internal fun searchResultKey(result: SearchResult): String = when (result) {
+    is SearchResult.Video -> "video:${result.video.url}"
+    is SearchResult.Channel -> "channel:${result.channel.url}"
+    is SearchResult.Playlist -> "playlist:${result.playlist.url}"
 }

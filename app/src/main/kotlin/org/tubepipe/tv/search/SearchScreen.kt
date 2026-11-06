@@ -224,12 +224,6 @@ fun SearchScreen(container: AppContainer, navigator: AppNavigator) {
     }
 }
 
-private fun searchResultKey(result: SearchResult): String = when (result) {
-    is SearchResult.Video -> "video:${result.video.url}"
-    is SearchResult.Channel -> "channel:${result.channel.url}"
-    is SearchResult.Playlist -> "playlist:${result.playlist.url}"
-}
-
 @Composable
 private fun SearchResultCard(result: SearchResult, navigator: AppNavigator, onVideoLongClick: (VideoItem) -> Unit) {
     when (result) {

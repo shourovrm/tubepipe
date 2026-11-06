@@ -83,6 +83,18 @@ class SearchViewModelMixedResultsTest {
     }
 
     @Test
+    fun aChannelRepeatedByYouTubeIsShownOnce() = runTest(timeout = 30.seconds) {
+        content.searchExtraResults["cats"] = listOf(channel, playlist, channel)
+        val viewModel = viewModel()
+
+        viewModel.submit("cats")
+
+        val state = viewModel.state.first { !it.isLoading && it.items.isNotEmpty() }
+        assertEquals(1, state.items.count { it == channel })
+        assertEquals(4, state.items.size)
+    }
+
+    @Test
     fun aSecondAndThirdSearchReplaceTheEarlierResults() = runTest(timeout = 30.seconds) {
         val viewModel = viewModel()
         viewModel.submit("cats")
