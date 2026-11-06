@@ -37,6 +37,8 @@ SABR glue and played one 1080p avc1 stream for 60 s on the Mi Box S with 0 rebuf
   DataStore prefs), SABR backoff UI, startup trace, full `DownloaderImpl` (cookies, reCaptcha, restricted mode).
 - One Home seed extraction can still time out at launch while the WebView warms up (box, 2026-11-06); it is fetched
   again at the first play. Consider starting the prewarm after the Recommended row has loaded.
+- The first embedded-player playback after a process start got one HTTP 403 on the box and on the phone; the
+  existing error recovery re-extracted and played (about 2 s lost). Cause not found; later plays were clean.
 
 ## Gotchas
 - Media3's `DefaultLoadControl` starts at 1,000 ms buffer and resumes at 2,000 ms (ExoPlayer 2.18.7: 2,500 / 5,000);
