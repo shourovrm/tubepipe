@@ -31,6 +31,8 @@ SABR glue and played one 1080p avc1 stream for 60 s on the Mi Box S with 0 rebuf
   `setMaxQuality` rebuilds the SABR source at that cap from the current position (box: kids video offers 1080-144).
 - Side-loaded captions are parsed during extraction (`SubtitleExtractor` in a `ProgressiveMediaSource`); Media3 1.11's
   text renderer rejects raw TTML/VTT samples, which crashed SABR playback when a caption was picked.
+- The surface is sized to the picture: `PlaybackSnapshot.videoAspectRatio` (from `onVideoSizeChanged`) drives a
+  `Modifier.aspectRatio` on both `PlayerSurface`s, so Shorts are letterboxed instead of stretched to 16:9.
 
 ## Open items
 - Untested paths: multi-language HLS original-audio switch, DASH/OTF/progressive builders; add device tests.
@@ -50,6 +52,8 @@ SABR glue and played one 1080p avc1 stream for 60 s on the Mi Box S with 0 rebuf
 - Media3's `DefaultLoadControl` starts at 1,000 ms buffer and resumes at 2,000 ms (ExoPlayer 2.18.7: 2,500 / 5,000);
   set the durations explicitly (`BufferSettings`: 1,500 start, 5,000 after a rebuffer).
 - The shared ExoPlayer keeps listeners across videos: every `addListener` needs its `removeListener` in release.
+- It also keeps `playWhenReady` over `stop()`, so the next `play()` fires no callback; `PlayerBinding` seeds the
+  snapshot from the player before adding its listener, or the pause button shows Play while playing.
 - Default back buffer is 0 and the spike has no cache, so a backward seek re-requests SABR sequences from the server.
 - The SABR period wrapper must forward `setUsesStreamPrerollFlags()` and `setEndPositionUs(long)` to its child.
 - The glue uses `@UnstableApi` types; opt in for the module or Android Lint fails with `UnsafeOptInUsageError`.

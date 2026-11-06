@@ -27,6 +27,8 @@ private const val TAG = "TubepipePlayerEngine"
 
 enum class LoadState { Idle, Loading, Loaded, Failed }
 
+const val DEFAULT_VIDEO_ASPECT_RATIO = 16f / 9f
+
 /** One audio track the viewer can switch to, for videos that carry several languages. */
 class AudioOption(val label: String, internal val trackGroup: TrackGroup)
 
@@ -40,6 +42,9 @@ class PlaybackSnapshot {
     var playWhenReady by mutableStateOf(false)
     var positionMillis by mutableLongStateOf(0L)
     var durationMillis by mutableLongStateOf(0L)
+
+    /** Width over height of the decoded picture; the surface is sized to it so vertical videos are letterboxed. */
+    var videoAspectRatio by mutableFloatStateOf(DEFAULT_VIDEO_ASPECT_RATIO)
     var captionText by mutableStateOf("")
     var skippedCategory by mutableStateOf<String?>(null)
 

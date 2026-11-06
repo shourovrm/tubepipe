@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -87,7 +88,10 @@ fun PlayerScreen(videoUrl: String, queue: PlaybackQueue?, container: AppContaine
 
     val isFullscreenForThisVideo = nowPlaying == NowPlaying(videoUrl, PlayerMode.Fullscreen)
     when {
-        state.isBlockedAsAdult -> AdultBlockedView()
+        state.isBlockedAsAdult -> BlockedView(stringResource(R.string.player_adult_blocked))
+        state.blockingWord != null -> BlockedView(
+            stringResource(R.string.player_blocked_by_word, state.blockingWord.orEmpty()),
+        )
         state.hasError -> ErrorView(message = stringResource(R.string.error_network), onRetry = viewModel::retry)
         engine?.loadState == LoadState.Failed ->
             ErrorView(message = stringResource(R.string.player_error), onRetry = { controller.restart(videoUrl) })
@@ -97,10 +101,10 @@ fun PlayerScreen(videoUrl: String, queue: PlaybackQueue?, container: AppContaine
 }
 
 @Composable
-private fun AdultBlockedView() {
+private fun BlockedView(message: String) {
     Box(modifier = Modifier.fillMaxSize().background(Color.Black), contentAlignment = Alignment.Center) {
         Text(
-            text = stringResource(R.string.player_adult_blocked),
+            text = message,
             style = MaterialTheme.typography.headlineMedium,
             color = TubepipeColors.OnSurface,
             textAlign = TextAlign.Center,
@@ -331,7 +335,9 @@ private fun PlayerContent(
             PlayerSurface(
                 player = exoPlayer,
                 surfaceType = SURFACE_TYPE_SURFACE_VIEW,
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier
+                    .aspectRatio(snapshot.videoAspectRatio)
+                    .align(Alignment.Center),
             )
         }
         if (engine.loadState != LoadState.Loaded) {

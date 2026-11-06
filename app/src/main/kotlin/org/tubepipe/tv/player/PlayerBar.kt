@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -176,7 +177,9 @@ fun PlayerBar(
                 PlayerSurface(
                     player = tubepipeEngine.player?.exoPlayer,
                     surfaceType = SURFACE_TYPE_SURFACE_VIEW,
-                    modifier = Modifier.fillMaxSize(),
+                    modifier = Modifier
+                        .aspectRatio(tubepipeEngine.snapshot.videoAspectRatio)
+                        .align(Alignment.Center),
                 )
             }
             Text(
