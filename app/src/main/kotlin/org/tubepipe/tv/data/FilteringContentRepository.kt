@@ -13,7 +13,7 @@ import org.tubepipe.core.service.VideoDetails
 import org.tubepipe.core.service.VideoItem
 
 /**
- * Applies the Settings content filters (Shorts, upcoming, members-only) to every list of videos the
+ * Applies the Parental content filters (Shorts, upcoming, members-only, blocked words) to every list of videos the
  * delegate returns. The switches are read on each call, so a change applies to the next load.
  */
 class FilteringContentRepository(private val delegate: ContentRepository, private val settings: Flow<AppSettings>) :
@@ -69,8 +69,4 @@ class FilteringContentRepository(private val delegate: ContentRepository, privat
         val current = settings.first()
         return filterNot { video -> current.hides(video) }
     }
-
-    private fun AppSettings.hides(video: VideoItem): Boolean = (hideShorts && video.isShort) ||
-        (hideUpcoming && video.isUpcoming) ||
-        (hidePaid && video.isMembersOnly)
 }

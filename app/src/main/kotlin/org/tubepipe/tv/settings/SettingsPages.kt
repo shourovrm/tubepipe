@@ -1,5 +1,6 @@
 package org.tubepipe.tv.settings
 
+import androidx.activity.compose.BackHandler
 import androidx.annotation.StringRes
 import androidx.compose.foundation.focusGroup
 import androidx.compose.foundation.layout.Arrangement
@@ -19,13 +20,18 @@ import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -259,6 +265,12 @@ internal fun HomeScreenPage(settings: AppSettings, viewModel: SettingsViewModel)
 
 @Composable
 internal fun ParentalPage(settings: AppSettings, viewModel: SettingsViewModel) {
+    var isBlockedWordsOpen by rememberSaveable { mutableStateOf(false) }
+    if (isBlockedWordsOpen) {
+        BackHandler { isBlockedWordsOpen = false }
+        BlockedWordsPage(settings.blockedWords, viewModel::addBlockedWord, viewModel::removeBlockedWord)
+        return
+    }
     SettingsPageScaffold(stringResource(R.string.settings_page_parental)) {
         SettingsToggleRow(
             name = stringResource(R.string.settings_hide_sensitive),
@@ -285,6 +297,12 @@ internal fun ParentalPage(settings: AppSettings, viewModel: SettingsViewModel) {
             name = stringResource(R.string.settings_hide_paid),
             checked = settings.hidePaid,
             onCheckedChange = viewModel::setHidePaid,
+        )
+        val wordCount = settings.blockedWords.size
+        SettingsActionRow(
+            name = stringResource(R.string.settings_blocked_words),
+            value = pluralStringResource(R.plurals.settings_blocked_words_count, wordCount, wordCount),
+            onClick = { isBlockedWordsOpen = true },
         )
     }
 }

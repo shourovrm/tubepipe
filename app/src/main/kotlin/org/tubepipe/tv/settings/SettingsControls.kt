@@ -380,6 +380,17 @@ internal fun SettingsConfirmActionRow(
     }
 }
 
+/** A row that opens another page or dialog on Centre; [value] is the summary shown on the right. */
+@Composable
+internal fun SettingsActionRow(name: String, value: String?, icon: ImageVector? = null, onClick: () -> Unit) {
+    SettingsRowFrame(interaction = Modifier.clickable(role = Role.Button, onClick = onClick)) {
+        RowName(name, icon)
+        if (value != null) {
+            Text(text = value, fontSize = ControlTextSize, color = TubepipeColors.OnSurfaceVariant, maxLines = 1)
+        }
+    }
+}
+
 /** A focusable row that only shows information; it holds focus so the list can scroll to it. */
 @Composable
 internal fun SettingsInfoRow(name: String, value: String? = null) {

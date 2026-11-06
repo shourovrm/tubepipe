@@ -120,6 +120,16 @@ class PlayerViewModelTest {
     }
 
     @Test
+    fun aBlockedWordKeepsTheVideoOutOfHistoryAndNamesTheWord() = runTest(timeout = 30.seconds) {
+        settings.value = settings.value.copy(blockedWords = setOf("video dqw"))
+
+        val state = viewModel().state.first { !it.isLoading && it.details != null }
+
+        assertEquals("video dqw", state.blockingWord)
+        assertTrue(databaseRule.database.historyDao().observeRecent(10).first().isEmpty())
+    }
+
+    @Test
     fun savedPositionIsStored() = runTest(timeout = 30.seconds) {
         val viewModel = viewModel()
         viewModel.state.first { !it.isLoading && it.details != null }

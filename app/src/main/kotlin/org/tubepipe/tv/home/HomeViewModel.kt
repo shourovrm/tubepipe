@@ -32,6 +32,7 @@ import org.tubepipe.core.ui.component.TimeFormatting
 import org.tubepipe.tv.common.toVideoItem
 import org.tubepipe.tv.data.AppSettings
 import org.tubepipe.tv.data.HomeSection
+import org.tubepipe.tv.data.blockedWordIn
 
 data class HomeVideo(val video: VideoItem, val watchedFraction: Float = 0f)
 
@@ -79,6 +80,7 @@ class HomeViewModel(
         val recentHistory: List<HistoryEntity>,
         val subscribedChannelUrls: List<String>,
         val refreshCount: Int,
+        val blockedWords: Set<String>,
     )
 
     /** What one section produced: its rows, and whether any of its sources failed. */
@@ -86,7 +88,7 @@ class HomeViewModel(
 
     init {
         val relevantSettings = settings
-            .map { it.contentCountry to it.visibleHomeSections }
+            .map { Triple(it.contentCountry, it.visibleHomeSections, it.blockedWords) }
             .distinctUntilChanged()
         val subscribedUrls = subscriptions.observeAll().map { channels -> channels.map { it.url } }
         viewModelScope.launch {
@@ -95,8 +97,8 @@ class HomeViewModel(
                 history.observeRecent(HISTORY_LIMIT),
                 subscribedUrls,
                 refreshCount,
-            ) { (country, sections), recentHistory, channelUrls, refreshes ->
-                LoadInputs(country, sections, recentHistory, channelUrls, refreshes)
+            ) { (country, sections, blockedWords), recentHistory, channelUrls, refreshes ->
+                LoadInputs(country, sections, recentHistory, channelUrls, refreshes, blockedWords)
             }.collectLatest { inputs -> load(inputs) }
         }
     }
@@ -163,7 +165,7 @@ class HomeViewModel(
     }
 
     private suspend fun loadSection(section: HomeSection, inputs: LoadInputs): SectionOutcome = when (section) {
-        HomeSection.ContinueWatching -> SectionOutcome(continueWatchingRows(inputs.recentHistory), hadFailure = false)
+        HomeSection.ContinueWatching -> SectionOutcome(continueWatchingRows(inputs), hadFailure = false)
         HomeSection.Recommended -> recommendedRows(inputs.recentHistory)
         HomeSection.Mix -> mixRows(inputs.recentHistory)
         HomeSection.NewFromSubscriptions -> subscriptionFeedRows(inputs.subscribedChannelUrls)
@@ -171,11 +173,13 @@ class HomeViewModel(
         HomeSection.TrendingMovies -> trendingRows(TrendingKind.MoviesAndShows, section, inputs.contentCountry)
     }
 
-    private fun continueWatchingRows(recentHistory: List<HistoryEntity>): List<HomeRow> {
-        val partlyWatched = recentHistory.mapNotNull { entry ->
+    private fun continueWatchingRows(inputs: LoadInputs): List<HomeRow> {
+        val partlyWatched = inputs.recentHistory.mapNotNull { entry ->
+            val video = entry.toVideoItem()
             val fraction = TimeFormatting.watchedFraction(entry.positionMillis, entry.durationSeconds)
-            if (fraction > 0f && fraction < FINISHED_FRACTION) {
-                HomeVideo(entry.toVideoItem(), fraction)
+            val isBlocked = inputs.blockedWords.blockedWordIn(video) != null
+            if (fraction > 0f && fraction < FINISHED_FRACTION && !isBlocked) {
+                HomeVideo(video, fraction)
             } else {
                 null
             }

@@ -13,9 +13,14 @@
   Centre on the picture reopens the queue video full screen. A video that ends in the playlist bar starts the next.
 - Player Back closes one layer per press (list, panel, controls, then the page), handled on KeyDown in the key
   preview; the BackHandler alone needed two presses because the first Back only clears focus.
+- Parental > Blocked words (`BlockedWordsPage`, a sub-page kept in `ParentalPage` state): `VideoFilters.kt` folds case,
+  accents, spaces and punctuation, so one entry covers the Latin variants and another script needs its own entry.
+  `FilteringContentRepository` drops matches from every list, Home drops them from Continue Watching, and the player
+  shows the blocked view naming the word instead of loading; such a video is not written to history.
 
 
 ## Open items
+- The saved Recommended row shown before the network answers (`RecommendationStore`) is not filtered by blocked words.
 - Stray key on keyboard open: none with a 120 ms press; adb's 6 ms press still types one. Confirm on the real remote.
 
 ## Gotchas

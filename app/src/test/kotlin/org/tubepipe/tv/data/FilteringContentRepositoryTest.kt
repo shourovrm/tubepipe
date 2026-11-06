@@ -48,6 +48,22 @@ class FilteringContentRepositoryTest {
     }
 
     @Test
+    fun blockedWordHidesMatchingTitlesInEveryList() = runTest {
+        val blocked = video("blocked").copy(title = "Motu Patlu ep 1")
+        val content = FakeContentRepository().apply {
+            searchFirstPages["q"] = listOf(normal, blocked)
+            trendingVideos[TrendingKind.Gaming] = listOf(normal, blocked)
+            addDetails(normal, related = listOf(normal, blocked))
+        }
+        val settings = testSettings().apply { value = value.copy(blockedWords = setOf("motu patlu")) }
+        val filtering = FilteringContentRepository(content, settings)
+
+        assertEquals(titles(listOf(normal)), titles(filtering.search("q").items.videoItems()))
+        assertEquals(titles(listOf(normal)), titles(filtering.trending(TrendingKind.Gaming)))
+        assertEquals(titles(listOf(normal)), titles(filtering.videoDetails(normal.url).related))
+    }
+
+    @Test
     fun eachFilterHidesOnlyItsKind() = runTest {
         val settings = testSettings().apply {
             value =

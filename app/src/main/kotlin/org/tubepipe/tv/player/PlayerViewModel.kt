@@ -25,6 +25,7 @@ import org.tubepipe.tv.data.AppSettings
 import org.tubepipe.tv.data.CaptionSize
 import org.tubepipe.tv.data.SponsorBlockCategory
 import org.tubepipe.tv.data.VideoCodec
+import org.tubepipe.tv.data.blockedWordIn
 
 data class PlayerState(
     val details: VideoDetails? = null,
@@ -39,9 +40,13 @@ data class PlayerState(
     val showSkipNotice: Boolean = true,
     val captionSize: CaptionSize = CaptionSize.Normal,
     val hideAdultVideos: Boolean = false,
+    val blockedWords: Set<String> = emptySet(),
 ) {
     /** True when parental controls hide this video; the stream is then never loaded. */
     val isBlockedAsAdult: Boolean get() = hideAdultVideos && details?.isAdultOnly == true
+
+    /** The blocked word in this video's title or channel, if any; the stream is then never loaded. */
+    val blockingWord: String? get() = details?.let { blockedWords.blockedWordIn(it.video) }
 }
 
 private const val MILLIS_PER_SECOND = 1_000L
@@ -73,6 +78,7 @@ class PlayerViewModel(
                         showSkipNotice = latest.sponsorBlockShowNotice,
                         captionSize = latest.captionSize,
                         hideAdultVideos = latest.hideAdultVideos,
+                        blockedWords = latest.blockedWords,
                     )
                 }
             }
@@ -167,7 +173,8 @@ class PlayerViewModel(
                 val previousPosition = previousPositionDeferred.await()
                 currentSettings = latest
                 isSponsorBlockEnabled = latest.sponsorBlockEnabled
-                if (latest.watchHistoryEnabled) {
+                val isBlocked = latest.blockedWords.blockedWordIn(details.video) != null
+                if (latest.watchHistoryEnabled && !isBlocked) {
                     history.upsert(details.video.toHistoryEntity(clock(), positionMillis = previousPosition ?: 0L))
                 }
                 val canResume = latest.resumeEnabled && !latest.alwaysStartFromBeginning

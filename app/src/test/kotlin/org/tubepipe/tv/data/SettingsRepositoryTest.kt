@@ -70,6 +70,18 @@ class SettingsRepositoryTest {
     }
 
     @Test
+    fun blockedWordsStartEmptyAndCanBeAddedAndRemoved() = runTest(UnconfinedTestDispatcher()) {
+        val settings = repository(this)
+        assertTrue(settings.settings.first().blockedWords.isEmpty())
+
+        settings.addBlockedWord("motu patlu")
+        settings.addBlockedWord("booba")
+        settings.removeBlockedWord("booba")
+
+        assertEquals(setOf("motu patlu"), settings.settings.first().blockedWords)
+    }
+
+    @Test
     fun homeSectionsDefaultToTheProductOrderAllVisible() = runTest(UnconfinedTestDispatcher()) {
         val settings = repository(this).settings.first()
         assertEquals(HomeSection.entries, settings.homeSectionOrder)

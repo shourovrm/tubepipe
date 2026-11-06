@@ -95,6 +95,18 @@
     <string name="settings_hide_shorts">Hide Shorts</string>
     <string name="settings_hide_upcoming">Hide upcoming videos</string>
     <string name="settings_hide_paid">Hide members-only and paid videos</string>
+    <string name="settings_blocked_words">Blocked words</string>
+    <plurals name="settings_blocked_words_count">
+        <item quantity="one">%d word</item>
+        <item quantity="other">%d words</item>
+    </plurals>
+    <string name="settings_blocked_words_hint">A video whose title or channel contains one of these words is hidden from every list and will not play. Case, accents and spaces are ignored. Add each language\'s spelling as its own word.</string>
+    <string name="settings_blocked_words_group">Words</string>
+    <string name="settings_add_blocked_word">Add a word</string>
+    <string name="settings_add_blocked_word_hint">Word or phrase</string>
+    <string name="settings_add">Add</string>
+    <string name="settings_remove">Remove</string>
+    <string name="settings_remove_blocked_word_message">Videos with this word in the title or channel will show and play again.</string>
 
     <!-- History and privacy -->
     <string name="settings_watch_history">Save watch history</string>

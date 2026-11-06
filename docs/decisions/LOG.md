@@ -59,3 +59,5 @@
 2026-11-06 | One ExoPlayer per process, start gate 2.5 s -> 1.5 s, view model reads in parallel | per-video player build and serial reads cost ~2 s on the box
 2026-11-06 | Live streams expose only the HLS manifest (extractor patch) | visionos live chunk URLs were offered as progressive files and stalled on the phone
 2026-11-06 | Embedded player retried once on a 360p-only answer | the same request minutes apart returned the full list
+2026-11-06 | letterbox vertical video with aspectRatio on PlayerSurface, no PlayerView | keeps the Compose surface, one listener line
+2026-11-06 | blocked words match folded title and channel name, substring | one entry covers case, accents, spacing; scripts stay separate entries

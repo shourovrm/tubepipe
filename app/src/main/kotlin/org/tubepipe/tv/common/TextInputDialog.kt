@@ -38,20 +38,38 @@ import org.tubepipe.tv.R
 /** Asks for a playlist name with the on-screen keyboard; [onCreate] gets the raw text, so the caller trims it. */
 @Composable
 internal fun NewPlaylistDialog(onCreate: (String) -> Unit, onDismiss: () -> Unit) {
+    TextInputDialog(
+        title = stringResource(R.string.library_new_playlist),
+        hint = stringResource(R.string.library_new_playlist_hint),
+        confirmLabel = stringResource(R.string.library_create),
+        onConfirm = onCreate,
+        onDismiss = onDismiss,
+    )
+}
+
+/** One line of text typed with the on-screen keyboard; [onConfirm] gets the raw text, so the caller trims it. */
+@Composable
+internal fun TextInputDialog(
+    title: String,
+    hint: String,
+    confirmLabel: String,
+    onConfirm: (String) -> Unit,
+    onDismiss: () -> Unit,
+) {
     var name by rememberSaveable { mutableStateOf("") }
     var fieldFocused by remember { mutableStateOf(false) }
     val fieldFocus = remember { FocusRequester() }
     val canCreate = name.isNotBlank()
     val submit = {
         if (canCreate) {
-            onCreate(name)
+            onConfirm(name)
             onDismiss()
         }
     }
     Dialog(onDismissRequest = onDismiss) {
         DialogSurface {
             Text(
-                text = stringResource(R.string.library_new_playlist),
+                text = title,
                 style = MaterialTheme.typography.titleLarge,
                 color = TubepipeColors.OnSurface,
             )
@@ -68,7 +86,7 @@ internal fun NewPlaylistDialog(onCreate: (String) -> Unit, onDismiss: () -> Unit
             ) {
                 if (name.isEmpty()) {
                     Text(
-                        text = stringResource(R.string.library_new_playlist_hint),
+                        text = hint,
                         style = MaterialTheme.typography.bodyLarge,
                         color = TubepipeColors.OnSurfaceVariant,
                     )
@@ -88,7 +106,7 @@ internal fun NewPlaylistDialog(onCreate: (String) -> Unit, onDismiss: () -> Unit
                 )
             }
             Button(onClick = { submit() }, modifier = Modifier.fillMaxWidth()) {
-                Text(text = stringResource(R.string.library_create))
+                Text(text = confirmLabel)
             }
         }
         LaunchedEffect(Unit) { fieldFocus.requestFocus() }

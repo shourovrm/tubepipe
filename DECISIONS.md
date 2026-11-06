@@ -13,7 +13,7 @@
   3.0 s cached. See player.md.
 - Extractor is now vendored (`third_party/`), same base and patches as the phone app; a shared fork repo is the next step.
 - Open: duplicate "English" in one video's caption list; Home "Mix for" rows sometimes fail ("Could not get playlistData").
-- Device-untested: 18+ block, media keys. Box-tested 2026-10-23: search, focus after Back, captions, kids quality, More menu.
+- Device-untested: 18+ block, media keys, blocked words page, Shorts letterbox, seeded pause icon, live stream after the HLS patch.
 - Workers: write the whole slice, then compile + own tests once; lint, full suite and TV check run once after merge.
 
 ## Gotchas (cross-cutting)

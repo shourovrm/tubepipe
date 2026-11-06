@@ -41,5 +41,6 @@
     <string name="bar_pause">Pause</string>
     <string name="bar_full_screen">Open full screen</string>
     <string name="player_adult_blocked">This video is for adults only and is hidden by parental controls</string>
+    <string name="player_blocked_by_word">This video is hidden by a blocked word: %s</string>
     <string name="player_queue_position">%1$d / %2$d · %3$s</string>
 </resources>

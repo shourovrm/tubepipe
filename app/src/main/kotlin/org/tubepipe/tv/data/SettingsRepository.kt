@@ -76,6 +76,7 @@ data class AppSettings(
     val hideSensitiveContent: Boolean = false,
     /** Refuse to play videos YouTube marks 18+ (parental control). */
     val hideAdultVideos: Boolean = false,
+    val blockedWords: Set<String> = emptySet(),
 ) {
     companion object {
         const val ORIGINAL_AUDIO_LANGUAGE = "original"
@@ -116,6 +117,7 @@ class SettingsRepository(
         val sponsorBlockShowNotice = booleanPreferencesKey("sponsor_block_show_notice")
         val hideSensitiveContent = booleanPreferencesKey("hide_sensitive_content")
         val hideAdultVideos = booleanPreferencesKey("hide_adult_videos")
+        val blockedWords = stringSetPreferencesKey("blocked_words")
     }
 
     val settings: Flow<AppSettings> = dataStore.data.map { preferences ->
@@ -149,6 +151,7 @@ class SettingsRepository(
             sponsorBlockShowNotice = preferences[Keys.sponsorBlockShowNotice] ?: true,
             hideSensitiveContent = preferences[Keys.hideSensitiveContent] ?: false,
             hideAdultVideos = preferences[Keys.hideAdultVideos] ?: false,
+            blockedWords = preferences[Keys.blockedWords].orEmpty(),
         )
     }
 
@@ -215,6 +218,18 @@ class SettingsRepository(
     suspend fun setHideSensitiveContent(enabled: Boolean) = save(Keys.hideSensitiveContent, enabled)
 
     suspend fun setHideAdultVideos(enabled: Boolean) = save(Keys.hideAdultVideos, enabled)
+
+    suspend fun addBlockedWord(word: String) {
+        dataStore.edit { preferences ->
+            preferences[Keys.blockedWords] = preferences[Keys.blockedWords].orEmpty() + word
+        }
+    }
+
+    suspend fun removeBlockedWord(word: String) {
+        dataStore.edit { preferences ->
+            preferences[Keys.blockedWords] = preferences[Keys.blockedWords].orEmpty() - word
+        }
+    }
 
     suspend fun setSponsorBlockCategoryEnabled(category: SponsorBlockCategory, enabled: Boolean) {
         dataStore.edit { preferences ->

@@ -12,6 +12,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.media3.common.C
 import androidx.media3.common.Player
+import androidx.media3.common.VideoSize
 import androidx.media3.common.text.CueGroup
 import androidx.media3.session.MediaSession
 import java.util.UUID
@@ -84,8 +85,8 @@ private fun PlaybackSession(
     val controller = container.playback
     val viewModel = rememberPlayerViewModel(videoUrl, container)
     val state by viewModel.state.collectAsStateWithLifecycle()
-    // A video hidden by parental controls is never loaded.
-    val hasDetails = state.details != null && !state.isBlockedAsAdult
+    // A video hidden by parental controls or a blocked word is never loaded.
+    val hasDetails = state.details != null && !state.isBlockedAsAdult && state.blockingWord == null
 
     LaunchedEffect(engine, hasDetails) {
         if (hasDetails && engine.loadState == LoadState.Idle) {
@@ -166,6 +167,12 @@ private fun PlayerBinding(
                 snapshot.captionText = cueGroup.cues.joinToString(separator = "\n") { it.text?.toString().orEmpty() }
             }
 
+            override fun onVideoSizeChanged(videoSize: VideoSize) {
+                if (videoSize.width > 0 && videoSize.height > 0) {
+                    snapshot.videoAspectRatio = videoSize.width * videoSize.pixelWidthHeightRatio / videoSize.height
+                }
+            }
+
             override fun onPlaybackStateChanged(playbackState: Int) {
                 if (playbackState == Player.STATE_READY) {
                     snapshot.hasStarted = true
@@ -177,6 +184,10 @@ private fun PlayerBinding(
                 }
             }
         }
+        // The ExoPlayer is shared across videos and keeps playWhenReady over stop(), so play() on the next video
+        // changes nothing and fires no callback; the snapshot must start from the player's current state.
+        snapshot.playWhenReady = exoPlayer.playWhenReady
+        snapshot.isPlaying = exoPlayer.isPlaying
         exoPlayer.addListener(listener)
         onDispose {
             // The engine may already be released, so the last polled position is saved, not the player's own.

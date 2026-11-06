@@ -137,6 +137,18 @@ class SettingsViewModel(
         viewModelScope.launch { settingsRepository.setHideAdultVideos(enabled) }
     }
 
+    fun addBlockedWord(word: String) {
+        val trimmed = word.trim()
+        if (trimmed.isEmpty()) {
+            return
+        }
+        viewModelScope.launch { settingsRepository.addBlockedWord(trimmed) }
+    }
+
+    fun removeBlockedWord(word: String) {
+        viewModelScope.launch { settingsRepository.removeBlockedWord(word) }
+    }
+
     fun setSponsorBlockShowNotice(enabled: Boolean) {
         viewModelScope.launch { settingsRepository.setSponsorBlockShowNotice(enabled) }
     }
