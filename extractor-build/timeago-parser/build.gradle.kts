@@ -1,4 +1,4 @@
-// Compiles extractor/timeago-parser (the PipePipeExtractor submodule) on JDK 21; see settings.gradle.kts.
+// Compiles the vendored timeago-parser (third_party/PipePipeExtractor) on JDK 21; see settings.gradle.kts.
 plugins {
     `java-library`
 }
@@ -11,7 +11,7 @@ java {
 
 sourceSets {
     main {
-        java.setSrcDirs(listOf(rootProject.file("extractor/timeago-parser/src/main/java")))
+        java.setSrcDirs(listOf(rootProject.file("third_party/PipePipeExtractor/timeago-parser/src/main/java")))
     }
 }
 

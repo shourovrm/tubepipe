@@ -28,9 +28,7 @@ open it with a file manager on the TV that can install apps. All releases are on
 Building from source needs JDK 21 and the Android SDK (compileSdk 37).
 
 ```sh
-git clone --recurse-submodules <repo-url>
-# or, in an existing clone:
-git submodule update --init extractor
+git clone <repo-url>
 ./gradlew :app:assembleRelease
 ```
 

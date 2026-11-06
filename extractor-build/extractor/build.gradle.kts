@@ -1,5 +1,5 @@
-// Compiles extractor/extractor (the PipePipeExtractor submodule) on JDK 21; see settings.gradle.kts.
-// Dependencies mirror the submodule's extractor/build.gradle; copy any change there when bumping the tag.
+// Compiles the vendored extractor (third_party/PipePipeExtractor) on JDK 21; see settings.gradle.kts.
+// Dependencies mirror its extractor/build.gradle; copy any change there when updating the vendored tree.
 plugins {
     `java-library`
     alias(libs.plugins.wire)
@@ -13,13 +13,13 @@ java {
 
 sourceSets {
     main {
-        java.setSrcDirs(listOf(rootProject.file("extractor/extractor/src/main/java")))
+        java.setSrcDirs(listOf(rootProject.file("third_party/PipePipeExtractor/extractor/src/main/java")))
     }
 }
 
 wire {
     sourcePath {
-        srcDir(rootProject.file("extractor/extractor/src/main/proto"))
+        srcDir(rootProject.file("third_party/PipePipeExtractor/extractor/src/main/proto"))
     }
     java {
     }

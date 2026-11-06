@@ -11,7 +11,8 @@ cookies, ReCaptcha), the YouTube playback glue (`player/datasource/Sabr*`, `Yout
 DASH manifest creators), SponsorBlock, the Room schema and the subscriptions JSON format. SmartTube gives 10-foot UX
 patterns only (sections, long-press menu, remote key map, double-back exit, storyboard seek preview); none of its code.
 
-Extractor delivery: git submodule `extractor/` = PipePipeExtractor pinned to commit `1a09d20e` (version v5.5.0; upstream has no tags), unmodified. Its sources are
+Extractor delivery: vendored in `third_party/PipePipeExtractor` = upstream commit `1a09d20e` (version v5.5.0; upstream has no tags) plus
+`third_party/patches/` (same base and patches 0001-0003 as the phone app, see `third_party/README.md`). Its sources are
 compiled by our `extractor-build/{extractor,timeago-parser}` build files on JDK 21 (projects `:extractor`, `:timeago-parser`).
 
 Gradle modules (five; features are packages inside `:app` until build time says otherwise):
@@ -68,7 +69,7 @@ Roborazzi for composable screenshots, the Android TV 1080p AVD for instrumented 
 - The extractor declares a JDK 25 toolchain and `includeBuild` cannot override it, so our build files compile it on 21.
 - `NewPipe.init` calls `trustEveryone()`, disabling TLS checks for all `HttpsURLConnection`s; `:core:service` must save
   and restore the default socket factory and hostname verifier around it. OkHttp and WebView are unaffected.
-- Extractor bump: copy dependency changes from `extractor/extractor/build.gradle` into `extractor-build/` and the catalog.
+- Extractor bump: follow `third_party/README.md`; copy dependency changes from its `extractor/build.gradle` into `extractor-build/` and the catalog.
 - The extractor is blocking Java with OkHttp; every call goes through `withContext(Dispatchers.IO)`.
 - Compose for TV uses `androidx.tv.material3.MaterialTheme`; never mix the phone `material3` theme into the same module.
 - PipePipeClient has `LEANBACK_LAUNCHER` but a phone UI; it is a data-layer reference, not a UI one.
