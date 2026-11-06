@@ -16,14 +16,17 @@
 - Parental > Blocked words (`BlockedWordsPage`, a sub-page kept in `ParentalPage` state): `VideoFilters.kt` folds case,
   accents, spaces and punctuation, so one entry covers the Latin variants and another script needs its own entry.
   `FilteringContentRepository` drops matches from every list, Home drops them from Continue Watching, and the player
-  shows the blocked view naming the word instead of loading; such a video is not written to history.
+  shows the blocked view naming the word instead of loading; such a video is not written to history. Search also
+  drops channels and playlists whose name matches. Home applies the words to its assembled rows, because its
+  per-seed source cache and the remembered rows outlive a settings change.
 
 
 ## Open items
-- The saved Recommended row shown before the network answers (`RecommendationStore`) is not filtered by blocked words.
 - Stray key on keyboard open: none with a 120 ms press; adb's 6 ms press still types one. Confirm on the real remote.
 
 ## Gotchas
+- YouTube repeats a channel across search result pages; the grid keys results by url, so `SearchViewModel` keeps
+  the first occurrence or Compose throws "Key ... was already used" (box crash, 2026-11-06).
 - Search moves focus to results once per `submissionCount`; keying the effect on "results showing" stole the
   keyboard whenever a new query fell back to the old results before its suggestions arrived.
 - After Back pops a screen, or leaves a single video for Home, the shell focuses the content group (`backCount`);

@@ -122,7 +122,8 @@ class HomeViewModel(
                     outcomes[index] = loadSection(section, inputs)
                     if (outcomes.any { it == null }) {
                         mutableState.value = HomeState(
-                            rows = rowsSoFar(inputs.sections, outcomes, rowsShownBefore),
+                            rows = rowsSoFar(inputs.sections, outcomes, rowsShownBefore)
+                                .withoutBlockedWords(inputs.blockedWords),
                             isLoading = false,
                             isLoadingMoreSections = true,
                         )
@@ -130,7 +131,7 @@ class HomeViewModel(
                 }
             }
         }
-        val rows = outcomes.flatMap { it?.rows.orEmpty() }
+        val rows = outcomes.flatMap { it?.rows.orEmpty() }.withoutBlockedWords(inputs.blockedWords)
         val anySourceFailed = outcomes.any { it?.hadFailure == true }
         mutableState.value = HomeState(rows = rows, isLoading = false, hasError = rows.isEmpty() && anySourceFailed)
         if (rows.isNotEmpty()) {
@@ -146,6 +147,12 @@ class HomeViewModel(
         outcomes[index]?.rows ?: rowsShownBefore.filter { it.section == section }
     }
 
+    // Sources are cached across reloads and rows carry over while a reload runs, so the words are applied to the
+    // assembled rows here, not only inside the repository at fetch time.
+    private fun List<HomeRow>.withoutBlockedWords(blockedWords: Set<String>): List<HomeRow> = map { row ->
+        row.copy(items = row.items.filterNot { blockedWords.blockedWordIn(it.video) != null })
+    }.filter { it.items.isNotEmpty() }
+
     /**
      * Shows the Recommended row saved by the last run while the network loads, so Home is not
      * a spinner on every start. Skipped once any rows are on screen; they are already newer.
@@ -159,13 +166,14 @@ class HomeViewModel(
             return
         }
         val savedRow = HomeRow(HomeSection.Recommended, seedTitle = null, items = savedVideos.asHomeVideos())
+        val savedRows = listOf(savedRow).withoutBlockedWords(inputs.blockedWords)
         mutableState.update { current ->
-            if (current.rows.isEmpty()) HomeState(rows = listOf(savedRow), isLoading = false) else current
+            if (current.rows.isEmpty()) HomeState(rows = savedRows, isLoading = false) else current
         }
     }
 
     private suspend fun loadSection(section: HomeSection, inputs: LoadInputs): SectionOutcome = when (section) {
-        HomeSection.ContinueWatching -> SectionOutcome(continueWatchingRows(inputs), hadFailure = false)
+        HomeSection.ContinueWatching -> SectionOutcome(continueWatchingRows(inputs.recentHistory), hadFailure = false)
         HomeSection.Recommended -> recommendedRows(inputs.recentHistory)
         HomeSection.Mix -> mixRows(inputs.recentHistory)
         HomeSection.NewFromSubscriptions -> subscriptionFeedRows(inputs.subscribedChannelUrls)
@@ -173,13 +181,11 @@ class HomeViewModel(
         HomeSection.TrendingMovies -> trendingRows(TrendingKind.MoviesAndShows, section, inputs.contentCountry)
     }
 
-    private fun continueWatchingRows(inputs: LoadInputs): List<HomeRow> {
-        val partlyWatched = inputs.recentHistory.mapNotNull { entry ->
-            val video = entry.toVideoItem()
+    private fun continueWatchingRows(recentHistory: List<HistoryEntity>): List<HomeRow> {
+        val partlyWatched = recentHistory.mapNotNull { entry ->
             val fraction = TimeFormatting.watchedFraction(entry.positionMillis, entry.durationSeconds)
-            val isBlocked = inputs.blockedWords.blockedWordIn(video) != null
-            if (fraction > 0f && fraction < FINISHED_FRACTION && !isBlocked) {
-                HomeVideo(video, fraction)
+            if (fraction > 0f && fraction < FINISHED_FRACTION) {
+                HomeVideo(entry.toVideoItem(), fraction)
             } else {
                 null
             }

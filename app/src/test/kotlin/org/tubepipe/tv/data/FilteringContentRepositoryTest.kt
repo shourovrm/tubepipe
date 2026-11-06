@@ -3,6 +3,9 @@ package org.tubepipe.tv.data
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Test
+import org.tubepipe.core.service.ChannelSummary
+import org.tubepipe.core.service.PlaylistSummary
+import org.tubepipe.core.service.SearchResult
 import org.tubepipe.core.service.TrendingKind
 import org.tubepipe.core.service.VideoItem
 import org.tubepipe.core.service.videoItems
@@ -61,6 +64,25 @@ class FilteringContentRepositoryTest {
         assertEquals(titles(listOf(normal)), titles(filtering.search("q").items.videoItems()))
         assertEquals(titles(listOf(normal)), titles(filtering.trending(TrendingKind.Gaming)))
         assertEquals(titles(listOf(normal)), titles(filtering.videoDetails(normal.url).related))
+    }
+
+    @Test
+    fun blockedWordHidesMatchingChannelsAndPlaylistsInSearch() = runTest {
+        val blockedChannel =
+            SearchResult.Channel(ChannelSummary("https://www.youtube.com/channel/mp", "Motu Patlu TV", null, 1L))
+        val keptChannel = SearchResult.Channel(ChannelSummary("https://www.youtube.com/channel/c", "Cats", null, 1L))
+        val blockedPlaylist = SearchResult.Playlist(
+            PlaylistSummary("https://www.youtube.com/playlist?list=1", "Best of MOTU-PATLU", null, "Someone", 9L),
+        )
+        val content = FakeContentRepository().apply {
+            searchFirstPages["q"] = listOf(normal)
+            searchExtraResults["q"] = listOf(blockedChannel, keptChannel, blockedPlaylist)
+        }
+        val settings = testSettings().apply { value = value.copy(blockedWords = setOf("motu patlu")) }
+
+        val items = FilteringContentRepository(content, settings).search("q").items
+
+        assertEquals(listOf(SearchResult.Video(normal), keptChannel), items)
     }
 
     @Test

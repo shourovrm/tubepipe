@@ -61,3 +61,4 @@
 2026-11-06 | Embedded player retried once on a 360p-only answer | the same request minutes apart returned the full list
 2026-11-06 | letterbox vertical video with aspectRatio on PlayerSurface, no PlayerView | keeps the Compose surface, one listener line
 2026-11-06 | blocked words match folded title and channel name, substring | one entry covers case, accents, spacing; scripts stay separate entries
+2026-11-06 | blocked words also hide matching channels and playlists in search | a 'motu patlu' channel card is the same content

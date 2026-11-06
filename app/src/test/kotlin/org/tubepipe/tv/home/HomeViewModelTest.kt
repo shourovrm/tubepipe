@@ -155,6 +155,18 @@ class HomeViewModelTest {
     }
 
     @Test
+    fun blockedWordsDropVideosFromTheAssembledRows() = runTest(timeout = 30.seconds) {
+        watch(video("r1"), watchedAtMillis = nowMillis - dayMillis)
+        val blockedTitle = content.details.getValue(video("r1").url).related.first().title
+        val settings = testSettings().value.copy(blockedWords = setOf(blockedTitle))
+
+        val rows = viewModel(settings).loaded().rows
+
+        assertTrue(rows.any { it.section == HomeSection.Recommended })
+        assertTrue(rows.flatMap { it.items }.none { it.video.title == blockedTitle })
+    }
+
+    @Test
     fun everySectionAppearsAtMostOnceEvenWithRepeatedTitles() = runTest(timeout = 30.seconds) {
         // Regression: two history videos with the same title produced two rows with the same key.
         watch(video("same1"), watchedAtMillis = nowMillis - dayMillis)

@@ -18,10 +18,10 @@ import org.tubepipe.core.service.VideoItem
  */
 class FilteringContentRepository(private val delegate: ContentRepository, private val settings: Flow<AppSettings>) :
     ContentRepository {
-    override suspend fun search(query: String): ContentPage<SearchResult> = delegate.search(query).withFilteredVideos()
+    override suspend fun search(query: String): ContentPage<SearchResult> = delegate.search(query).withFilteredResults()
 
     override suspend fun searchMore(query: String, cursor: PageCursor): ContentPage<SearchResult> =
-        delegate.searchMore(query, cursor).withFilteredVideos()
+        delegate.searchMore(query, cursor).withFilteredResults()
 
     // Suggestions are text, not videos.
     override suspend fun searchSuggestions(query: String): List<String> = delegate.searchSuggestions(query)
@@ -55,12 +55,9 @@ class FilteringContentRepository(private val delegate: ContentRepository, privat
     override suspend fun latestFromChannels(channelUrls: List<String>): List<VideoItem> =
         delegate.latestFromChannels(channelUrls).filtered()
 
-    // Channels and playlists have no Short or members-only flag, so only the video entries are tested.
-    private suspend fun ContentPage<SearchResult>.withFilteredVideos(): ContentPage<SearchResult> {
+    private suspend fun ContentPage<SearchResult>.withFilteredResults(): ContentPage<SearchResult> {
         val current = settings.first()
-        return copy(
-            items = items.filterNot { result -> result is SearchResult.Video && current.hides(result.video) },
-        )
+        return copy(items = items.filterNot { result -> current.hides(result) })
     }
 
     private suspend fun ContentPage<VideoItem>.filtered(): ContentPage<VideoItem> = copy(items = items.filtered())

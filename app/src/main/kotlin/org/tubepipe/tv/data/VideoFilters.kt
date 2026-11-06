@@ -2,6 +2,7 @@ package org.tubepipe.tv.data
 
 import java.text.Normalizer
 import java.util.Locale
+import org.tubepipe.core.service.SearchResult
 import org.tubepipe.core.service.VideoItem
 
 private val CombiningMarks = Regex("\\p{Mn}+")
@@ -13,16 +14,26 @@ fun AppSettings.hides(video: VideoItem): Boolean = (hideShorts && video.isShort)
     (hidePaid && video.isMembersOnly) ||
     blockedWords.blockedWordIn(video) != null
 
+/** True when a search result is hidden: a video by [hides], a channel or playlist by its name alone. */
+fun AppSettings.hides(result: SearchResult): Boolean = when (result) {
+    is SearchResult.Video -> hides(result.video)
+    is SearchResult.Channel -> blockedWords.blockedWordIn(result.channel.name) != null
+    is SearchResult.Playlist ->
+        blockedWords.blockedWordIn(result.playlist.title, result.playlist.uploaderName.orEmpty()) != null
+}
+
 /** The first blocked word found in [video]'s title or channel name, or null when none matches. */
-fun Set<String>.blockedWordIn(video: VideoItem): String? {
+fun Set<String>.blockedWordIn(video: VideoItem): String? = blockedWordIn(video.title, video.channelName)
+
+/** The first blocked word found in any of [texts], or null when none matches. */
+fun Set<String>.blockedWordIn(vararg texts: String): String? {
     if (isEmpty()) {
         return null
     }
-    val title = foldForBlocking(video.title)
-    val channel = foldForBlocking(video.channelName)
+    val folded = texts.map(::foldForBlocking)
     return firstOrNull { word ->
         val needle = foldForBlocking(word)
-        needle.isNotEmpty() && (title.contains(needle) || channel.contains(needle))
+        needle.isNotEmpty() && folded.any { it.contains(needle) }
     }
 }
 
