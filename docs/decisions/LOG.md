@@ -64,3 +64,4 @@
 2026-11-06 | blocked words also hide matching channels and playlists in search | a 'motu patlu' channel card is the same content
 2026-11-07 | CI builds and publishes releases on a v* tag; one APK per ABI plus universal | signing from repo secrets
 2026-11-07 | Player view model wraps its async reads in coroutineScope | a failed async cancelled the launch and crashed the app
+2026-11-07 | Subtitles downloaded up front, a failed track dropped; extractor no longer fetches a caption per extraction | timedtext 429 ended every video since 0.2.2

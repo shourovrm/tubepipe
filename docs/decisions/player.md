@@ -41,10 +41,6 @@ SABR glue and played one 1080p avc1 stream for 60 s on the Mi Box S with 0 rebuf
   An embed-served live stream uses the embedded answer's manifest. Phone-verified on two Booba live streams; the
   box plays `hlsUrl` for live and is not re-tested yet.
 - Add instrumented tests for seek back 30 s, forward seek, forced quality switch, and time to first frame (2 s budget).
-- 2026-11-07: YouTube answered 429 on `/api/timedtext` for the home public IP (CGNAT 103.222.x.x; the PC got 429 too)
-  while InnerTube, the HLS manifest and segments stayed 200. The side-loaded subtitle source is merged into the video
-  source, so its 429 ends playback ("could not be played"); something also fetches timedtext per Home seed through
-  `DownloaderImpl`. Fix: a failed subtitle load must not stop playback, and Home must not fetch subtitle files.
 - Restore what the spike stubbed: segment disk cache (Media3 `SimpleCache`), audio pick by language (original first,
   DataStore prefs), SABR backoff UI, startup trace, full `DownloaderImpl` (cookies, reCaptcha, restricted mode).
 - One Home seed extraction can still time out at launch while the WebView warms up (box, 2026-11-06); it is fetched
@@ -53,6 +49,10 @@ SABR glue and played one 1080p avc1 stream for 60 s on the Mi Box S with 0 rebuf
   existing error recovery re-extracted and played (about 2 s lost). Cause not found; later plays were clean.
 
 ## Gotchas
+- Subtitle files are downloaded before the source is built (`SubtitleSources.attach`) and a failed one drops its
+  track: a merged `ProgressiveMediaSource` cannot prepare without its bytes and ends the video. 0.2.1's
+  `SingleSampleMediaSource` ignored load errors by default; the caption-parsing fix in 0.2.2 lost that. YouTube
+  rate-limits `/api/timedtext` per IP (429 on a CGNAT IP on 2026-11-07) while InnerTube and the streams still answer.
 - Media3's `DefaultLoadControl` starts at 1,000 ms buffer and resumes at 2,000 ms (ExoPlayer 2.18.7: 2,500 / 5,000);
   set the durations explicitly (`BufferSettings`: 1,500 start, 5,000 after a rebuffer).
 - The shared ExoPlayer keeps listeners across videos: every `addListener` needs its `removeListener` in release.

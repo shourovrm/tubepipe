@@ -5,6 +5,8 @@ import android.net.Uri
 import androidx.annotation.OptIn
 import androidx.media3.common.MediaItem
 import androidx.media3.common.util.UnstableApi
+import androidx.media3.datasource.DataSourceUtil
+import androidx.media3.datasource.DataSpec
 import androidx.media3.exoplayer.dash.DashMediaSource
 import androidx.media3.exoplayer.dash.manifest.DashManifestParser
 import androidx.media3.exoplayer.hls.DefaultHlsExtractorFactory
@@ -55,14 +57,24 @@ class StreamMediaSourceFactory(
         maxVideoHeight: Int = this.maxVideoHeight,
     ): BuiltMediaSource {
         val withoutSubtitles = buildWithoutSubtitles(streamInfo, startPositionMs, maxVideoHeight)
-        // No range or rn parameters: those belong to media segments, not to a plain timed-text download.
-        val subtitleDataSourceFactory = youtubeDataSourceFactory(rangeParameter = false, rnParameter = false)
         val withSubtitles = SubtitleSources.attach(
             withoutSubtitles.mediaSource,
             streamInfo.subtitles,
-            subtitleDataSourceFactory,
+            ::downloadSubtitle,
         )
         return BuiltMediaSource(withSubtitles, withoutSubtitles.delivery)
+    }
+
+    @Throws(IOException::class)
+    private fun downloadSubtitle(url: String): ByteArray {
+        // No range or rn parameters: those belong to media segments, not to a plain timed-text download.
+        val dataSource = youtubeDataSourceFactory(rangeParameter = false, rnParameter = false).createDataSource()
+        try {
+            dataSource.open(DataSpec(Uri.parse(url)))
+            return DataSourceUtil.readToEnd(dataSource)
+        } finally {
+            DataSourceUtil.closeQuietly(dataSource)
+        }
     }
 
     /** The heights a SABR video can be rebuilt at, tallest first; empty when the video has no SABR streams. */

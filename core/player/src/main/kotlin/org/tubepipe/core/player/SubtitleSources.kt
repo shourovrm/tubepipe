@@ -1,11 +1,12 @@
 package org.tubepipe.core.player
 
+import android.util.Log
 import androidx.annotation.OptIn
 import androidx.media3.common.Format
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MimeTypes
 import androidx.media3.common.util.UnstableApi
-import androidx.media3.datasource.DataSource
+import androidx.media3.datasource.ByteArrayDataSource
 import androidx.media3.exoplayer.source.MediaSource
 import androidx.media3.exoplayer.source.MergingMediaSource
 import androidx.media3.exoplayer.source.ProgressiveMediaSource
@@ -13,26 +14,39 @@ import androidx.media3.extractor.Extractor
 import androidx.media3.extractor.ExtractorsFactory
 import androidx.media3.extractor.text.DefaultSubtitleParserFactory
 import androidx.media3.extractor.text.SubtitleExtractor
+import java.io.IOException
 import org.schabi.newpipe.extractor.MediaFormat
 import org.schabi.newpipe.extractor.stream.SubtitlesStream
 
 /** Side-loads the extractor's subtitles next to a built media source, whatever its delivery. */
 @OptIn(UnstableApi::class)
 object SubtitleSources {
+    private const val TAG = "SubtitleSources"
     private const val AUTO_GENERATED_SUFFIX = " (auto-generated)"
     private val subtitleParserFactory = DefaultSubtitleParserFactory()
 
-    /** Returns [mediaSource] unchanged when the video has no usable subtitles. */
+    /**
+     * Returns [mediaSource] unchanged when the video has no usable subtitles. Each subtitle file is read with
+     * [download] now, on the caller's IO thread, so a download that fails drops its track instead of ending the
+     * video: the merged ProgressiveMediaSource cannot prepare without the bytes and reports the failure as a fatal
+     * source error. YouTube answers 429 on timedtext for a throttled IP while the streams still play.
+     */
     fun attach(
         mediaSource: MediaSource,
         subtitles: List<SubtitlesStream>,
-        dataSourceFactory: DataSource.Factory,
+        download: (url: String) -> ByteArray,
     ): MediaSource {
-        val chosen = choose(subtitles)
-        if (chosen.isEmpty()) {
+        val subtitleSources = choose(subtitles).mapNotNull { subtitle ->
+            try {
+                parsedSubtitleSource(subtitle, download(subtitle.content))
+            } catch (error: IOException) {
+                Log.w(TAG, "Subtitle ${subtitle.languageTag} dropped: ${error.message}")
+                null
+            }
+        }
+        if (subtitleSources.isEmpty()) {
             return mediaSource
         }
-        val subtitleSources = chosen.map { subtitle -> parsedSubtitleSource(subtitle, dataSourceFactory) }
         return MergingMediaSource(mediaSource, *subtitleSources.toTypedArray())
     }
 
@@ -41,7 +55,7 @@ object SubtitleSources {
      * side-loads subtitles. Media3's text renderer only accepts parsed cues: a raw TTML or VTT sample made it throw
      * "Legacy decoding is disabled", which stopped SABR playback as soon as a caption was picked.
      */
-    private fun parsedSubtitleSource(subtitle: SubtitlesStream, dataSourceFactory: DataSource.Factory): MediaSource {
+    private fun parsedSubtitleSource(subtitle: SubtitlesStream, content: ByteArray): MediaSource {
         val plainFormat = Format.Builder()
             .setSampleMimeType(mimeTypeOf(subtitle))
             .setLanguage(subtitle.languageTag)
@@ -53,7 +67,7 @@ object SubtitleSources {
         val extractorsFactory = ExtractorsFactory {
             arrayOf<Extractor>(SubtitleExtractor(subtitleParserFactory.create(format), format))
         }
-        return ProgressiveMediaSource.Factory(dataSourceFactory, extractorsFactory)
+        return ProgressiveMediaSource.Factory({ ByteArrayDataSource(content) }, extractorsFactory)
             .createMediaSource(MediaItem.fromUri(subtitle.content))
     }
 
