@@ -74,7 +74,7 @@ public final class DownloaderImpl extends Downloader {
                 buildOkHttpRequest(request));
         if (response.code() == 429) {
             response.close();
-            throw new ReCaptchaException("reCaptcha Challenge requested", url);
+            throw new ReCaptchaException("HTTP 429 for " + url, url);
         }
         final ResponseBody body = response.body();
         byte[] rawBodyBytes = null;
@@ -137,7 +137,7 @@ public final class DownloaderImpl extends Downloader {
                 buildOkHttpRequest(request));
         if (response.code() == 429) {
             response.close();
-            throw new ReCaptchaException("reCaptcha Challenge requested", request.url());
+            throw new ReCaptchaException("HTTP 429 for " + request.url(), request.url());
         }
         final ResponseBody body = response.body();
         final InputStream stream = body == null
@@ -167,7 +167,7 @@ public final class DownloaderImpl extends Downloader {
                 try {
                     if (response.code() == 429) {
                         callback.onError(new ReCaptchaException(
-                                "reCaptcha Challenge requested", request.url()));
+                                "HTTP 429 for " + request.url(), request.url()));
                         return;
                     }
                     final ResponseBody body = response.body();
