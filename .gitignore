@@ -44,3 +44,4 @@ sessions/
 
 # Design mockups (design-system skill)
 .design-mockups/
+.playwright-mcp/
