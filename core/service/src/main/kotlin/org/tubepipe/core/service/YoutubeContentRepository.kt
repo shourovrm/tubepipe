@@ -9,6 +9,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
 import kotlinx.coroutines.withContext
@@ -238,6 +239,8 @@ class YoutubeContentRepository(private val ioDispatcher: CoroutineDispatcher = D
             try {
                 block()
             } catch (error: ExtractionException) {
+                // A cancelled OkHttp call surfaces as "Canceled" inside an ExtractionException.
+                ensureActive()
                 throw IOException("YouTube $operation failed for $subject: ${error.message}", error)
             }
         }

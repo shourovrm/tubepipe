@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import java.io.IOException
 import java.util.Locale
 import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -164,31 +165,35 @@ class PlayerViewModel(
         mutableState.update { it.copy(isLoading = true, hasError = false) }
         viewModelScope.launch {
             try {
-                // The three reads are independent; the extraction is the long one.
-                val detailsDeferred = async { content.videoDetails(videoUrl) }
-                // Read before the upsert below, which rewrites the row.
-                val previousPositionDeferred = async { history.positionOf(videoUrl) }
-                val latest = settings.first()
-                val details = detailsDeferred.await()
-                val previousPosition = previousPositionDeferred.await()
-                currentSettings = latest
-                isSponsorBlockEnabled = latest.sponsorBlockEnabled
-                val isBlocked = latest.blockedWords.blockedWordIn(details.video) != null
-                if (latest.watchHistoryEnabled && !isBlocked) {
-                    history.upsert(details.video.toHistoryEntity(clock(), positionMillis = previousPosition ?: 0L))
-                }
-                val canResume = latest.resumeEnabled && !latest.alwaysStartFromBeginning
-                mutableState.update {
-                    it.copy(
-                        details = details,
-                        isLoading = false,
-                        resumePositionMillis = previousPosition?.takeIf { canResume }?.let { position ->
-                            resumePositionFor(position, details.video.durationSeconds)
-                        },
-                    )
-                }
-                if (isSponsorBlockEnabled && latest.sponsorBlockCategories.isNotEmpty()) {
-                    loadSegments(latest.sponsorBlockCategories)
+                // A failed async cancels the launch and crashes the app even when await() is caught;
+                // coroutineScope rethrows the failure here instead.
+                coroutineScope {
+                    // The three reads are independent; the extraction is the long one.
+                    val detailsDeferred = async { content.videoDetails(videoUrl) }
+                    // Read before the upsert below, which rewrites the row.
+                    val previousPositionDeferred = async { history.positionOf(videoUrl) }
+                    val latest = settings.first()
+                    val details = detailsDeferred.await()
+                    val previousPosition = previousPositionDeferred.await()
+                    currentSettings = latest
+                    isSponsorBlockEnabled = latest.sponsorBlockEnabled
+                    val isBlocked = latest.blockedWords.blockedWordIn(details.video) != null
+                    if (latest.watchHistoryEnabled && !isBlocked) {
+                        history.upsert(details.video.toHistoryEntity(clock(), positionMillis = previousPosition ?: 0L))
+                    }
+                    val canResume = latest.resumeEnabled && !latest.alwaysStartFromBeginning
+                    mutableState.update {
+                        it.copy(
+                            details = details,
+                            isLoading = false,
+                            resumePositionMillis = previousPosition?.takeIf { canResume }?.let { position ->
+                                resumePositionFor(position, details.video.durationSeconds)
+                            },
+                        )
+                    }
+                    if (isSponsorBlockEnabled && latest.sponsorBlockCategories.isNotEmpty()) {
+                        loadSegments(latest.sponsorBlockCategories)
+                    }
                 }
             } catch (failure: IOException) {
                 Log.e(TAG, "Loading video $videoUrl failed", failure)

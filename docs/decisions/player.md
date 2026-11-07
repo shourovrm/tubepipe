@@ -41,6 +41,10 @@ SABR glue and played one 1080p avc1 stream for 60 s on the Mi Box S with 0 rebuf
   An embed-served live stream uses the embedded answer's manifest. Phone-verified on two Booba live streams; the
   box plays `hlsUrl` for live and is not re-tested yet.
 - Add instrumented tests for seek back 30 s, forward seek, forced quality switch, and time to first frame (2 s budget).
+- 2026-11-07: YouTube answered 429 on `/api/timedtext` for the home public IP (CGNAT 103.222.x.x; the PC got 429 too)
+  while InnerTube, the HLS manifest and segments stayed 200. The side-loaded subtitle source is merged into the video
+  source, so its 429 ends playback ("could not be played"); something also fetches timedtext per Home seed through
+  `DownloaderImpl`. Fix: a failed subtitle load must not stop playback, and Home must not fetch subtitle files.
 - Restore what the spike stubbed: segment disk cache (Media3 `SimpleCache`), audio pick by language (original first,
   DataStore prefs), SABR backoff UI, startup trace, full `DownloaderImpl` (cookies, reCaptcha, restricted mode).
 - One Home seed extraction can still time out at launch while the WebView warms up (box, 2026-11-06); it is fetched

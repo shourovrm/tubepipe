@@ -62,3 +62,5 @@
 2026-11-06 | letterbox vertical video with aspectRatio on PlayerSurface, no PlayerView | keeps the Compose surface, one listener line
 2026-11-06 | blocked words match folded title and channel name, substring | one entry covers case, accents, spacing; scripts stay separate entries
 2026-11-06 | blocked words also hide matching channels and playlists in search | a 'motu patlu' channel card is the same content
+2026-11-07 | CI builds and publishes releases on a v* tag; one APK per ABI plus universal | signing from repo secrets
+2026-11-07 | Player view model wraps its async reads in coroutineScope | a failed async cancelled the launch and crashed the app

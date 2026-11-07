@@ -46,8 +46,8 @@ class PlayerViewModelTest {
 
     private val createdViewModels = mutableListOf<PlayerViewModel>()
 
-    private fun viewModel(sponsorBlockEnabled: Boolean = true) = PlayerViewModel(
-        videoUrl = playing.url,
+    private fun viewModel(sponsorBlockEnabled: Boolean = true, videoUrl: String = playing.url) = PlayerViewModel(
+        videoUrl = videoUrl,
         content = content,
         history = databaseRule.database.historyDao(),
         playlists = databaseRule.database.playlistDao(),
@@ -70,6 +70,13 @@ class PlayerViewModelTest {
 
         assertEquals(playing.title, state.details?.video?.title)
         assertEquals(videos("rel", 10), state.details?.related)
+    }
+
+    @Test
+    fun aFailedDetailsReadShowsTheErrorState() = runTest(timeout = 30.seconds) {
+        val state = viewModel(videoUrl = "https://www.youtube.com/watch?v=unknown0000").state.first { !it.isLoading }
+
+        assertTrue(state.hasError)
     }
 
     @Test
