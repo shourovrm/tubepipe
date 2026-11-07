@@ -21,8 +21,8 @@ android {
         applicationId = "org.tubepipe.tv"
         minSdk = 24
         targetSdk = 36
-        versionCode = 4
-        versionName = "0.2.2"
+        versionCode = 5
+        versionName = "0.2.3"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
     signingConfigs {
@@ -33,6 +33,15 @@ android {
                 keyAlias = keystoreProperties.getProperty("keyAlias")
                 keyPassword = keystoreProperties.getProperty("keyPassword")
             }
+        }
+    }
+    splits {
+        // One APK per TV CPU (Mi Box armeabi-v7a, Shield/Google TV arm64-v8a) plus a universal one.
+        abi {
+            isEnable = true
+            reset()
+            include("armeabi-v7a", "arm64-v8a", "x86_64")
+            isUniversalApk = true
         }
     }
     buildTypes {

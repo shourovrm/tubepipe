@@ -13,11 +13,11 @@ Stack, modules and commands are decided in the first session and recorded in `do
 - Verify (full, main session only): steps 1 to 5 of the pre-push list under CI/CD, once on the merged tree.
 - Lint / format: `./gradlew ktlintCheck lint`; fix formatting with `./gradlew ktlintFormat`
 - Run locally: start the Android TV 1080p AVD (or `adb connect <tv-ip>`), then `./gradlew :app:installRelease && adb shell monkey -p org.tubepipe.tv -c android.intent.category.LEANBACK_LAUNCHER 1`. Test every screen with the D-pad only: `adb shell input keyevent DPAD_DOWN|DPAD_CENTER|BACK`.
-- Release, in order: 1 bump `versionCode`/`versionName` in `app/build.gradle.kts`; 2 `./gradlew :app:assembleRelease` with `keystore.properties` (gitignored); 3 `git tag vN`; 4 `gh release create vN app/build/outputs/apk/release/*.apk --generate-notes`; 5 sideload notes in the release body, F-Droid later.
+- Release, in order: 1 bump `versionCode`/`versionName` in `app/build.gradle.kts`; 2 `./gradlew :app:assembleRelease` locally to prove it builds; 3 `git tag vN` and push the tag (CI publishes the GitHub release; do not run `gh release create` by hand); 4 check the release assets; 5 sideload notes in the release body, F-Droid later.
 - Exclusive resources (one session at a time): the TV emulator, the ADB-connected TV device.
 
-## CI/CD — declined 2026-10-22 (user will revisit later)
-No GitHub Actions yet; the local checks below are the gate. Pushing, opening a PR or tagging needs the user's approval in the current session, every time; committing does not.
+## CI/CD — GitHub Actions since 2026-11-07
+`.github/workflows/ci.yml`: every push to `main` and every PR runs `ktlintCheck lint test`. Pushing a `v*` tag also builds the signed release and publishes one APK per ABI plus a universal one. Signing comes from repo secrets `KEYSTORE_BASE64`, `KEYSTORE_PASSWORD`, `KEY_ALIAS`, `KEY_PASSWORD`. Locally the checks below stay the gate. Pushing, opening a PR or tagging needs the user's approval in the current session, every time; committing does not.
 
 Rules:
 - Verify before a full push, in order: 1 format check; 2 lint; 3 unit tests; 4 build; 5 install and D-pad walk on the TV emulator or device. A quick push runs 1 and 2 only and is never used for a tag or release.
